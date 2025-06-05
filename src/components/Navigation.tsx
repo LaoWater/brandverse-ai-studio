@@ -21,8 +21,8 @@ const Navigation = () => {
     { name: "Settings", href: "/settings" },
   ] : [
     { name: "Home", href: "/" },
-    { name: "Features", href: "#features" },
-    { name: "Pricing", href: "#pricing" },
+    { name: "Features", href: "/features" },
+    { name: "Pricing", href: "/pricing" },
   ];
 
   return (
@@ -52,25 +52,24 @@ const Navigation = () => {
             {user ? (
               <div className="flex items-center space-x-4">
                 <span className="text-white text-sm">Welcome, {user.email}</span>
-                <Button 
+                <button 
                   onClick={handleSignOut}
-                  variant="outline" 
-                  className="border-white/20 text-white hover:bg-white/10"
+                  className="px-4 py-2 border border-white/20 text-white hover:bg-white/10 rounded-md transition-colors"
                 >
                   Sign Out
-                </Button>
+                </button>
               </div>
             ) : (
               <>
                 <Link to="/auth">
-                  <Button variant="ghost" className="text-white hover:bg-white/10">
+                  <button className="px-4 py-2 text-white hover:bg-white/10 rounded-md transition-colors">
                     Sign In
-                  </Button>
+                  </button>
                 </Link>
                 <Link to="/auth">
-                  <Button className="cosmic-button text-white font-semibold">
+                  <button className="cosmic-button px-6 py-2 rounded-md">
                     Get Started
-                  </Button>
+                  </button>
                 </Link>
               </>
             )}
@@ -78,14 +77,12 @@ const Navigation = () => {
 
           {/* Mobile Menu Button */}
           <div className="md:hidden">
-            <Button
-              variant="ghost"
-              size="sm"
+            <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-white"
+              className="text-white p-2"
             >
               {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </Button>
+            </button>
           </div>
         </div>
 
@@ -107,28 +104,27 @@ const Navigation = () => {
               {user ? (
                 <div className="pt-4 border-t border-white/10">
                   <p className="text-white text-sm mb-2">Welcome, {user.email}</p>
-                  <Button 
+                  <button 
                     onClick={() => {
                       handleSignOut();
                       setIsOpen(false);
                     }}
-                    variant="outline" 
-                    className="border-white/20 text-white hover:bg-white/10 w-full"
+                    className="px-4 py-2 border border-white/20 text-white hover:bg-white/10 rounded-md transition-colors w-full"
                   >
                     Sign Out
-                  </Button>
+                  </button>
                 </div>
               ) : (
                 <div className="flex flex-col space-y-2 pt-4 border-t border-white/10">
                   <Link to="/auth" onClick={() => setIsOpen(false)}>
-                    <Button variant="ghost" className="text-white hover:bg-white/10 w-full">
+                    <button className="px-4 py-2 text-white hover:bg-white/10 rounded-md transition-colors w-full">
                       Sign In
-                    </Button>
+                    </button>
                   </Link>
                   <Link to="/auth" onClick={() => setIsOpen(false)}>
-                    <Button className="cosmic-button text-white font-semibold w-full">
+                    <button className="cosmic-button px-6 py-2 rounded-md w-full">
                       Get Started
-                    </Button>
+                    </button>
                   </Link>
                 </div>
               )}
