@@ -97,8 +97,9 @@
   }
 
   .cosmic-card {
-    @apply backdrop-blur-md bg-white/5 border border-white/10 rounded-xl;
-    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+    @apply backdrop-blur-md border rounded-xl;
+    background: linear-gradient(135deg, rgba(91, 95, 238, 0.1) 0%, rgba(0, 212, 255, 0.05) 100%);
+    border: 1px solid rgba(91, 95, 238, 0.2);
   }
 
   .glow-effect {
@@ -114,10 +115,33 @@
 
   .cosmic-glow {
     box-shadow: 0 0 20px rgba(91, 95, 238, 0.4), 0 0 40px rgba(0, 212, 255, 0.2);
-    transition: box-shadow 0.3s ease;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(91, 95, 238, 0.3);
   }
 
   .cosmic-glow:hover {
     box-shadow: 0 0 30px rgba(91, 95, 238, 0.6), 0 0 60px rgba(0, 212, 255, 0.3);
+    border: 1px solid rgba(91, 95, 238, 0.5);
+    transform: translateY(-1px);
+  }
+
+  .cosmic-button {
+    background: linear-gradient(135deg, #5B5FEE 0%, #00D4FF 100%);
+    border: none;
+    color: white;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(91, 95, 238, 0.3);
+  }
+
+  .cosmic-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(91, 95, 238, 0.4), 0 0 30px rgba(0, 212, 255, 0.3);
+  }
+
+  .cosmic-button:disabled {
+    opacity: 0.7;
+    transform: none;
+    box-shadow: 0 4px 15px rgba(91, 95, 238, 0.2);
   }
 }

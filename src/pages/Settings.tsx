@@ -236,16 +236,16 @@ const Settings = () => {
           </div>
 
           <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3 cosmic-card">
-              <TabsTrigger value="profile" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+            <TabsList className="grid w-full grid-cols-3 cosmic-card border-0">
+              <TabsTrigger value="profile" className="data-[state=active]:bg-primary data-[state=active]:text-white text-gray-300">
                 <User className="w-4 h-4 mr-2" />
                 Profile
               </TabsTrigger>
-              <TabsTrigger value="company" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+              <TabsTrigger value="company" className="data-[state=active]:bg-primary data-[state=active]:text-white text-gray-300">
                 <Building2 className="w-4 h-4 mr-2" />
                 Company
               </TabsTrigger>
-              <TabsTrigger value="preferences" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+              <TabsTrigger value="preferences" className="data-[state=active]:bg-primary data-[state=active]:text-white text-gray-300">
                 <SettingsIcon className="w-4 h-4 mr-2" />
                 Preferences
               </TabsTrigger>
@@ -253,7 +253,7 @@ const Settings = () => {
 
             {/* Profile Tab */}
             <TabsContent value="profile">
-              <Card className="cosmic-card">
+              <Card className="cosmic-card border-0">
                 <CardHeader>
                   <CardTitle className="text-white">Profile Information</CardTitle>
                   <CardDescription className="text-gray-300">
@@ -285,7 +285,7 @@ const Settings = () => {
                     </div>
                   </div>
 
-                  <div className="p-4 cosmic-card">
+                  <div className="p-4 cosmic-card border-0">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-white font-medium">Subscription Plan</p>
@@ -301,7 +301,7 @@ const Settings = () => {
                     <Button 
                       onClick={handleSaveProfile} 
                       disabled={saving}
-                      className="bg-primary hover:bg-primary/90 text-white cosmic-glow"
+                      className="cosmic-button text-white"
                     >
                       {saving ? 'Saving...' : 'Save Profile'}
                     </Button>
@@ -320,7 +320,7 @@ const Settings = () => {
             {/* Company Tab */}
             <TabsContent value="company">
               {selectedCompany ? (
-                <Card className="cosmic-card">
+                <Card className="cosmic-card border-0">
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <div>
@@ -332,7 +332,7 @@ const Settings = () => {
                       <Button
                         onClick={() => navigate('/brand-setup')}
                         size="sm"
-                        className="bg-accent hover:bg-accent/90 text-black cosmic-glow"
+                        className="cosmic-button text-white"
                       >
                         <Plus className="w-4 h-4 mr-2" />
                         Add Company
@@ -399,7 +399,7 @@ const Settings = () => {
                       <Button 
                         onClick={handleSaveCompany} 
                         disabled={saving}
-                        className="bg-primary hover:bg-primary/90 text-white cosmic-glow"
+                        className="cosmic-button text-white"
                       >
                         {saving ? 'Saving...' : 'Save Company'}
                       </Button>
@@ -415,14 +415,14 @@ const Settings = () => {
                   </CardContent>
                 </Card>
               ) : (
-                <Card className="cosmic-card">
+                <Card className="cosmic-card border-0">
                   <CardContent className="p-8 text-center">
                     <Building2 className="w-16 h-16 mx-auto mb-4 text-gray-400" />
                     <h3 className="text-xl font-semibold text-white mb-2">No Company Selected</h3>
                     <p className="text-gray-300 mb-6">Create or select a company to manage its settings</p>
                     <Button 
                       onClick={() => navigate('/brand-setup')}
-                      className="bg-primary hover:bg-primary/90 text-white cosmic-glow"
+                      className="cosmic-button text-white"
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       Create Company
@@ -434,7 +434,7 @@ const Settings = () => {
 
             {/* Preferences Tab */}
             <TabsContent value="preferences">
-              <Card className="cosmic-card">
+              <Card className="cosmic-card border-0">
                 <CardHeader>
                   <CardTitle className="text-white">Notification Preferences</CardTitle>
                   <CardDescription className="text-gray-300">
@@ -449,7 +449,7 @@ const Settings = () => {
                     { key: 'weeklyReports', label: 'Weekly Reports', description: 'Receive weekly performance summaries' },
                     { key: 'platformAlerts', label: 'Platform Alerts', description: 'Important alerts about connected platforms' }
                   ].map((item) => (
-                    <div key={item.key} className="flex items-center justify-between p-4 cosmic-card">
+                    <div key={item.key} className="flex items-center justify-between p-4 cosmic-card border-0">
                       <div className="space-y-1">
                         <div className="text-white font-medium">{item.label}</div>
                         <div className="text-gray-400 text-sm">{item.description}</div>
@@ -466,7 +466,7 @@ const Settings = () => {
 
                   <Button 
                     onClick={() => toast({ title: "Preferences Saved! ✅" })} 
-                    className="bg-primary hover:bg-primary/90 text-white cosmic-glow"
+                    className="cosmic-button text-white"
                   >
                     Save Preferences
                   </Button>

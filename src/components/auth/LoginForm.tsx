@@ -43,49 +43,51 @@ export const LoginForm = ({ onToggleMode }: LoginFormProps) => {
   };
 
   return (
-    <Card className="cosmic-card">
-      <CardHeader>
-        <CardTitle className="text-white">Sign In</CardTitle>
-        <CardDescription className="text-gray-300">
+    <Card className="cosmic-card border-0">
+      <CardHeader className="text-center">
+        <CardTitle className="text-white text-2xl font-bold">Sign In</CardTitle>
+        <CardDescription className="text-gray-300 text-base">
           Welcome back to the Creators Multiverse
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-white">Email</Label>
+            <Label htmlFor="email" className="text-white font-medium">Email</Label>
             <Input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="bg-white/5 border-white/20 text-white focus:border-primary focus:ring-primary"
+              className="bg-white/5 border-white/20 text-white focus:border-primary focus:ring-primary placeholder:text-gray-400"
+              placeholder="Enter your email"
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-white">Password</Label>
+            <Label htmlFor="password" className="text-white font-medium">Password</Label>
             <Input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="bg-white/5 border-white/20 text-white focus:border-primary focus:ring-primary"
+              className="bg-white/5 border-white/20 text-white focus:border-primary focus:ring-primary placeholder:text-gray-400"
+              placeholder="Enter your password"
               required
             />
           </div>
           <Button
             type="submit"
             disabled={loading}
-            className="w-full bg-primary hover:bg-primary/90 text-white cosmic-glow font-medium"
+            className="w-full cosmic-button text-white font-semibold py-3 text-base"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </Button>
         </form>
-        <div className="mt-4 text-center">
+        <div className="text-center">
           <button
             onClick={onToggleMode}
-            className="text-accent hover:text-accent/80 text-sm transition-colors"
+            className="text-accent hover:text-accent/80 text-sm transition-colors font-medium"
           >
             Don't have an account? Sign up
           </button>
