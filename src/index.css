@@ -111,4 +111,13 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
+  .cosmic-glow {
+    box-shadow: 0 0 20px rgba(91, 95, 238, 0.4), 0 0 40px rgba(0, 212, 255, 0.2);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .cosmic-glow:hover {
+    box-shadow: 0 0 30px rgba(91, 95, 238, 0.6), 0 0 60px rgba(0, 212, 255, 0.3);
+  }
 }

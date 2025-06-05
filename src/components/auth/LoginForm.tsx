@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface LoginFormProps {
   onToggleMode: () => void;
@@ -16,6 +17,7 @@ export const LoginForm = ({ onToggleMode }: LoginFormProps) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +36,7 @@ export const LoginForm = ({ onToggleMode }: LoginFormProps) => {
         title: 'Welcome back! ✨',
         description: 'You have successfully signed in.',
       });
+      navigate('/');
     }
 
     setLoading(false);
@@ -56,7 +59,7 @@ export const LoginForm = ({ onToggleMode }: LoginFormProps) => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="bg-white/5 border-white/20 text-white"
+              className="bg-white/5 border-white/20 text-white focus:border-primary focus:ring-primary"
               required
             />
           </div>
@@ -67,14 +70,14 @@ export const LoginForm = ({ onToggleMode }: LoginFormProps) => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="bg-white/5 border-white/20 text-white"
+              className="bg-white/5 border-white/20 text-white focus:border-primary focus:ring-primary"
               required
             />
           </div>
           <Button
             type="submit"
             disabled={loading}
-            className="w-full bg-primary hover:bg-primary/90 text-white"
+            className="w-full bg-primary hover:bg-primary/90 text-white cosmic-glow font-medium"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </Button>
@@ -82,7 +85,7 @@ export const LoginForm = ({ onToggleMode }: LoginFormProps) => {
         <div className="mt-4 text-center">
           <button
             onClick={onToggleMode}
-            className="text-accent hover:text-accent/80 text-sm"
+            className="text-accent hover:text-accent/80 text-sm transition-colors"
           >
             Don't have an account? Sign up
           </button>

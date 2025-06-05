@@ -56,7 +56,7 @@ export const SignUpForm = ({ onToggleMode }: SignUpFormProps) => {
               id="fullName"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="bg-white/5 border-white/20 text-white"
+              className="bg-white/5 border-white/20 text-white focus:border-primary focus:ring-primary"
               required
             />
           </div>
@@ -67,7 +67,7 @@ export const SignUpForm = ({ onToggleMode }: SignUpFormProps) => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="bg-white/5 border-white/20 text-white"
+              className="bg-white/5 border-white/20 text-white focus:border-primary focus:ring-primary"
               required
             />
           </div>
@@ -78,14 +78,14 @@ export const SignUpForm = ({ onToggleMode }: SignUpFormProps) => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="bg-white/5 border-white/20 text-white"
+              className="bg-white/5 border-white/20 text-white focus:border-primary focus:ring-primary"
               required
             />
           </div>
           <Button
             type="submit"
             disabled={loading}
-            className="w-full bg-primary hover:bg-primary/90 text-white"
+            className="w-full bg-primary hover:bg-primary/90 text-white cosmic-glow font-medium"
           >
             {loading ? 'Creating account...' : 'Create Account'}
           </Button>
@@ -93,7 +93,7 @@ export const SignUpForm = ({ onToggleMode }: SignUpFormProps) => {
         <div className="mt-4 text-center">
           <button
             onClick={onToggleMode}
-            className="text-accent hover:text-accent/80 text-sm"
+            className="text-accent hover:text-accent/80 text-sm transition-colors"
           >
             Already have an account? Sign in
           </button>

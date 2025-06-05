@@ -26,14 +26,48 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.id);
+        setUser(session?.user ?? null);
+        setLoading(false);
+        
+        // Create user profile if it doesn't exist
+        if (event === 'SIGNED_IN' && session?.user) {
+          setTimeout(async () => {
+            try {
+              const { data: existingUser } = await supabase
+                .from('users')
+                .select('id')
+                .eq('id', session.user.id)
+                .single();
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+              if (!existingUser) {
+                console.log('Creating user profile...');
+                const { error } = await supabase
+                  .from('users')
+                  .insert({
+                    id: session.user.id,
+                    email: session.user.email || '',
+                    full_name: session.user.user_metadata?.full_name || session.user.email || ''
+                  });
+                
+                if (error) {
+                  console.error('Error creating user profile:', error);
+                }
+              }
+            } catch (error) {
+              console.error('Error checking/creating user:', error);
+            }
+          }, 0);
+        }
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session:', session?.user?.id);
       setUser(session?.user ?? null);
       setLoading(false);
     });

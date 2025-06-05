@@ -42,6 +42,8 @@ const Settings = () => {
     platformAlerts: true
   });
 
+  const [saving, setSaving] = useState(false);
+
   // Redirect if not authenticated
   useEffect(() => {
     if (!user) {
@@ -59,6 +61,7 @@ const Settings = () => {
   // Load company data when selected company changes
   useEffect(() => {
     if (selectedCompany) {
+      console.log('Loading company data:', selectedCompany);
       setCompanyData({
         name: selectedCompany.name || "",
         mission: selectedCompany.mission || "",
@@ -71,15 +74,20 @@ const Settings = () => {
 
   const fetchUserProfile = async () => {
     try {
+      console.log('Fetching user profile for:', user?.id);
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', user?.id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return;
+      }
 
       if (data) {
+        console.log('Loaded user profile:', data);
         setProfile({
           full_name: data.full_name || "",
           email: data.email || "",
@@ -92,7 +100,9 @@ const Settings = () => {
   };
 
   const handleSaveProfile = async () => {
+    setSaving(true);
     try {
+      console.log('Saving profile:', profile);
       const { error } = await supabase
         .from('users')
         .update({
@@ -114,13 +124,25 @@ const Settings = () => {
         description: "Failed to update profile. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleSaveCompany = async () => {
-    if (!selectedCompany) return;
+    if (!selectedCompany) {
+      toast({
+        title: "No Company Selected",
+        description: "Please select a company to update.",
+        variant: "destructive"
+      });
+      return;
+    }
 
+    setSaving(true);
     try {
+      console.log('Saving company:', companyData, 'for company ID:', selectedCompany.id);
+      
       const { error } = await supabase
         .from('companies')
         .update({
@@ -132,7 +154,10 @@ const Settings = () => {
         })
         .eq('id', selectedCompany.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
       await refreshCompanies();
       
@@ -147,6 +172,8 @@ const Settings = () => {
         description: "Failed to update company. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -209,7 +236,7 @@ const Settings = () => {
           </div>
 
           <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3 bg-white/5 border border-white/10">
+            <TabsList className="grid w-full grid-cols-3 cosmic-card">
               <TabsTrigger value="profile" className="data-[state=active]:bg-primary data-[state=active]:text-white">
                 <User className="w-4 h-4 mr-2" />
                 Profile
@@ -242,7 +269,7 @@ const Settings = () => {
                         id="fullName"
                         value={profile.full_name}
                         onChange={(e) => setProfile(prev => ({ ...prev, full_name: e.target.value }))}
-                        className="bg-white/5 border-white/20 text-white"
+                        className="bg-white/5 border-white/20 text-white focus:border-primary"
                       />
                     </div>
                     
@@ -253,12 +280,12 @@ const Settings = () => {
                         type="email"
                         value={profile.email}
                         onChange={(e) => setProfile(prev => ({ ...prev, email: e.target.value }))}
-                        className="bg-white/5 border-white/20 text-white"
+                        className="bg-white/5 border-white/20 text-white focus:border-primary"
                       />
                     </div>
                   </div>
 
-                  <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+                  <div className="p-4 cosmic-card">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-white font-medium">Subscription Plan</p>
@@ -271,8 +298,12 @@ const Settings = () => {
                   </div>
 
                   <div className="flex justify-between">
-                    <Button onClick={handleSaveProfile} className="bg-primary hover:bg-primary/90 text-white">
-                      Save Profile
+                    <Button 
+                      onClick={handleSaveProfile} 
+                      disabled={saving}
+                      className="bg-primary hover:bg-primary/90 text-white cosmic-glow"
+                    >
+                      {saving ? 'Saving...' : 'Save Profile'}
                     </Button>
                     <Button 
                       onClick={handleSignOut} 
@@ -301,7 +332,7 @@ const Settings = () => {
                       <Button
                         onClick={() => navigate('/brand-setup')}
                         size="sm"
-                        className="bg-accent hover:bg-accent/90 text-black"
+                        className="bg-accent hover:bg-accent/90 text-black cosmic-glow"
                       >
                         <Plus className="w-4 h-4 mr-2" />
                         Add Company
@@ -316,7 +347,7 @@ const Settings = () => {
                         id="companyName"
                         value={companyData.name}
                         onChange={(e) => setCompanyData(prev => ({ ...prev, name: e.target.value }))}
-                        className="bg-white/5 border-white/20 text-white"
+                        className="bg-white/5 border-white/20 text-white focus:border-primary"
                       />
                     </div>
 
@@ -326,7 +357,7 @@ const Settings = () => {
                         id="mission"
                         value={companyData.mission}
                         onChange={(e) => setCompanyData(prev => ({ ...prev, mission: e.target.value }))}
-                        className="bg-white/5 border-white/20 text-white min-h-[100px]"
+                        className="bg-white/5 border-white/20 text-white min-h-[100px] focus:border-primary"
                       />
                     </div>
 
@@ -336,7 +367,7 @@ const Settings = () => {
                         id="tone"
                         value={companyData.tone_of_voice}
                         onChange={(e) => setCompanyData(prev => ({ ...prev, tone_of_voice: e.target.value }))}
-                        className="bg-white/5 border-white/20 text-white min-h-[80px]"
+                        className="bg-white/5 border-white/20 text-white min-h-[80px] focus:border-primary"
                       />
                     </div>
 
@@ -365,8 +396,12 @@ const Settings = () => {
                     </div>
 
                     <div className="flex justify-between pt-4">
-                      <Button onClick={handleSaveCompany} className="bg-primary hover:bg-primary/90 text-white">
-                        Save Company
+                      <Button 
+                        onClick={handleSaveCompany} 
+                        disabled={saving}
+                        className="bg-primary hover:bg-primary/90 text-white cosmic-glow"
+                      >
+                        {saving ? 'Saving...' : 'Save Company'}
                       </Button>
                       <Button 
                         onClick={handleDeleteCompany}
@@ -387,7 +422,7 @@ const Settings = () => {
                     <p className="text-gray-300 mb-6">Create or select a company to manage its settings</p>
                     <Button 
                       onClick={() => navigate('/brand-setup')}
-                      className="bg-primary hover:bg-primary/90 text-white"
+                      className="bg-primary hover:bg-primary/90 text-white cosmic-glow"
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       Create Company
@@ -414,7 +449,7 @@ const Settings = () => {
                     { key: 'weeklyReports', label: 'Weekly Reports', description: 'Receive weekly performance summaries' },
                     { key: 'platformAlerts', label: 'Platform Alerts', description: 'Important alerts about connected platforms' }
                   ].map((item) => (
-                    <div key={item.key} className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
+                    <div key={item.key} className="flex items-center justify-between p-4 cosmic-card">
                       <div className="space-y-1">
                         <div className="text-white font-medium">{item.label}</div>
                         <div className="text-gray-400 text-sm">{item.description}</div>
@@ -429,7 +464,10 @@ const Settings = () => {
                     </div>
                   ))}
 
-                  <Button onClick={() => toast({ title: "Preferences Saved! ✅" })} className="bg-primary hover:bg-primary/90 text-white">
+                  <Button 
+                    onClick={() => toast({ title: "Preferences Saved! ✅" })} 
+                    className="bg-primary hover:bg-primary/90 text-white cosmic-glow"
+                  >
                     Save Preferences
                   </Button>
                 </CardContent>

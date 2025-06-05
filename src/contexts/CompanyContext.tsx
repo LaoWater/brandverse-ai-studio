@@ -39,21 +39,32 @@ export const CompanyProvider = ({ children }: { children: React.ReactNode }) => 
   const [loading, setLoading] = useState(false);
 
   const fetchCompanies = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('No user, clearing companies');
+      setCompanies([]);
+      setSelectedCompany(null);
+      return;
+    }
     
     setLoading(true);
     try {
+      console.log('Fetching companies for user:', user.id);
       const { data, error } = await supabase
         .from('companies')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching companies:', error);
+        throw error;
+      }
 
+      console.log('Fetched companies:', data);
       setCompanies(data || []);
       
-      // Auto-select first company if none selected
+      // Auto-select first company if none selected and we have companies
       if (!selectedCompany && data && data.length > 0) {
+        console.log('Auto-selecting first company:', data[0]);
         setSelectedCompany(data[0]);
       }
     } catch (error) {
@@ -65,18 +76,22 @@ export const CompanyProvider = ({ children }: { children: React.ReactNode }) => 
 
   useEffect(() => {
     if (user) {
+      console.log('User changed, fetching companies for:', user.id);
       fetchCompanies();
     } else {
+      console.log('User logged out, clearing companies');
       setCompanies([]);
       setSelectedCompany(null);
     }
   }, [user]);
 
   const selectCompany = (company: Company) => {
+    console.log('Selecting company:', company);
     setSelectedCompany(company);
   };
 
   const refreshCompanies = async () => {
+    console.log('Refreshing companies...');
     await fetchCompanies();
   };
 
