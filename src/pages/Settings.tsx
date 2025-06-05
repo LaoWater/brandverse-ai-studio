@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navigation from "@/components/Navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,21 +8,31 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Settings as SettingsIcon, Image, Calendar } from "lucide-react";
+import { User, Settings as SettingsIcon, Building2, Trash2, Plus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCompany } from "@/contexts/CompanyContext";
+import { supabase } from "@/integrations/supabase/client";
+import { CompanySelector } from "@/components/CompanySelector";
+import { useNavigate } from "react-router-dom";
 
 const Settings = () => {
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  const { selectedCompany, refreshCompanies } = useCompany();
+  
   const [profile, setProfile] = useState({
-    name: "Alex Creator",
-    email: "alex@creatorsverse.com",
-    company: "Creators Multiverse"
+    full_name: "",
+    email: "",
+    subscription_type: "free"
   });
 
-  const [brandSettings, setBrandSettings] = useState({
-    companyName: "Creators Multiverse",
-    mission: "Empowering creators to scale their content across the digital multiverse",
-    toneOfVoice: "Professional, innovative, and inspiring with a touch of futuristic vision",
-    primaryColor: "#5B5FEE"
+  const [companyData, setCompanyData] = useState({
+    name: "",
+    mission: "",
+    tone_of_voice: "",
+    primary_color_1: "#5B5FEE",
+    primary_color_2: "#00D4FF"
   });
 
   const [notifications, setNotifications] = useState({
@@ -32,12 +42,153 @@ const Settings = () => {
     platformAlerts: true
   });
 
-  const handleSave = () => {
-    toast({
-      title: "Settings Saved! ✅",
-      description: "Your preferences have been updated successfully."
-    });
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth');
+    }
+  }, [user, navigate]);
+
+  // Load user profile
+  useEffect(() => {
+    if (user) {
+      fetchUserProfile();
+    }
+  }, [user]);
+
+  // Load company data when selected company changes
+  useEffect(() => {
+    if (selectedCompany) {
+      setCompanyData({
+        name: selectedCompany.name || "",
+        mission: selectedCompany.mission || "",
+        tone_of_voice: selectedCompany.tone_of_voice || "",
+        primary_color_1: selectedCompany.primary_color_1 || "#5B5FEE",
+        primary_color_2: selectedCompany.primary_color_2 || "#00D4FF"
+      });
+    }
+  }, [selectedCompany]);
+
+  const fetchUserProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user?.id)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setProfile({
+          full_name: data.full_name || "",
+          email: data.email || "",
+          subscription_type: data.subscription_type || "free"
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
   };
+
+  const handleSaveProfile = async () => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({
+          full_name: profile.full_name,
+          email: profile.email
+        })
+        .eq('id', user?.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Profile Updated! ✅",
+        description: "Your profile has been saved successfully."
+      });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSaveCompany = async () => {
+    if (!selectedCompany) return;
+
+    try {
+      const { error } = await supabase
+        .from('companies')
+        .update({
+          name: companyData.name,
+          mission: companyData.mission,
+          tone_of_voice: companyData.tone_of_voice,
+          primary_color_1: companyData.primary_color_1,
+          primary_color_2: companyData.primary_color_2
+        })
+        .eq('id', selectedCompany.id);
+
+      if (error) throw error;
+
+      await refreshCompanies();
+      
+      toast({
+        title: "Company Updated! ✅",
+        description: "Your company settings have been saved successfully."
+      });
+    } catch (error) {
+      console.error('Error updating company:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update company. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteCompany = async () => {
+    if (!selectedCompany) return;
+    
+    if (!confirm(`Are you sure you want to delete "${selectedCompany.name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('companies')
+        .delete()
+        .eq('id', selectedCompany.id);
+
+      if (error) throw error;
+
+      await refreshCompanies();
+      
+      toast({
+        title: "Company Deleted",
+        description: "The company has been removed successfully."
+      });
+    } catch (error) {
+      console.error('Error deleting company:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete company. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
+  if (!user) {
+    return null; // Will redirect to auth
+  }
 
   return (
     <div className="min-h-screen">
@@ -45,28 +196,27 @@ const Settings = () => {
       
       <div className="container mx-auto px-4 pt-24 pb-12">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-white mb-4">
-              <span className="text-cosmic font-serif">Settings</span> & Profile
-            </h1>
-            <p className="text-gray-300 text-lg">
-              Manage your account, brand identity, and preferences
-            </p>
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-4xl font-bold text-white mb-2">
+                <span className="text-cosmic font-serif">Settings</span> & Management
+              </h1>
+              <p className="text-gray-300 text-lg">
+                Manage your profile, companies, and preferences
+              </p>
+            </div>
+            <CompanySelector />
           </div>
 
           <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4 bg-white/5 border border-white/10">
+            <TabsList className="grid w-full grid-cols-3 bg-white/5 border border-white/10">
               <TabsTrigger value="profile" className="data-[state=active]:bg-primary data-[state=active]:text-white">
                 <User className="w-4 h-4 mr-2" />
                 Profile
               </TabsTrigger>
-              <TabsTrigger value="brand" className="data-[state=active]:bg-primary data-[state=active]:text-white">
-                <Image className="w-4 h-4 mr-2" />
-                Brand
-              </TabsTrigger>
-              <TabsTrigger value="platforms" className="data-[state=active]:bg-primary data-[state=active]:text-white">
-                <Calendar className="w-4 h-4 mr-2" />
-                Platforms
+              <TabsTrigger value="company" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+                <Building2 className="w-4 h-4 mr-2" />
+                Company
               </TabsTrigger>
               <TabsTrigger value="preferences" className="data-[state=active]:bg-primary data-[state=active]:text-white">
                 <SettingsIcon className="w-4 h-4 mr-2" />
@@ -87,11 +237,11 @@ const Settings = () => {
                 <CardContent className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name" className="text-white">Full Name</Label>
+                      <Label htmlFor="fullName" className="text-white">Full Name</Label>
                       <Input
-                        id="name"
-                        value={profile.name}
-                        onChange={(e) => setProfile(prev => ({ ...prev, name: e.target.value }))}
+                        id="fullName"
+                        value={profile.full_name}
+                        onChange={(e) => setProfile(prev => ({ ...prev, full_name: e.target.value }))}
                         className="bg-white/5 border-white/20 text-white"
                       />
                     </div>
@@ -108,121 +258,143 @@ const Settings = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="company" className="text-white">Company</Label>
-                    <Input
-                      id="company"
-                      value={profile.company}
-                      onChange={(e) => setProfile(prev => ({ ...prev, company: e.target.value }))}
-                      className="bg-white/5 border-white/20 text-white"
-                    />
+                  <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-white font-medium">Subscription Plan</p>
+                        <p className="text-gray-400 text-sm capitalize">{profile.subscription_type}</p>
+                      </div>
+                      <Button variant="outline" className="border-accent text-accent hover:bg-accent/10">
+                        Upgrade Plan
+                      </Button>
+                    </div>
                   </div>
 
-                  <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white">
-                    Save Profile
-                  </Button>
+                  <div className="flex justify-between">
+                    <Button onClick={handleSaveProfile} className="bg-primary hover:bg-primary/90 text-white">
+                      Save Profile
+                    </Button>
+                    <Button 
+                      onClick={handleSignOut} 
+                      variant="outline" 
+                      className="border-red-500 text-red-500 hover:bg-red-500/10"
+                    >
+                      Sign Out
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            {/* Brand Tab */}
-            <TabsContent value="brand">
-              <Card className="cosmic-card">
-                <CardHeader>
-                  <CardTitle className="text-white">Brand Identity</CardTitle>
-                  <CardDescription className="text-gray-300">
-                    Manage your brand voice and visual identity
-                  </CardDescription>
-                </CardHeader>
-                
-                <CardContent className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="brandName" className="text-white">Company Name</Label>
-                    <Input
-                      id="brandName"
-                      value={brandSettings.companyName}
-                      onChange={(e) => setBrandSettings(prev => ({ ...prev, companyName: e.target.value }))}
-                      className="bg-white/5 border-white/20 text-white"
-                    />
-                  </div>
+            {/* Company Tab */}
+            <TabsContent value="company">
+              {selectedCompany ? (
+                <Card className="cosmic-card">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-white">Company Settings</CardTitle>
+                        <CardDescription className="text-gray-300">
+                          Manage your brand identity and voice
+                        </CardDescription>
+                      </div>
+                      <Button
+                        onClick={() => navigate('/brand-setup')}
+                        size="sm"
+                        className="bg-accent hover:bg-accent/90 text-black"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Company
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="companyName" className="text-white">Company Name</Label>
+                      <Input
+                        id="companyName"
+                        value={companyData.name}
+                        onChange={(e) => setCompanyData(prev => ({ ...prev, name: e.target.value }))}
+                        className="bg-white/5 border-white/20 text-white"
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="mission" className="text-white">Mission Statement</Label>
-                    <Textarea
-                      id="mission"
-                      value={brandSettings.mission}
-                      onChange={(e) => setBrandSettings(prev => ({ ...prev, mission: e.target.value }))}
-                      className="bg-white/5 border-white/20 text-white min-h-[100px]"
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="mission" className="text-white">Mission Statement</Label>
+                      <Textarea
+                        id="mission"
+                        value={companyData.mission}
+                        onChange={(e) => setCompanyData(prev => ({ ...prev, mission: e.target.value }))}
+                        className="bg-white/5 border-white/20 text-white min-h-[100px]"
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="tone" className="text-white">Tone of Voice</Label>
-                    <Textarea
-                      id="tone"
-                      value={brandSettings.toneOfVoice}
-                      onChange={(e) => setBrandSettings(prev => ({ ...prev, toneOfVoice: e.target.value }))}
-                      className="bg-white/5 border-white/20 text-white min-h-[80px]"
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="tone" className="text-white">Tone of Voice</Label>
+                      <Textarea
+                        id="tone"
+                        value={companyData.tone_of_voice}
+                        onChange={(e) => setCompanyData(prev => ({ ...prev, tone_of_voice: e.target.value }))}
+                        className="bg-white/5 border-white/20 text-white min-h-[80px]"
+                      />
+                    </div>
 
-                  <div className="flex items-center space-x-4">
-                    <Label htmlFor="primaryColor" className="text-white">Primary Color</Label>
-                    <input
-                      type="color"
-                      id="primaryColor"
-                      value={brandSettings.primaryColor}
-                      onChange={(e) => setBrandSettings(prev => ({ ...prev, primaryColor: e.target.value }))}
-                      className="w-16 h-10 rounded border border-white/20 bg-transparent"
-                    />
-                  </div>
-
-                  <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white">
-                    Update Brand
-                  </Button>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Platforms Tab */}
-            <TabsContent value="platforms">
-              <Card className="cosmic-card">
-                <CardHeader>
-                  <CardTitle className="text-white">Connected Platforms</CardTitle>
-                  <CardDescription className="text-gray-300">
-                    Manage your social media platform connections
-                  </CardDescription>
-                </CardHeader>
-                
-                <CardContent className="space-y-4">
-                  {[
-                    { name: "Instagram", icon: "📸", connected: true },
-                    { name: "LinkedIn", icon: "💼", connected: true },
-                    { name: "Twitter", icon: "🐦", connected: false },
-                    { name: "Facebook", icon: "👥", connected: true }
-                  ].map((platform) => (
-                    <div key={platform.name} className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
-                      <div className="flex items-center space-x-3">
-                        <span className="text-2xl">{platform.icon}</span>
-                        <span className="text-white font-medium">{platform.name}</span>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-center space-x-4">
+                        <Label htmlFor="primaryColor1" className="text-white">Primary Color</Label>
+                        <input
+                          type="color"
+                          id="primaryColor1"
+                          value={companyData.primary_color_1}
+                          onChange={(e) => setCompanyData(prev => ({ ...prev, primary_color_1: e.target.value }))}
+                          className="w-16 h-10 rounded border border-white/20 bg-transparent"
+                        />
                       </div>
                       
-                      <div className="flex items-center space-x-3">
-                        <span className={`text-sm ${platform.connected ? 'text-green-400' : 'text-gray-400'}`}>
-                          {platform.connected ? 'Connected' : 'Not Connected'}
-                        </span>
-                        <Button 
-                          variant={platform.connected ? "outline" : "default"}
-                          size="sm"
-                          className={platform.connected ? "border-white/20 text-white hover:bg-white/10" : "bg-primary hover:bg-primary/90 text-white"}
-                        >
-                          {platform.connected ? 'Disconnect' : 'Connect'}
-                        </Button>
+                      <div className="flex items-center space-x-4">
+                        <Label htmlFor="primaryColor2" className="text-white">Accent Color</Label>
+                        <input
+                          type="color"
+                          id="primaryColor2"
+                          value={companyData.primary_color_2}
+                          onChange={(e) => setCompanyData(prev => ({ ...prev, primary_color_2: e.target.value }))}
+                          className="w-16 h-10 rounded border border-white/20 bg-transparent"
+                        />
                       </div>
                     </div>
-                  ))}
-                </CardContent>
-              </Card>
+
+                    <div className="flex justify-between pt-4">
+                      <Button onClick={handleSaveCompany} className="bg-primary hover:bg-primary/90 text-white">
+                        Save Company
+                      </Button>
+                      <Button 
+                        onClick={handleDeleteCompany}
+                        variant="outline" 
+                        className="border-red-500 text-red-500 hover:bg-red-500/10"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete Company
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="cosmic-card">
+                  <CardContent className="p-8 text-center">
+                    <Building2 className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                    <h3 className="text-xl font-semibold text-white mb-2">No Company Selected</h3>
+                    <p className="text-gray-300 mb-6">Create or select a company to manage its settings</p>
+                    <Button 
+                      onClick={() => navigate('/brand-setup')}
+                      className="bg-primary hover:bg-primary/90 text-white"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Company
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             {/* Preferences Tab */}
@@ -257,7 +429,7 @@ const Settings = () => {
                     </div>
                   ))}
 
-                  <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white">
+                  <Button onClick={() => toast({ title: "Preferences Saved! ✅" })} className="bg-primary hover:bg-primary/90 text-white">
                     Save Preferences
                   </Button>
                 </CardContent>
