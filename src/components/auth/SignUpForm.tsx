@@ -20,29 +20,51 @@ export const SignUpForm = ({ onToggleMode }: SignUpFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    const { error } = await signUp(email, password, fullName);
-
-    if (error) {
+    
+    if (!email || !password || !fullName) {
       toast({
-        title: 'Sign up failed',
-        description: error.message,
+        title: 'Missing Information',
+        description: 'Please fill in all fields.',
         variant: 'destructive',
       });
-    } else {
-      toast({
-        title: 'Welcome to Creators Multiverse! 🚀',
-        description: 'Please check your email to verify your account.',
-      });
+      return;
     }
 
-    setLoading(false);
+    setLoading(true);
+    console.log('Attempting signup with:', email, fullName);
+
+    try {
+      const { error } = await signUp(email, password, fullName);
+
+      if (error) {
+        console.error('Signup error:', error);
+        toast({
+          title: 'Sign up failed',
+          description: error.message || 'Registration failed. Please try again.',
+          variant: 'destructive',
+        });
+      } else {
+        console.log('Signup successful!');
+        toast({
+          title: 'Welcome to Creators Multiverse! 🚀',
+          description: 'Please check your email to verify your account.',
+        });
+      }
+    } catch (err) {
+      console.error('Unexpected signup error:', err);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <Card className="cosmic-card border-0">
-      <CardHeader className="text-center">
+    <Card className="cosmic-card border-0 cosmic-glow">
+      <CardHeader className="text-center card-header">
         <CardTitle className="text-white text-2xl font-bold">Create Account</CardTitle>
         <CardDescription className="text-gray-300 text-base">
           Join the Creators Multiverse today

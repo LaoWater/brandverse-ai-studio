@@ -21,30 +21,52 @@ export const LoginForm = ({ onToggleMode }: LoginFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    const { error } = await signIn(email, password);
-
-    if (error) {
+    
+    if (!email || !password) {
       toast({
-        title: 'Sign in failed',
-        description: error.message,
+        title: 'Missing Information',
+        description: 'Please enter both email and password.',
         variant: 'destructive',
       });
-    } else {
-      toast({
-        title: 'Welcome back! ✨',
-        description: 'You have successfully signed in.',
-      });
-      navigate('/');
+      return;
     }
 
-    setLoading(false);
+    setLoading(true);
+    console.log('Attempting login with:', email);
+
+    try {
+      const { error } = await signIn(email, password);
+
+      if (error) {
+        console.error('Login error:', error);
+        toast({
+          title: 'Sign in failed',
+          description: error.message || 'Login failed. Please check your credentials.',
+          variant: 'destructive',
+        });
+      } else {
+        console.log('Login successful!');
+        toast({
+          title: 'Welcome back! ✨',
+          description: 'You have successfully signed in.',
+        });
+        navigate('/');
+      }
+    } catch (err) {
+      console.error('Unexpected login error:', err);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <Card className="cosmic-card border-0">
-      <CardHeader className="text-center">
+    <Card className="cosmic-card border-0 cosmic-glow">
+      <CardHeader className="text-center card-header">
         <CardTitle className="text-white text-2xl font-bold">Sign In</CardTitle>
         <CardDescription className="text-gray-300 text-base">
           Welcome back to the Creators Multiverse
