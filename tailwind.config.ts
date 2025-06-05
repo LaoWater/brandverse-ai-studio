@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -18,6 +19,10 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				sans: ['Poppins', 'sans-serif'],
+				serif: ['Cinzel', 'serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -25,12 +30,36 @@ export default {
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
 				primary: {
-					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))'
+					DEFAULT: '#5B5FEE',
+					50: '#F0F0FF',
+					100: '#E6E6FF',
+					200: '#D4D4FF',
+					300: '#B8B8FF',
+					400: '#9999FF',
+					500: '#5B5FEE',
+					600: '#4A4ED4',
+					700: '#3A3DB8',
+					800: '#2E3199',
+					900: '#242680',
+					foreground: '#FFFFFF'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
 					foreground: 'hsl(var(--secondary-foreground))'
+				},
+				accent: {
+					DEFAULT: '#00D4FF',
+					50: '#E6FAFF',
+					100: '#CCF5FF',
+					200: '#99EBFF',
+					300: '#66E0FF',
+					400: '#33D6FF',
+					500: '#00D4FF',
+					600: '#00AACC',
+					700: '#008099',
+					800: '#005566',
+					900: '#002B33',
+					foreground: '#0A0A0F'
 				},
 				destructive: {
 					DEFAULT: 'hsl(var(--destructive))',
@@ -39,10 +68,6 @@ export default {
 				muted: {
 					DEFAULT: 'hsl(var(--muted))',
 					foreground: 'hsl(var(--muted-foreground))'
-				},
-				accent: {
-					DEFAULT: 'hsl(var(--accent))',
-					foreground: 'hsl(var(--accent-foreground))'
 				},
 				popover: {
 					DEFAULT: 'hsl(var(--popover))',
@@ -84,11 +109,42 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'fade-in': {
+					'0%': {
+						opacity: '0',
+						transform: 'translateY(10px)'
+					},
+					'100%': {
+						opacity: '1',
+						transform: 'translateY(0)'
+					}
+				},
+				'slide-in-right': {
+					'0%': { transform: 'translateX(100%)' },
+					'100%': { transform: 'translateX(0)' }
+				},
+				'pulse-glow': {
+					'0%, 100%': { boxShadow: '0 0 20px rgba(91, 95, 238, 0.3)' },
+					'50%': { boxShadow: '0 0 40px rgba(91, 95, 238, 0.6)' }
+				},
+				'cosmic-drift': {
+					'0%': { transform: 'rotate(0deg) translateX(100px) rotate(0deg)' },
+					'100%': { transform: 'rotate(360deg) translateX(100px) rotate(-360deg)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.3s ease-out',
+				'slide-in-right': 'slide-in-right 0.3s ease-out',
+				'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
+				'cosmic-drift': 'cosmic-drift 20s linear infinite'
+			},
+			backgroundImage: {
+				'cosmic-gradient': 'linear-gradient(135deg, #0A0A0F 0%, #1A1A2E 50%, #16213E 100%)',
+				'primary-gradient': 'linear-gradient(135deg, #5B5FEE 0%, #00D4FF 100%)',
+				'card-gradient': 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)'
 			}
 		}
 	},
