@@ -64,45 +64,45 @@ export const SignUpForm = ({ onToggleMode }: SignUpFormProps) => {
 
   return (
     <Card className="cosmic-card border-0 cosmic-glow">
-      <CardHeader className="text-center card-header">
-        <CardTitle className="text-white text-2xl font-bold">Create Account</CardTitle>
+      <CardHeader className="text-center cosmic-card-header p-8">
+        <CardTitle className="text-white text-2xl font-bold mb-2">Create Account</CardTitle>
         <CardDescription className="text-gray-300 text-base">
           Join the Creators Multiverse today
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="fullName" className="text-white font-medium">Full Name</Label>
+      <CardContent className="space-y-8 p-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-3">
+            <Label htmlFor="fullName" className="text-white font-medium text-sm">Full Name</Label>
             <Input
               id="fullName"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="bg-white/5 border-white/20 text-white focus:border-primary focus:ring-primary placeholder:text-gray-400"
+              className="bg-white/5 border-white/20 text-white focus:border-primary focus:ring-primary placeholder:text-gray-400 h-12 px-4"
               placeholder="Enter your full name"
               required
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-white font-medium">Email</Label>
+          <div className="space-y-3">
+            <Label htmlFor="email" className="text-white font-medium text-sm">Email</Label>
             <Input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="bg-white/5 border-white/20 text-white focus:border-primary focus:ring-primary placeholder:text-gray-400"
+              className="bg-white/5 border-white/20 text-white focus:border-primary focus:ring-primary placeholder:text-gray-400 h-12 px-4"
               placeholder="Enter your email"
               required
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-white font-medium">Password</Label>
+          <div className="space-y-3">
+            <Label htmlFor="password" className="text-white font-medium text-sm">Password</Label>
             <Input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="bg-white/5 border-white/20 text-white focus:border-primary focus:ring-primary placeholder:text-gray-400"
+              className="bg-white/5 border-white/20 text-white focus:border-primary focus:ring-primary placeholder:text-gray-400 h-12 px-4"
               placeholder="Create a password"
               required
             />
@@ -110,12 +110,12 @@ export const SignUpForm = ({ onToggleMode }: SignUpFormProps) => {
           <Button
             type="submit"
             disabled={loading}
-            className="w-full cosmic-button text-white font-semibold py-3 text-base"
+            className="w-full cosmic-button text-white font-semibold py-4 text-base h-12 mt-8"
           >
             {loading ? 'Creating account...' : 'Create Account'}
           </Button>
         </form>
-        <div className="text-center">
+        <div className="text-center pt-4">
           <button
             onClick={onToggleMode}
             className="text-accent hover:text-accent/80 text-sm transition-colors font-medium"

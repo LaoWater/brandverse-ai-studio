@@ -98,23 +98,34 @@
 
   .cosmic-card {
     @apply backdrop-blur-md border rounded-xl;
-    background: linear-gradient(135deg, rgba(91, 95, 238, 0.1) 0%, rgba(0, 212, 255, 0.05) 100%) !important;
-    border: 1px solid rgba(91, 95, 238, 0.2) !important;
+    background: linear-gradient(135deg, rgba(91, 95, 238, 0.08) 0%, rgba(0, 212, 255, 0.03) 100%) !important;
+    border: 1px solid rgba(91, 95, 238, 0.25) !important;
+    backdrop-filter: blur(20px) !important;
   }
 
   .cosmic-card-header {
     background: linear-gradient(135deg, rgba(91, 95, 238, 0.15) 0%, rgba(0, 212, 255, 0.08) 100%) !important;
-    border-bottom: 1px solid rgba(91, 95, 238, 0.2) !important;
+    border-bottom: 1px solid rgba(91, 95, 238, 0.3) !important;
     border-radius: 0.75rem 0.75rem 0 0 !important;
+    margin: 0 !important;
   }
 
-  /* Force ALL card headers to use cosmic styling */
-  .cosmic-card .card-header,
-  .cosmic-card [data-card-header],
-  .cosmic-card > div:first-child,
-  .cosmic-card > .card-header {
+  /* Override all card backgrounds and headers */
+  .cosmic-card,
+  .cosmic-card > *,
+  .cosmic-card .card-content,
+  .cosmic-card .card-header {
+    background: transparent !important;
+  }
+  
+  .cosmic-card {
+    background: linear-gradient(135deg, rgba(91, 95, 238, 0.08) 0%, rgba(0, 212, 255, 0.03) 100%) !important;
+  }
+
+  .cosmic-card .cosmic-card-header,
+  .cosmic-card > div:first-child {
     background: linear-gradient(135deg, rgba(91, 95, 238, 0.15) 0%, rgba(0, 212, 255, 0.08) 100%) !important;
-    border-bottom: 1px solid rgba(91, 95, 238, 0.2) !important;
+    border-bottom: 1px solid rgba(91, 95, 238, 0.3) !important;
     border-radius: 0.75rem 0.75rem 0 0 !important;
   }
 
