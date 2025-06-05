@@ -96,37 +96,91 @@
     min-height: 100vh;
   }
 
-  .cosmic-card {
-    @apply backdrop-blur-md border rounded-xl;
+  /* COSMIC CARD SYSTEM - High specificity overrides */
+  .cosmic-card,
+  .cosmic-card.cosmic-card {
     background: linear-gradient(135deg, rgba(91, 95, 238, 0.08) 0%, rgba(0, 212, 255, 0.03) 100%) !important;
     border: 1px solid rgba(91, 95, 238, 0.25) !important;
     backdrop-filter: blur(20px) !important;
+    border-radius: 0.75rem !important;
+    overflow: hidden !important;
   }
 
-  .cosmic-card-header {
+  .cosmic-card .cosmic-card-header,
+  .cosmic-card > div:first-child,
+  .cosmic-card > header {
     background: linear-gradient(135deg, rgba(91, 95, 238, 0.15) 0%, rgba(0, 212, 255, 0.08) 100%) !important;
     border-bottom: 1px solid rgba(91, 95, 238, 0.3) !important;
     border-radius: 0.75rem 0.75rem 0 0 !important;
     margin: 0 !important;
+    padding: 2rem !important;
   }
 
-  /* Override all card backgrounds and headers */
-  .cosmic-card,
-  .cosmic-card > *,
-  .cosmic-card .card-content,
-  .cosmic-card .card-header {
-    background: transparent !important;
-  }
-  
-  .cosmic-card {
-    background: linear-gradient(135deg, rgba(91, 95, 238, 0.08) 0%, rgba(0, 212, 255, 0.03) 100%) !important;
+  .cosmic-card .cosmic-card-header h3,
+  .cosmic-card > div:first-child h3,
+  .cosmic-card > header h3 {
+    color: white !important;
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 0.5rem !important;
   }
 
-  .cosmic-card .cosmic-card-header,
-  .cosmic-card > div:first-child {
-    background: linear-gradient(135deg, rgba(91, 95, 238, 0.15) 0%, rgba(0, 212, 255, 0.08) 100%) !important;
-    border-bottom: 1px solid rgba(91, 95, 238, 0.3) !important;
-    border-radius: 0.75rem 0.75rem 0 0 !important;
+  .cosmic-card .cosmic-card-header p,
+  .cosmic-card > div:first-child p,
+  .cosmic-card > header p {
+    color: rgb(209 213 219) !important;
+    font-size: 1rem !important;
+  }
+
+  /* Card content spacing */
+  .cosmic-card > div:last-child,
+  .cosmic-card .card-content {
+    padding: 2rem !important;
+  }
+
+  /* COSMIC BUTTON SYSTEM - Maximum specificity */
+  .cosmic-button,
+  .cosmic-button.cosmic-button,
+  button.cosmic-button,
+  .cosmic-button:not([disabled]) {
+    background: linear-gradient(135deg, #5B5FEE 0%, #00D4FF 100%) !important;
+    border: none !important;
+    color: white !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 4px 15px rgba(91, 95, 238, 0.4), 0 0 20px rgba(0, 212, 255, 0.3) !important;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5) !important;
+    position: relative !important;
+    overflow: hidden !important;
+  }
+
+  .cosmic-button:hover,
+  .cosmic-button.cosmic-button:hover,
+  button.cosmic-button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 25px rgba(91, 95, 238, 0.5), 0 0 30px rgba(0, 212, 255, 0.5) !important;
+    background: linear-gradient(135deg, #6B6FEE 0%, #10D4FF 100%) !important;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.7) !important;
+  }
+
+  .cosmic-button:disabled,
+  .cosmic-button.cosmic-button:disabled,
+  button.cosmic-button:disabled {
+    opacity: 0.7 !important;
+    transform: none !important;
+    box-shadow: 0 4px 15px rgba(91, 95, 238, 0.2) !important;
+    cursor: not-allowed !important;
+  }
+
+  .cosmic-button:active,
+  .cosmic-button.cosmic-button:active,
+  button.cosmic-button:active {
+    transform: translateY(-1px) !important;
+  }
+
+  /* Override any button defaults that might interfere */
+  .cosmic-button * {
+    pointer-events: none !important;
   }
 
   .glow-effect {
@@ -152,30 +206,33 @@
     transform: translateY(-1px);
   }
 
-  .cosmic-button {
-    background: linear-gradient(135deg, #5B5FEE 0%, #00D4FF 100%) !important;
-    border: none !important;
+  /* Form inputs in cosmic cards */
+  .cosmic-card input,
+  .cosmic-card textarea {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
     color: white !important;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(91, 95, 238, 0.4), 0 0 20px rgba(0, 212, 255, 0.3) !important;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    border-radius: 0.5rem !important;
+    padding: 0.75rem 1rem !important;
+    height: 3rem !important;
   }
 
-  .cosmic-button:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 8px 25px rgba(91, 95, 238, 0.5), 0 0 30px rgba(0, 212, 255, 0.5) !important;
-    background: linear-gradient(135deg, #6B6FEE 0%, #10D4FF 100%) !important;
-    text-shadow: 0 0 15px rgba(255, 255, 255, 0.7);
+  .cosmic-card input:focus,
+  .cosmic-card textarea:focus {
+    border-color: rgb(91 95 238) !important;
+    box-shadow: 0 0 0 2px rgba(91, 95, 238, 0.2) !important;
   }
 
-  .cosmic-button:disabled {
-    opacity: 0.7;
-    transform: none !important;
-    box-shadow: 0 4px 15px rgba(91, 95, 238, 0.2) !important;
+  .cosmic-card input::placeholder,
+  .cosmic-card textarea::placeholder {
+    color: rgba(156, 163, 175, 1) !important;
   }
 
-  .cosmic-button:active {
-    transform: translateY(-1px) !important;
+  .cosmic-card label {
+    color: white !important;
+    font-weight: 500 !important;
+    font-size: 0.875rem !important;
+    margin-bottom: 0.75rem !important;
+    display: block !important;
   }
 }

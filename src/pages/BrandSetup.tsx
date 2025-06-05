@@ -10,9 +10,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowRight, Upload } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCompany } from "@/contexts/CompanyContext";
 
 const BrandSetup = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { refreshCompanies } = useCompany();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     companyName: "",
     mission: "",
@@ -37,14 +43,65 @@ const BrandSetup = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Brand setup data:", formData);
-    toast({
-      title: "Brand Setup Complete! 🚀",
-      description: "Your brand identity has been saved. Ready to generate content!"
-    });
-    navigate("/content-generator");
+    
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to create a company.",
+        variant: "destructive",
+      });
+      navigate('/auth');
+      return;
+    }
+
+    setLoading(true);
+    console.log("Creating company with data:", formData);
+
+    try {
+      const { data, error } = await supabase
+        .from('companies')
+        .insert({
+          name: formData.companyName,
+          mission: formData.mission,
+          tone_of_voice: formData.toneOfVoice,
+          primary_color_1: formData.brandColors,
+          primary_color_2: "#00D4FF",
+          user_id: user.id,
+          other_info: {
+            platforms: formData.platforms
+          }
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating company:', error);
+        throw error;
+      }
+
+      console.log('Company created successfully:', data);
+      
+      // Refresh companies list
+      await refreshCompanies();
+      
+      toast({
+        title: "Brand Setup Complete! 🚀",
+        description: "Your brand identity has been saved. Ready to generate content!"
+      });
+      
+      navigate("/content-generator");
+    } catch (error) {
+      console.error('Error creating company:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create company. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -62,30 +119,30 @@ const BrandSetup = () => {
             </p>
           </div>
 
-          <Card className="cosmic-card">
-            <CardHeader>
-              <CardTitle className="text-white">Brand Identity</CardTitle>
-              <CardDescription className="text-gray-300">
+          <Card className="cosmic-card border-0 cosmic-glow">
+            <CardHeader className="cosmic-card-header">
+              <CardTitle className="text-white text-2xl font-bold">Brand Identity</CardTitle>
+              <CardDescription className="text-gray-300 text-base">
                 This information helps our AI understand your unique brand personality
               </CardDescription>
             </CardHeader>
             
-            <CardContent>
+            <CardContent className="space-y-6">
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="companyName" className="text-white">Company Name</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="companyName" className="text-white font-medium">Company Name</Label>
                   <Input
                     id="companyName"
                     value={formData.companyName}
                     onChange={(e) => setFormData(prev => ({ ...prev, companyName: e.target.value }))}
                     placeholder="Enter your company name"
-                    className="bg-white/5 border-white/20 text-white placeholder:text-gray-400"
+                    className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 h-12"
                     required
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="mission" className="text-white">Mission Statement</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="mission" className="text-white font-medium">Mission Statement</Label>
                   <Textarea
                     id="mission"
                     value={formData.mission}
@@ -96,23 +153,23 @@ const BrandSetup = () => {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="toneOfVoice" className="text-white">Tone of Voice</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="toneOfVoice" className="text-white font-medium">Tone of Voice</Label>
                   <Textarea
                     id="toneOfVoice"
                     value={formData.toneOfVoice}
                     onChange={(e) => setFormData(prev => ({ ...prev, toneOfVoice: e.target.value }))}
                     placeholder="Describe your brand's personality (e.g., professional, friendly, innovative, casual)"
-                    className="bg-white/5 border-white/20 text-white placeholder:text-gray-400"
+                    className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 min-h-[80px]"
                     required
                   />
                 </div>
 
                 <div className="space-y-4">
-                  <Label className="text-white">Target Platforms</Label>
+                  <Label className="text-white font-medium">Target Platforms</Label>
                   <div className="grid grid-cols-2 gap-4">
                     {platforms.map((platform) => (
-                      <div key={platform.id} className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 border border-white/10">
+                      <div key={platform.id} className="flex items-center space-x-3 p-4 rounded-lg bg-white/5 border border-white/10">
                         <Checkbox
                           id={platform.id}
                           checked={formData.platforms.includes(platform.id)}
@@ -129,14 +186,14 @@ const BrandSetup = () => {
                 </div>
 
                 <div className="space-y-4">
-                  <Label className="text-white">Brand Assets</Label>
-                  <div className="space-y-3">
-                    <Button type="button" variant="outline" className="w-full border-white/20 text-white hover:bg-white/10">
+                  <Label className="text-white font-medium">Brand Assets</Label>
+                  <div className="space-y-4">
+                    <Button type="button" variant="outline" className="w-full border-white/20 text-white hover:bg-white/10 h-12">
                       <Upload className="w-4 h-4 mr-2" />
                       Upload Logo
                     </Button>
                     <div className="flex items-center space-x-4">
-                      <Label htmlFor="brandColors" className="text-white">Primary Color</Label>
+                      <Label htmlFor="brandColors" className="text-white font-medium">Primary Color</Label>
                       <input
                         type="color"
                         id="brandColors"
@@ -151,10 +208,10 @@ const BrandSetup = () => {
                 <Button 
                   type="submit" 
                   size="lg" 
-                  className="w-full bg-primary hover:bg-primary/90 text-white glow-effect"
-                  disabled={formData.platforms.length === 0}
+                  className="w-full cosmic-button text-white font-semibold h-12 mt-8"
+                  disabled={loading || formData.platforms.length === 0}
                 >
-                  Complete Setup <ArrowRight className="ml-2 w-5 h-5" />
+                  {loading ? 'Creating Company...' : 'Complete Setup'} <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </form>
             </CardContent>
