@@ -21,8 +21,10 @@ export const LoginForm = ({ onToggleMode }: LoginFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Login form submitted!', { email, password: '***' });
     
     if (!email || !password) {
+      console.log('Missing email or password');
       toast({
         title: 'Missing Information',
         description: 'Please enter both email and password.',
@@ -64,9 +66,15 @@ export const LoginForm = ({ onToggleMode }: LoginFormProps) => {
     }
   };
 
+  const handleButtonClick = (e: React.MouseEvent) => {
+    console.log('Login button clicked!');
+    e.preventDefault();
+    handleSubmit(e as any);
+  };
+
   return (
     <Card className="cosmic-card border-0 cosmic-glow">
-      <CardHeader className="text-center card-header">
+      <CardHeader className="text-center cosmic-card-header">
         <CardTitle className="text-white text-2xl font-bold">Sign In</CardTitle>
         <CardDescription className="text-gray-300 text-base">
           Welcome back to the Creators Multiverse
@@ -101,6 +109,7 @@ export const LoginForm = ({ onToggleMode }: LoginFormProps) => {
           <Button
             type="submit"
             disabled={loading}
+            onClick={handleButtonClick}
             className="w-full cosmic-button text-white font-semibold py-3 text-base"
           >
             {loading ? 'Signing in...' : 'Sign In'}
