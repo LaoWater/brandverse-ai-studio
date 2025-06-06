@@ -1,7 +1,6 @@
-
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, Calendar, Zap, Globe, Share2, Lightbulb, Target, Rocket, Play, Users, Trending, Clock } from "lucide-react";
+import { ArrowRight, Calendar, Zap, Globe, Share2, Lightbulb, Target, Rocket, Play, Users, TrendingUp, Clock } from "lucide-react";
 
 const HeroSection = () => {
   return (
@@ -181,7 +180,7 @@ const HeroSection = () => {
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <Trending className="w-5 h-5 text-accent" />
+                    <TrendingUp className="w-5 h-5 text-accent" />
                     <span className="text-white font-semibold">Viral Potential</span>
                   </div>
                   <p className="text-gray-400 text-sm">AI-optimized content for maximum engagement</p>
