@@ -24,15 +24,19 @@ const Navigation = () => {
     navigate('/');
   };
 
-  const navItems = user ? [
-    { name: "Dashboard", href: "/" },
-    { name: "Content Generator", href: "/content-generator" },
-    { name: "Settings", href: "/settings" },
-  ] : [
+  const baseNavItems = [
     { name: "Home", href: "/" },
     { name: "Features", href: "/features" },
     { name: "Pricing", href: "/pricing" },
   ];
+
+  const authNavItems = [
+    { name: "Dashboard", href: "/" },
+    { name: "Content Generator", href: "/content-generator" },
+    { name: "Settings", href: "/settings" },
+  ];
+
+  const navItems = user ? [...baseNavItems, ...authNavItems] : baseNavItems;
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-primary/20">
