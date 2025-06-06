@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowRight, Image, Calendar, Check, X } from "lucide-react";
+import { ArrowRight, Image, Calendar, Check, X, Instagram, Facebook, Twitter, Linkedin } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const ContentGenerator = () => {
@@ -24,10 +24,10 @@ const ContentGenerator = () => {
   });
 
   const platforms = [
-    { id: 'instagram', name: 'Instagram', icon: '📸', color: 'from-pink-500 to-purple-600' },
-    { id: 'facebook', name: 'Facebook', icon: '👥', color: 'from-blue-600 to-blue-700' },
-    { id: 'twitter', name: 'Twitter', icon: '🐦', color: 'from-sky-400 to-sky-600' },
-    { id: 'linkedin', name: 'LinkedIn', icon: '💼', color: 'from-blue-700 to-blue-800' }
+    { id: 'instagram', name: 'Instagram', icon: Instagram, color: 'from-pink-500 to-purple-600' },
+    { id: 'facebook', name: 'Facebook', icon: Facebook, color: 'from-blue-600 to-blue-700' },
+    { id: 'twitter', name: 'Twitter', icon: Twitter, color: 'from-sky-400 to-sky-600' },
+    { id: 'linkedin', name: 'LinkedIn', icon: Linkedin, color: 'from-blue-700 to-blue-800' }
   ];
 
   const mockContent = {
@@ -157,23 +157,26 @@ const ContentGenerator = () => {
                   <div className="space-y-3">
                     <Label className="text-white font-semibold">Target Platforms</Label>
                     <div className="grid grid-cols-2 gap-4">
-                      {platforms.map((platform) => (
-                        <div key={platform.id} className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
-                          <Checkbox
-                            id={platform.id}
-                            checked={selectedPlatforms[platform.id as keyof typeof selectedPlatforms]}
-                            onCheckedChange={(checked) => handlePlatformChange(platform.id, checked as boolean)}
-                            className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                          />
-                          <label
-                            htmlFor={platform.id}
-                            className="flex items-center space-x-2 text-white cursor-pointer flex-1"
-                          >
-                            <span className="text-lg">{platform.icon}</span>
-                            <span className="font-medium">{platform.name}</span>
-                          </label>
-                        </div>
-                      ))}
+                      {platforms.map((platform) => {
+                        const IconComponent = platform.icon;
+                        return (
+                          <div key={platform.id} className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+                            <Checkbox
+                              id={platform.id}
+                              checked={selectedPlatforms[platform.id as keyof typeof selectedPlatforms]}
+                              onCheckedChange={(checked) => handlePlatformChange(platform.id, checked as boolean)}
+                              className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                            />
+                            <label
+                              htmlFor={platform.id}
+                              className="flex items-center space-x-2 text-white cursor-pointer flex-1"
+                            >
+                              <IconComponent className="w-5 h-5" />
+                              <span className="font-medium">{platform.name}</span>
+                            </label>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -210,13 +213,14 @@ const ContentGenerator = () => {
                   .filter(platform => selectedPlatforms[platform.id as keyof typeof selectedPlatforms])
                   .map((platform) => {
                     const content = generatedContent[platform.id as keyof typeof generatedContent];
+                    const IconComponent = platform.icon;
                     return (
                       <Card key={platform.id} className="cosmic-card">
                         <CardHeader>
                           <div className="flex items-center justify-between">
                             <CardTitle className="text-white flex items-center gap-3">
                               <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${platform.color} flex items-center justify-center text-white font-semibold`}>
-                                {platform.icon}
+                                <IconComponent className="w-5 h-5" />
                               </div>
                               {platform.name} Post
                             </CardTitle>

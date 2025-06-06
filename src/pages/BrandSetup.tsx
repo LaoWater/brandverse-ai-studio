@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowRight, Upload } from "lucide-react";
+import { ArrowRight, Upload, Instagram, Facebook, Twitter, Linkedin } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,14 +24,15 @@ const BrandSetup = () => {
     mission: "",
     toneOfVoice: "",
     platforms: [] as string[],
-    brandColors: "#5B5FEE"
+    primaryColor: "#5B5FEE",
+    secondaryColor: "#00D4FF"
   });
 
   const platforms = [
-    { id: "instagram", label: "Instagram", icon: "📸" },
-    { id: "linkedin", label: "LinkedIn", icon: "💼" },
-    { id: "twitter", label: "Twitter", icon: "🐦" },
-    { id: "facebook", label: "Facebook", icon: "👥" }
+    { id: "instagram", label: "Instagram", icon: Instagram },
+    { id: "linkedin", label: "LinkedIn", icon: Linkedin },
+    { id: "twitter", label: "Twitter", icon: Twitter },
+    { id: "facebook", label: "Facebook", icon: Facebook }
   ];
 
   const handlePlatformChange = (platformId: string, checked: boolean) => {
@@ -66,8 +67,8 @@ const BrandSetup = () => {
           name: formData.companyName,
           mission: formData.mission,
           tone_of_voice: formData.toneOfVoice,
-          primary_color_1: formData.brandColors,
-          primary_color_2: "#00D4FF",
+          primary_color_1: formData.primaryColor,
+          primary_color_2: formData.secondaryColor,
           user_id: user.id,
           other_info: {
             platforms: formData.platforms
@@ -168,20 +169,23 @@ const BrandSetup = () => {
                 <div className="space-y-4">
                   <Label className="text-white font-medium">Target Platforms</Label>
                   <div className="grid grid-cols-2 gap-4">
-                    {platforms.map((platform) => (
-                      <div key={platform.id} className="flex items-center space-x-3 p-4 rounded-lg bg-white/5 border border-white/10">
-                        <Checkbox
-                          id={platform.id}
-                          checked={formData.platforms.includes(platform.id)}
-                          onCheckedChange={(checked) => handlePlatformChange(platform.id, checked as boolean)}
-                          className="border-white/20"
-                        />
-                        <label htmlFor={platform.id} className="text-white cursor-pointer flex items-center space-x-2">
-                          <span>{platform.icon}</span>
-                          <span>{platform.label}</span>
-                        </label>
-                      </div>
-                    ))}
+                    {platforms.map((platform) => {
+                      const IconComponent = platform.icon;
+                      return (
+                        <div key={platform.id} className="flex items-center space-x-3 p-4 rounded-lg bg-white/5 border border-white/10">
+                          <Checkbox
+                            id={platform.id}
+                            checked={formData.platforms.includes(platform.id)}
+                            onCheckedChange={(checked) => handlePlatformChange(platform.id, checked as boolean)}
+                            className="border-white/20"
+                          />
+                          <label htmlFor={platform.id} className="text-white cursor-pointer flex items-center space-x-2">
+                            <IconComponent className="w-5 h-5" />
+                            <span>{platform.label}</span>
+                          </label>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -192,15 +196,27 @@ const BrandSetup = () => {
                       <Upload className="w-4 h-4 mr-2" />
                       Upload Logo
                     </Button>
-                    <div className="flex items-center space-x-4">
-                      <Label htmlFor="brandColors" className="text-white font-medium">Primary Color</Label>
-                      <input
-                        type="color"
-                        id="brandColors"
-                        value={formData.brandColors}
-                        onChange={(e) => setFormData(prev => ({ ...prev, brandColors: e.target.value }))}
-                        className="w-16 h-10 rounded border border-white/20 bg-transparent"
-                      />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-center space-x-4">
+                        <Label htmlFor="primaryColor" className="text-white font-medium">Primary Color</Label>
+                        <input
+                          type="color"
+                          id="primaryColor"
+                          value={formData.primaryColor}
+                          onChange={(e) => setFormData(prev => ({ ...prev, primaryColor: e.target.value }))}
+                          className="w-16 h-10 rounded border border-white/20 bg-transparent"
+                        />
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <Label htmlFor="secondaryColor" className="text-white font-medium">Secondary Color</Label>
+                        <input
+                          type="color"
+                          id="secondaryColor"
+                          value={formData.secondaryColor}
+                          onChange={(e) => setFormData(prev => ({ ...prev, secondaryColor: e.target.value }))}
+                          className="w-16 h-10 rounded border border-white/20 bg-transparent"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
