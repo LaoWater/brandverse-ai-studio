@@ -1,8 +1,8 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-// REMOVE Sparkles if no longer used elsewhere, or keep if needed
-import { Menu, X, /* Sparkles, */ ChevronDown, User, Settings, LogOut, CreditCard } from "lucide-react"; 
+import { Menu, X, ChevronDown, User, Settings, LogOut, CreditCard } from "lucide-react"; 
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
-import CreatorsMultiverseLogo from "@/components/CreatorsMultiverseLogo"; // Adjust path if needed
+import CreatorsMultiverseLogo from "@/components/CreatorsMultiverseLogo";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -32,7 +32,6 @@ const Navigation = () => {
   ];
 
   const authNavItems = [
-    { name: "Dashboard", href: "/" },
     { name: "Content Generator", href: "/content-generator" },
     { name: "Settings", href: "/settings" },
   ];
@@ -40,17 +39,10 @@ const Navigation = () => {
   const navItems = user ? [...baseNavItems, ...authNavItems] : baseNavItems;
 
   return (
-    // Adjusted navbar height from h-16 to h-20 (or h-24 if more space is needed for the logo)
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-primary/20">
       <div className="container mx-auto px-4">
-        {/* Adjusted height here for the inner container as well */}
-        <div className="flex items-center justify-between h-16"> {/* Increased from h-16 */}
+        <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center space-x-2">
-            {/* Replace Sparkles with CreatorsMultiverseLogo */}
-            {/* Adjust w-12 h-12 (width and height) as needed. 
-                The logo's viewBox will scale it correctly.
-                text-primary might not affect this SVG much as its colors are hardcoded.
-            */}
             <CreatorsMultiverseLogo className="w-14 h-14" />
             <span className="text-xl font-bold text-white">Creators Multiverse</span>
           </Link>
@@ -91,7 +83,7 @@ const Navigation = () => {
                   
                   <DropdownMenuContent align="end" className="w-48 bg-card border-primary/20">
                     <DropdownMenuItem 
-                      onClick={() => navigate('/pricing')}
+                      onClick={() => navigate('/my-plan')}
                       className="text-white hover:bg-white/10 cursor-pointer"
                     >
                       <CreditCard className="w-4 h-4 mr-2" />
@@ -174,7 +166,7 @@ const Navigation = () => {
                   <div className="flex flex-col space-y-2">
                     <button 
                       onClick={() => {
-                        navigate('/pricing');
+                        navigate('/my-plan');
                         setIsOpen(false);
                       }}
                       className="flex items-center px-4 py-2 text-white hover:bg-white/10 rounded-md transition-colors w-full text-left"
