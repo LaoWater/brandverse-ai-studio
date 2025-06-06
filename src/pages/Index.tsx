@@ -5,10 +5,12 @@ import ProcessSteps from "@/components/ProcessSteps";
 
 const Index = () => {
   return (
-    <div className="min-h-screen">
+    <div className="flex flex-col min-h-screen">
       <Navigation />
-      <HeroSection />
-      <ProcessSteps />
+      <div className="flex-grow">
+        <HeroSection />
+        <ProcessSteps />
+      </div>
     </div>
   );
 };

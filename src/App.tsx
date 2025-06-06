@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CompanyProvider } from "@/contexts/CompanyContext";
+import Footer from "@/components/Footer";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import BrandSetup from "./pages/BrandSetup";
@@ -26,17 +27,20 @@ const App = () => (
       <AuthProvider>
         <CompanyProvider>
           <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/brand-setup" element={<BrandSetup />} />
-              <Route path="/content-generator" element={<ContentGenerator />} />
-              <Route path="/campaign-preview" element={<CampaignPreview />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/features" element={<Features />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <div className="flex flex-col min-h-screen">
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/brand-setup" element={<BrandSetup />} />
+                <Route path="/content-generator" element={<ContentGenerator />} />
+                <Route path="/campaign-preview" element={<CampaignPreview />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/features" element={<Features />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <Footer />
+            </div>
           </BrowserRouter>
         </CompanyProvider>
       </AuthProvider>
