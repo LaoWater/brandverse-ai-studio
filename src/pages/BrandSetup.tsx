@@ -179,7 +179,7 @@ const BrandSetup = () => {
                             onCheckedChange={(checked) => handlePlatformChange(platform.id, checked as boolean)}
                             className="border-white/20"
                           />
-                          <label htmlFor={platform.id} className="text-white cursor-pointer flex items-center space-x-2">
+                          <label htmlFor={platform.id} className="text-white cursor-pointer flex items-center space-x-2 flex-1">
                             <IconComponent className="w-5 h-5" />
                             <span>{platform.label}</span>
                           </label>
