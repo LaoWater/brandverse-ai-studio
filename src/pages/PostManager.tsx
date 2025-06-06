@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Edit, Trash2, Eye, Filter, Plus, Calendar, Image, Video } from "lucide-react";
+import { Edit, Trash2, Eye, Filter, Plus, Calendar, Image, Video, Instagram, Facebook, Twitter, Linkedin } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
@@ -115,10 +115,10 @@ const PostManager = () => {
   });
 
   const platforms = [
-    { id: 'instagram', name: 'Instagram', icon: '📸', color: 'from-pink-500 to-purple-600' },
-    { id: 'facebook', name: 'Facebook', icon: '👥', color: 'from-blue-600 to-blue-700' },
-    { id: 'twitter', name: 'Twitter', icon: '🐦', color: 'from-sky-400 to-sky-600' },
-    { id: 'linkedin', name: 'LinkedIn', icon: '💼', color: 'from-blue-700 to-blue-800' }
+    { id: 'instagram', name: 'Instagram', icon: Instagram, color: 'from-pink-500 to-purple-600' },
+    { id: 'facebook', name: 'Facebook', icon: Facebook, color: 'from-blue-600 to-blue-700' },
+    { id: 'twitter', name: 'Twitter', icon: Twitter, color: 'from-sky-400 to-sky-600' },
+    { id: 'linkedin', name: 'LinkedIn', icon: Linkedin, color: 'from-blue-700 to-blue-800' }
   ];
 
   const getStatusColor = (status: PostStatus) => {
@@ -131,7 +131,8 @@ const PostManager = () => {
   };
 
   const getPlatformIcon = (platform: PlatformType) => {
-    return platforms.find(p => p.id === platform)?.icon || '📱';
+    const platformData = platforms.find(p => p.id === platform);
+    return platformData ? platformData.icon : Instagram;
   };
 
   const handleEditPost = (post: Post) => {
@@ -237,11 +238,17 @@ const PostManager = () => {
                     </SelectTrigger>
                     <SelectContent className="bg-gray-900 border-gray-700">
                       <SelectItem value="all">All Platforms</SelectItem>
-                      {platforms.map(platform => (
-                        <SelectItem key={platform.id} value={platform.id}>
-                          {platform.icon} {platform.name}
-                        </SelectItem>
-                      ))}
+                      {platforms.map(platform => {
+                        const IconComponent = platform.icon;
+                        return (
+                          <SelectItem key={platform.id} value={platform.id}>
+                            <div className="flex items-center gap-2">
+                              <IconComponent className="w-4 h-4" />
+                              {platform.name}
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
@@ -324,68 +331,71 @@ const PostManager = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {posts?.map((post) => (
-                          <TableRow key={post.id} className="border-white/10 hover:bg-white/5">
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <span className="text-lg">{getPlatformIcon(post.platform_type)}</span>
-                                <span className="text-white capitalize">{post.platform_type}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="max-w-xs">
-                                <div className="text-white font-medium truncate">{post.title}</div>
-                                <div className="text-gray-400 text-sm truncate">{post.details?.substring(0, 60)}...</div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Select 
-                                value={post.status || 'draft'} 
-                                onValueChange={(value) => handleQuickStatusUpdate(post.id, value as PostStatus)}
-                              >
-                                <SelectTrigger className={`w-32 border ${getStatusColor(post.status || 'draft')}`}>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="bg-gray-900 border-gray-700">
-                                  <SelectItem value="draft">Draft</SelectItem>
-                                  <SelectItem value="approved">Approved</SelectItem>
-                                  <SelectItem value="posted">Posted</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex gap-1">
-                                {post.has_picture && <Image className="w-4 h-4 text-blue-400" />}
-                                {post.has_video && <Video className="w-4 h-4 text-purple-400" />}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="text-gray-400 text-sm">
-                                {post.created_date ? new Date(post.created_date).toLocaleDateString() : 'N/A'}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleEditPost(post)}
-                                  className="border-white/20 text-white hover:bg-white/10"
+                        {posts?.map((post) => {
+                          const IconComponent = getPlatformIcon(post.platform_type);
+                          return (
+                            <TableRow key={post.id} className="border-white/10 hover:bg-white/5">
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <IconComponent className="w-5 h-5 text-white" />
+                                  <span className="text-white capitalize">{post.platform_type}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="max-w-xs">
+                                  <div className="text-white font-medium truncate">{post.title}</div>
+                                  <div className="text-gray-400 text-sm truncate">{post.details?.substring(0, 60)}...</div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Select 
+                                  value={post.status || 'draft'} 
+                                  onValueChange={(value) => handleQuickStatusUpdate(post.id, value as PostStatus)}
                                 >
-                                  <Edit className="w-3 h-3" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleDeletePost(post.id)}
-                                  className="border-red-500/50 text-red-400 hover:bg-red-500/10"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                                  <SelectTrigger className={`w-32 border ${getStatusColor(post.status || 'draft')}`}>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-gray-900 border-gray-700">
+                                    <SelectItem value="draft">Draft</SelectItem>
+                                    <SelectItem value="approved">Approved</SelectItem>
+                                    <SelectItem value="posted">Posted</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-1">
+                                  {post.has_picture && <Image className="w-4 h-4 text-blue-400" />}
+                                  {post.has_video && <Video className="w-4 h-4 text-purple-400" />}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-gray-400 text-sm">
+                                  {post.created_date ? new Date(post.created_date).toLocaleDateString() : 'N/A'}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleEditPost(post)}
+                                    className="border-white/20 text-white hover:bg-white/10"
+                                  >
+                                    <Edit className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleDeletePost(post.id)}
+                                    className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>
@@ -395,51 +405,54 @@ const PostManager = () => {
 
             <TabsContent value="cards">
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {posts?.map((post) => (
-                  <Card key={post.id} className="cosmic-card">
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">{getPlatformIcon(post.platform_type)}</span>
-                          <Badge variant="outline" className="border-white/20 text-white">
-                            {post.platform_type}
+                {posts?.map((post) => {
+                  const IconComponent = getPlatformIcon(post.platform_type);
+                  return (
+                    <Card key={post.id} className="cosmic-card">
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <IconComponent className="w-5 h-5 text-white" />
+                            <Badge variant="outline" className="border-white/20 text-white">
+                              {post.platform_type}
+                            </Badge>
+                          </div>
+                          <Badge className={getStatusColor(post.status || 'draft')}>
+                            {post.status}
                           </Badge>
                         </div>
-                        <Badge className={getStatusColor(post.status || 'draft')}>
-                          {post.status}
-                        </Badge>
-                      </div>
-                      <CardTitle className="text-white text-lg">{post.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-300 text-sm mb-4 line-clamp-3">{post.details}</p>
-                      <div className="flex items-center justify-between">
-                        <div className="flex gap-1">
-                          {post.has_picture && <Image className="w-4 h-4 text-blue-400" />}
-                          {post.has_video && <Video className="w-4 h-4 text-purple-400" />}
+                        <CardTitle className="text-white text-lg">{post.title}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-gray-300 text-sm mb-4 line-clamp-3">{post.details}</p>
+                        <div className="flex items-center justify-between">
+                          <div className="flex gap-1">
+                            {post.has_picture && <Image className="w-4 h-4 text-blue-400" />}
+                            {post.has_video && <Video className="w-4 h-4 text-purple-400" />}
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEditPost(post)}
+                              className="border-white/20 text-white hover:bg-white/10"
+                            >
+                              <Edit className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDeletePost(post.id)}
+                              className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEditPost(post)}
-                            className="border-white/20 text-white hover:bg-white/10"
-                          >
-                            <Edit className="w-3 h-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDeletePost(post.id)}
-                            className="border-red-500/50 text-red-400 hover:bg-red-500/10"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             </TabsContent>
 
@@ -447,12 +460,13 @@ const PostManager = () => {
               <div className="space-y-6">
                 {platforms.map((platform) => {
                   const platformPosts = groupedPosts[platform.id as PlatformType] || [];
+                  const IconComponent = platform.icon;
                   return (
                     <Card key={platform.id} className="cosmic-card">
                       <CardHeader>
                         <CardTitle className="text-white flex items-center gap-3">
                           <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${platform.color} flex items-center justify-center text-white font-semibold`}>
-                            {platform.icon}
+                            <IconComponent className="w-6 h-6" />
                           </div>
                           {platform.name} ({platformPosts.length} posts)
                         </CardTitle>
@@ -527,11 +541,17 @@ const PostManager = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-gray-900 border-gray-700">
-                      {platforms.map(platform => (
-                        <SelectItem key={platform.id} value={platform.id}>
-                          {platform.icon} {platform.name}
-                        </SelectItem>
-                      ))}
+                      {platforms.map(platform => {
+                        const IconComponent = platform.icon;
+                        return (
+                          <SelectItem key={platform.id} value={platform.id}>
+                            <div className="flex items-center gap-2">
+                              <IconComponent className="w-4 h-4" />
+                              {platform.name}
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>

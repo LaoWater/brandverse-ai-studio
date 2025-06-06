@@ -57,31 +57,33 @@ const Navigation = () => {
             {user ? (
               <>
                 {/* Collapsible Home Menu for authenticated users */}
-                <Collapsible open={isHomeMenuOpen} onOpenChange={setIsHomeMenuOpen}>
-                  <CollapsibleTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      className="text-gray-300 hover:text-white transition-colors flex items-center gap-1"
-                    >
-                      Home
-                      <ChevronDown className={`w-4 h-4 transition-transform ${isHomeMenuOpen ? 'rotate-180' : ''}`} />
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="absolute top-full left-0 mt-2 w-48 bg-card border border-primary/20 rounded-md shadow-lg z-50">
-                    <div className="py-2">
-                      {publicNavItems.map((item) => (
-                        <Link
-                          key={item.name}
-                          to={item.href}
-                          className="block px-4 py-2 text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
-                          onClick={() => setIsHomeMenuOpen(false)}
-                        >
-                          {item.name}
-                        </Link>
-                      ))}
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
+                <div className="relative">
+                  <Collapsible open={isHomeMenuOpen} onOpenChange={setIsHomeMenuOpen}>
+                    <CollapsibleTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        className="text-gray-300 hover:text-white transition-colors flex items-center gap-1"
+                      >
+                        Home
+                        <ChevronDown className={`w-4 h-4 transition-transform ${isHomeMenuOpen ? 'rotate-180' : ''}`} />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="absolute top-full left-0 mt-2 w-48 bg-card border border-primary/20 rounded-md shadow-lg z-50">
+                      <div className="py-2">
+                        {publicNavItems.map((item) => (
+                          <Link
+                            key={item.name}
+                            to={item.href}
+                            className="block px-4 py-2 text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
+                            onClick={() => setIsHomeMenuOpen(false)}
+                          >
+                            {item.name}
+                          </Link>
+                        ))}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </div>
 
                 {/* Main authenticated navigation */}
                 {authNavItems.map((item) => (
