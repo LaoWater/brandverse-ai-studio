@@ -10,12 +10,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
 import CreatorsMultiverseLogo from "@/components/CreatorsMultiverseLogo";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isHomeMenuOpen, setIsHomeMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
   const { selectedCompany } = useCompany();
   const navigate = useNavigate();
@@ -25,7 +31,7 @@ const Navigation = () => {
     navigate('/');
   };
 
-  const baseNavItems = [
+  const publicNavItems = [
     { name: "Home", href: "/" },
     { name: "Features", href: "/features" },
     { name: "Pricing", href: "/pricing" },
@@ -33,10 +39,9 @@ const Navigation = () => {
 
   const authNavItems = [
     { name: "Content Generator", href: "/content-generator" },
+    { name: "Library", href: "/post-manager" },
     { name: "Settings", href: "/settings" },
   ];
-
-  const navItems = user ? [...baseNavItems, ...authNavItems] : baseNavItems;
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-primary/20">
@@ -49,15 +54,58 @@ const Navigation = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className="text-gray-300 hover:text-white transition-colors"
-              >
-                {item.name}
-              </Link>
-            ))}
+            {user ? (
+              <>
+                {/* Collapsible Home Menu for authenticated users */}
+                <Collapsible open={isHomeMenuOpen} onOpenChange={setIsHomeMenuOpen}>
+                  <CollapsibleTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      className="text-gray-300 hover:text-white transition-colors flex items-center gap-1"
+                    >
+                      Home
+                      <ChevronDown className={`w-4 h-4 transition-transform ${isHomeMenuOpen ? 'rotate-180' : ''}`} />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="absolute top-full left-0 mt-2 w-48 bg-card border border-primary/20 rounded-md shadow-lg z-50">
+                    <div className="py-2">
+                      {publicNavItems.map((item) => (
+                        <Link
+                          key={item.name}
+                          to={item.href}
+                          className="block px-4 py-2 text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
+                          onClick={() => setIsHomeMenuOpen(false)}
+                        >
+                          {item.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+
+                {/* Main authenticated navigation */}
+                {authNavItems.map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className="text-gray-300 hover:text-white transition-colors"
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </>
+            ) : (
+              // Show public navigation for non-authenticated users
+              publicNavItems.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className="text-gray-300 hover:text-white transition-colors"
+                >
+                  {item.name}
+                </Link>
+              ))
+            )}
           </div>
 
           {/* Auth Buttons */}
@@ -141,16 +189,58 @@ const Navigation = () => {
         {isOpen && (
           <div className="md:hidden py-4 border-t border-primary/20">
             <div className="flex flex-col space-y-4">
-              {navItems.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className="text-gray-300 hover:text-white transition-colors py-2"
-                  onClick={() => setIsOpen(false)}
-                >
-                  {item.name}
-                </Link>
-              ))}
+              {user ? (
+                <>
+                  {/* Mobile Home Menu */}
+                  <Collapsible>
+                    <CollapsibleTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        className="text-gray-300 hover:text-white transition-colors w-full justify-between"
+                      >
+                        Home
+                        <ChevronDown className="w-4 h-4" />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="ml-4 mt-2 space-y-2">
+                      {publicNavItems.map((item) => (
+                        <Link
+                          key={item.name}
+                          to={item.href}
+                          className="block text-gray-300 hover:text-white transition-colors py-2"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          {item.name}
+                        </Link>
+                      ))}
+                    </CollapsibleContent>
+                  </Collapsible>
+
+                  {/* Mobile authenticated navigation */}
+                  {authNavItems.map((item) => (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      className="text-gray-300 hover:text-white transition-colors py-2"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      {item.name}
+                    </Link>
+                  ))}
+                </>
+              ) : (
+                // Mobile public navigation
+                publicNavItems.map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className="text-gray-300 hover:text-white transition-colors py-2"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    {item.name}
+                  </Link>
+                ))
+              )}
               
               {user ? (
                 <div className="pt-4 border-t border-primary/20">

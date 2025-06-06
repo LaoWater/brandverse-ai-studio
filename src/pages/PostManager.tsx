@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Navigation from "@/components/Navigation";
@@ -43,10 +42,10 @@ const PostManager = () => {
         .order('created_date', { ascending: false });
 
       if (filters.platform !== 'all') {
-        query = query.eq('platform_type', filters.platform);
+        query = query.eq('platform_type', filters.platform as PlatformType);
       }
       if (filters.status !== 'all') {
-        query = query.eq('status', filters.status);
+        query = query.eq('status', filters.status as PostStatus);
       }
       if (filters.search) {
         query = query.or(`title.ilike.%${filters.search}%,details.ilike.%${filters.search}%`);
@@ -204,7 +203,7 @@ const PostManager = () => {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-white mb-4">
-              Post <span className="text-cosmic font-serif">Manager</span>
+              Post <span className="text-cosmic font-serif">Library</span>
             </h1>
             <p className="text-gray-300 text-lg">
               Manage all your social media content in one place
