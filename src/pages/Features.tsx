@@ -50,9 +50,9 @@ const Features = () => {
       <Navigation />
       
       <main className="pt-20 pb-16">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-6">
           {/* Hero Section */}
-          <div className="text-center mb-16">
+          <div className="text-center mb-20">
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
               Powerful Features for
               <span className="text-cosmic block mt-2">Content Creators</span>
@@ -63,10 +63,10 @@ const Features = () => {
           </div>
 
           {/* Features Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
             {features.map((feature, index) => (
-              <div key={index} className="cosmic-card p-8 text-center">
-                <div className="flex justify-center mb-4">
+              <div key={index} className="bg-black/20 backdrop-blur-lg border border-white/10 rounded-xl p-8 text-center hover:border-accent/30 transition-all duration-300">
+                <div className="flex justify-center mb-6">
                   {feature.icon}
                 </div>
                 <h3 className="text-xl font-semibold text-white mb-4">
@@ -80,23 +80,21 @@ const Features = () => {
           </div>
 
           {/* Benefits Section */}
-          <div className="cosmic-card p-12 text-center">
-            <h2 className="text-3xl font-bold text-white mb-8">
+          <div className="bg-black/20 backdrop-blur-lg border border-white/10 rounded-xl p-12 text-center">
+            <h2 className="text-3xl font-bold text-white mb-12">
               Why Choose Creators Multiverse?
             </h2>
-            <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-12">
               {benefits.map((benefit, index) => (
-                <div key={index} className="flex items-center space-x-3">
-                  <Check className="w-5 h-5 text-accent flex-shrink-0" />
-                  <span className="text-gray-300">{benefit}</span>
+                <div key={index} className="flex items-center space-x-4 text-left">
+                  <Check className="w-6 h-6 text-accent flex-shrink-0" />
+                  <span className="text-gray-300 text-lg">{benefit}</span>
                 </div>
               ))}
             </div>
-            <div className="mt-12">
-              <a href="/auth" className="cosmic-button px-8 py-3 rounded-lg text-lg font-semibold">
-                Start Creating Today
-              </a>
-            </div>
+            <a href="/auth" className="cosmic-button px-10 py-4 rounded-lg text-lg font-semibold inline-block">
+              Start Creating Today
+            </a>
           </div>
         </div>
       </main>

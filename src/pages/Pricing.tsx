@@ -81,9 +81,9 @@ const Pricing = () => {
       <Navigation />
       
       <main className="pt-20 pb-16">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-6">
           {/* Hero Section */}
-          <div className="text-center mb-16">
+          <div className="text-center mb-20">
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
               Simple, Transparent
               <span className="text-cosmic block mt-2">Pricing</span>
@@ -94,11 +94,15 @@ const Pricing = () => {
           </div>
 
           {/* Pricing Cards */}
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
+          <div className="grid md:grid-cols-3 gap-8 mb-20">
             {plans.map((plan, index) => (
               <div 
                 key={index} 
-                className={`cosmic-card p-8 relative ${plan.popular ? 'ring-2 ring-accent' : ''}`}
+                className={`bg-black/20 backdrop-blur-lg border rounded-xl p-8 relative hover:border-accent/30 transition-all duration-300 ${
+                  plan.popular 
+                    ? 'border-accent/50 shadow-lg shadow-accent/20' 
+                    : 'border-white/10'
+                }`}
               >
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-accent text-black px-6 py-2 rounded-full text-sm font-semibold">
@@ -106,8 +110,8 @@ const Pricing = () => {
                   </div>
                 )}
                 
-                <div className="text-center mb-6">
-                  <div className="flex items-center justify-center space-x-2 mb-2">
+                <div className="text-center mb-8">
+                  <div className="flex items-center justify-center space-x-2 mb-4">
                     {plan.icon}
                     <h3 className="text-2xl font-bold text-white">{plan.name}</h3>
                   </div>
@@ -118,10 +122,10 @@ const Pricing = () => {
                   <p className="text-gray-300 text-sm">{plan.description}</p>
                 </div>
 
-                <ul className="space-y-3 mb-8">
+                <ul className="space-y-4 mb-8">
                   {plan.features.map((feature, featureIndex) => (
                     <li key={featureIndex} className="flex items-center space-x-3">
-                      <Check className="w-4 h-4 text-accent flex-shrink-0" />
+                      <Check className="w-5 h-5 text-accent flex-shrink-0" />
                       <span className="text-gray-300 text-sm">{feature}</span>
                     </li>
                   ))}
@@ -135,48 +139,48 @@ const Pricing = () => {
           </div>
 
           {/* Pay-As-You-Go Section */}
-          <div className="cosmic-card p-8 text-center max-w-2xl mx-auto">
+          <div className="bg-black/20 backdrop-blur-lg border border-white/10 rounded-xl p-12 text-center max-w-2xl mx-auto mb-20">
             <h3 className="text-2xl font-bold text-white mb-4">{payAsYouGo.title}</h3>
-            <p className="text-gray-300 mb-6">{payAsYouGo.description}</p>
+            <p className="text-gray-300 mb-8">{payAsYouGo.description}</p>
             
-            <div className="mb-6">
+            <div className="mb-8">
               <span className="text-3xl font-bold text-white">{payAsYouGo.price}</span>
               <span className="text-gray-400 ml-2">{payAsYouGo.unit}</span>
             </div>
 
-            <ul className="space-y-2 mb-8 max-w-md mx-auto">
+            <ul className="space-y-3 mb-10 max-w-md mx-auto">
               {payAsYouGo.features.map((feature, index) => (
                 <li key={index} className="flex items-center space-x-3">
-                  <Check className="w-4 h-4 text-accent flex-shrink-0" />
+                  <Check className="w-5 h-5 text-accent flex-shrink-0" />
                   <span className="text-gray-300 text-sm">{feature}</span>
                 </li>
               ))}
             </ul>
 
-            <button className="cosmic-button px-8 py-3 rounded-lg font-semibold">
+            <button className="cosmic-button px-10 py-4 rounded-lg font-semibold">
               Start Pay-As-You-Go
             </button>
           </div>
 
           {/* FAQ Section */}
-          <div className="text-center mt-16">
-            <h2 className="text-3xl font-bold text-white mb-8">Frequently Asked Questions</h2>
-            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold text-white mb-12">Frequently Asked Questions</h2>
+            <div className="grid md:grid-cols-2 gap-10 max-w-5xl mx-auto">
               <div className="text-left">
-                <h4 className="text-lg font-semibold text-white mb-2">Can I change plans anytime?</h4>
-                <p className="text-gray-300">Yes, you can upgrade, downgrade, or cancel your subscription at any time. Changes take effect immediately.</p>
+                <h4 className="text-xl font-semibold text-white mb-4">Can I change plans anytime?</h4>
+                <p className="text-gray-300 leading-relaxed">Yes, you can upgrade, downgrade, or cancel your subscription at any time. Changes take effect immediately.</p>
               </div>
               <div className="text-left">
-                <h4 className="text-lg font-semibold text-white mb-2">What happens to unused generations?</h4>
-                <p className="text-gray-300">Unused daily generations don't roll over, but you can always upgrade for higher limits or use pay-as-you-go for flexibility.</p>
+                <h4 className="text-xl font-semibold text-white mb-4">What happens to unused generations?</h4>
+                <p className="text-gray-300 leading-relaxed">Unused daily generations don't roll over, but you can always upgrade for higher limits or use pay-as-you-go for flexibility.</p>
               </div>
               <div className="text-left">
-                <h4 className="text-lg font-semibold text-white mb-2">Do you offer refunds?</h4>
-                <p className="text-gray-300">Yes, we offer a 30-day money-back guarantee for all paid plans. No questions asked.</p>
+                <h4 className="text-xl font-semibold text-white mb-4">Do you offer refunds?</h4>
+                <p className="text-gray-300 leading-relaxed">Yes, we offer a 30-day money-back guarantee for all paid plans. No questions asked.</p>
               </div>
               <div className="text-left">
-                <h4 className="text-lg font-semibold text-white mb-2">Is there a free trial for paid plans?</h4>
-                <p className="text-gray-300">Our generous free plan lets you experience most features. You can also try any paid plan for 7 days risk-free.</p>
+                <h4 className="text-xl font-semibold text-white mb-4">Is there a free trial for paid plans?</h4>
+                <p className="text-gray-300 leading-relaxed">Our generous free plan lets you experience most features. You can also try any paid plan for 7 days risk-free.</p>
               </div>
             </div>
           </div>
