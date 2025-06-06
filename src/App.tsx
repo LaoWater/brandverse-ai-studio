@@ -12,6 +12,7 @@ import Auth from "./pages/Auth";
 import BrandSetup from "./pages/BrandSetup";
 import ContentGenerator from "./pages/ContentGenerator";
 import CampaignPreview from "./pages/CampaignPreview";
+import PostManager from "./pages/PostManager";
 import Settings from "./pages/Settings";
 import MyPlan from "./pages/MyPlan";
 import Features from "./pages/Features";
@@ -35,6 +36,7 @@ const App = () => (
                 <Route path="/brand-setup" element={<BrandSetup />} />
                 <Route path="/content-generator" element={<ContentGenerator />} />
                 <Route path="/campaign-preview" element={<CampaignPreview />} />
+                <Route path="/post-manager" element={<PostManager />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/my-plan" element={<MyPlan />} />
                 <Route path="/features" element={<Features />} />
