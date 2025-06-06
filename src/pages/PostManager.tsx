@@ -74,7 +74,8 @@ const PostManager = () => {
       queryClient.invalidateQueries({ queryKey: ['posts'] });
       toast({
         title: "Post Updated! ✨",
-        description: "Post has been successfully updated."
+        description: "Post has been successfully updated.",
+        className: "bg-primary/90 border-primary text-white"
       });
       setIsEditDialogOpen(false);
       setSelectedPost(null);
@@ -102,7 +103,8 @@ const PostManager = () => {
       queryClient.invalidateQueries({ queryKey: ['posts'] });
       toast({
         title: "Post Deleted",
-        description: "Post has been successfully deleted."
+        description: "Post has been successfully deleted.",
+        className: "bg-primary/90 border-primary text-white"
       });
     },
     onError: (error) => {
@@ -123,10 +125,10 @@ const PostManager = () => {
 
   const getStatusColor = (status: PostStatus) => {
     switch (status) {
-      case 'draft': return 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30';
-      case 'approved': return 'bg-green-500/20 text-green-700 border-green-500/30';
-      case 'posted': return 'bg-blue-500/20 text-blue-700 border-blue-500/30';
-      default: return 'bg-gray-500/20 text-gray-700 border-gray-500/30';
+      case 'draft': return 'bg-yellow-500 text-yellow-900 border-yellow-500 shadow-lg shadow-yellow-500/20 font-semibold';
+      case 'approved': return 'bg-green-500 text-green-900 border-green-500 shadow-lg shadow-green-500/20 font-semibold';
+      case 'posted': return 'bg-primary text-white border-primary shadow-lg shadow-primary/20 font-semibold';
+      default: return 'bg-gray-500 text-gray-900 border-gray-500 shadow-lg shadow-gray-500/20 font-semibold';
     }
   };
 
@@ -310,9 +312,9 @@ const PostManager = () => {
           {/* Posts Table */}
           <Tabs defaultValue="table" className="space-y-6">
             <TabsList className="bg-white/10 border-white/20">
-              <TabsTrigger value="table" className="data-[state=active]:bg-primary">Table View</TabsTrigger>
-              <TabsTrigger value="cards" className="data-[state=active]:bg-primary">Card View</TabsTrigger>
-              <TabsTrigger value="platform" className="data-[state=active]:bg-primary">By Platform</TabsTrigger>
+              <TabsTrigger value="table" className="data-[state=active]:bg-primary text-white">Table View</TabsTrigger>
+              <TabsTrigger value="cards" className="data-[state=active]:bg-primary text-white">Card View</TabsTrigger>
+              <TabsTrigger value="platform" className="data-[state=active]:bg-primary text-white">By Platform</TabsTrigger>
             </TabsList>
 
             <TabsContent value="table">

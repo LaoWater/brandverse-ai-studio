@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -262,5 +263,42 @@
   /* Override for toggle switch backgrounds */
   [data-state="unchecked"].bg-input {
     background-color: rgb(20 20 35) !important;
+  }
+
+  /* TOAST STYLING - Fixed color alignment */
+  [data-sonner-toast] {
+    background: linear-gradient(135deg, rgba(91, 95, 238, 0.9) 0%, rgba(0, 212, 255, 0.1) 100%) !important;
+    border: 1px solid rgba(91, 95, 238, 0.4) !important;
+    color: white !important;
+    backdrop-filter: blur(20px) !important;
+    box-shadow: 0 10px 25px rgba(91, 95, 238, 0.3) !important;
+  }
+
+  [data-sonner-toast][data-type="success"] {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.9) 0%, rgba(91, 95, 238, 0.1) 100%) !important;
+    border: 1px solid rgba(34, 197, 94, 0.4) !important;
+  }
+
+  [data-sonner-toast][data-type="error"] {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.9) 0%, rgba(91, 95, 238, 0.1) 100%) !important;
+    border: 1px solid rgba(239, 68, 68, 0.4) !important;
+  }
+
+  [data-sonner-toast] [data-title] {
+    color: white !important;
+    font-weight: 600 !important;
+  }
+
+  [data-sonner-toast] [data-description] {
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+
+  /* Tab styling fixes for proper alignment */
+  [data-state="active"] {
+    color: white !important;
+  }
+
+  .tabs-list [data-state="inactive"] {
+    color: rgba(255, 255, 255, 0.7) !important;
   }
 }
