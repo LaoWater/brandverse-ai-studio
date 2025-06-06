@@ -371,27 +371,71 @@ const Settings = () => {
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="flex items-center space-x-4">
-                        <Label htmlFor="primaryColor1" className="text-white">Primary Color</Label>
-                        <input
-                          type="color"
-                          id="primaryColor1"
-                          value={companyData.primary_color_1}
-                          onChange={(e) => setCompanyData(prev => ({ ...prev, primary_color_1: e.target.value }))}
-                          className="w-16 h-10 rounded border border-white/20 bg-transparent"
-                        />
+                    <div className="space-y-4">
+                      <Label className="text-white text-lg font-semibold">Brand Colors</Label>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-3">
+                          <Label htmlFor="primaryColor1" className="text-white">Primary Brand Color</Label>
+                          <div className="flex items-center space-x-3">
+                            <input
+                              type="color"
+                              id="primaryColor1"
+                              value={companyData.primary_color_1}
+                              onChange={(e) => setCompanyData(prev => ({ ...prev, primary_color_1: e.target.value }))}
+                              className="w-20 h-12 rounded-lg border-2 border-white/20 bg-transparent cursor-pointer"
+                            />
+                            <div className="flex-1">
+                              <Input
+                                value={companyData.primary_color_1}
+                                onChange={(e) => setCompanyData(prev => ({ ...prev, primary_color_1: e.target.value }))}
+                                className="bg-white/5 border-white/20 text-white focus:border-primary"
+                                placeholder="#5B5FEE"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <Label htmlFor="primaryColor2" className="text-white">Secondary Brand Color</Label>
+                          <div className="flex items-center space-x-3">
+                            <input
+                              type="color"
+                              id="primaryColor2"
+                              value={companyData.primary_color_2}
+                              onChange={(e) => setCompanyData(prev => ({ ...prev, primary_color_2: e.target.value }))}
+                              className="w-20 h-12 rounded-lg border-2 border-white/20 bg-transparent cursor-pointer"
+                            />
+                            <div className="flex-1">
+                              <Input
+                                value={companyData.primary_color_2}
+                                onChange={(e) => setCompanyData(prev => ({ ...prev, primary_color_2: e.target.value }))}
+                                className="bg-white/5 border-white/20 text-white focus:border-primary"
+                                placeholder="#00D4FF"
+                              />
+                            </div>
+                          </div>
+                        </div>
                       </div>
                       
-                      <div className="flex items-center space-x-4">
-                        <Label htmlFor="primaryColor2" className="text-white">Accent Color</Label>
-                        <input
-                          type="color"
-                          id="primaryColor2"
-                          value={companyData.primary_color_2}
-                          onChange={(e) => setCompanyData(prev => ({ ...prev, primary_color_2: e.target.value }))}
-                          className="w-16 h-10 rounded border border-white/20 bg-transparent"
-                        />
+                      <div className="p-4 cosmic-card border-0 rounded-lg">
+                        <p className="text-white text-sm font-medium mb-2">Color Preview</p>
+                        <div className="flex space-x-4">
+                          <div 
+                            className="w-16 h-16 rounded-lg border-2 border-white/20"
+                            style={{ backgroundColor: companyData.primary_color_1 }}
+                          />
+                          <div 
+                            className="w-16 h-16 rounded-lg border-2 border-white/20"
+                            style={{ backgroundColor: companyData.primary_color_2 }}
+                          />
+                          <div 
+                            className="flex-1 h-16 rounded-lg border-2 border-white/20"
+                            style={{ 
+                              background: `linear-gradient(135deg, ${companyData.primary_color_1} 0%, ${companyData.primary_color_2} 100%)` 
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
 
