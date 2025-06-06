@@ -99,7 +99,7 @@ const Footer = () => {
           </div>
         </div>
         
-        <div className="mt-12 pt-8 border-t border-primary/10 flex flex-col md:flex-row md:items-center md:justify-between text-gray-400 text-sm">
+        <div className="mt-5 pt-8 border-t border-primary/10 flex flex-col md:flex-row md:items-center md:justify-between text-gray-400 text-sm">
           <p>&copy; {currentYear} Creators Multiverse. All rights reserved.</p>
           <p className="mt-2 md:mt-0">Created & Maintained by Free2Play</p>
         </div>

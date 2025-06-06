@@ -1,8 +1,8 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Sparkles, ChevronDown, User, Settings, LogOut, CreditCard } from "lucide-react";
+// REMOVE Sparkles if no longer used elsewhere, or keep if needed
+import { Menu, X, /* Sparkles, */ ChevronDown, User, Settings, LogOut, CreditCard } from "lucide-react"; 
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
+import CreatorsMultiverseLogo from "@/components/CreatorsMultiverseLogo"; // Adjust path if needed
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -39,11 +40,18 @@ const Navigation = () => {
   const navItems = user ? [...baseNavItems, ...authNavItems] : baseNavItems;
 
   return (
+    // Adjusted navbar height from h-16 to h-20 (or h-24 if more space is needed for the logo)
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-primary/20">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+        {/* Adjusted height here for the inner container as well */}
+        <div className="flex items-center justify-between h-16"> {/* Increased from h-16 */}
           <Link to="/" className="flex items-center space-x-2">
-            <Sparkles className="w-8 h-8 text-primary" />
+            {/* Replace Sparkles with CreatorsMultiverseLogo */}
+            {/* Adjust w-12 h-12 (width and height) as needed. 
+                The logo's viewBox will scale it correctly.
+                text-primary might not affect this SVG much as its colors are hardcoded.
+            */}
+            <CreatorsMultiverseLogo className="w-14 h-14" />
             <span className="text-xl font-bold text-white">Creators Multiverse</span>
           </Link>
 
