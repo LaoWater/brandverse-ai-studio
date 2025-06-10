@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight, Calendar, Zap, Globe, Share2, Lightbulb, Target, Rocket, Play, Users, TrendingUp, Clock } from "lucide-react";
@@ -7,20 +8,20 @@ const HeroSection = () => {
     <div className="min-h-screen">
       {/* Main Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Enhanced Cosmic Background Elements */}
+        {/* Enhanced Cosmic Background Elements - Speed Theme */}
         <div className="absolute inset-0 overflow-hidden">
-          {/* Central idea explosion */}
+          {/* Central light speed burst */}
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/30 rounded-full blur-3xl animate-pulse"></div>
           
-          {/* Idea spreading particles */}
-          <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-accent/40 rounded-full blur-2xl animate-cosmic-drift"></div>
-          <div className="absolute bottom-1/3 right-1/3 w-48 h-48 bg-primary/20 rounded-full blur-3xl animate-cosmic-drift" style={{ animationDelay: '-5s' }}></div>
-          <div className="absolute top-1/3 right-1/4 w-24 h-24 bg-accent/30 rounded-full blur-xl animate-cosmic-drift" style={{ animationDelay: '-10s' }}></div>
+          {/* Light speed streaks */}
+          <div className="absolute top-1/4 left-1/4 w-64 h-1 bg-gradient-to-r from-transparent via-accent/60 to-transparent rotate-45 blur-sm animate-pulse"></div>
+          <div className="absolute bottom-1/3 right-1/3 w-80 h-1 bg-gradient-to-r from-transparent via-primary/40 to-transparent -rotate-45 blur-sm animate-pulse" style={{ animationDelay: '-2s' }}></div>
+          <div className="absolute top-1/3 right-1/4 w-48 h-1 bg-gradient-to-r from-transparent via-accent/50 to-transparent rotate-12 blur-sm animate-pulse" style={{ animationDelay: '-4s' }}></div>
           
-          {/* Connection lines simulation */}
-          <div className="absolute top-1/2 left-1/2 w-64 h-1 bg-gradient-to-r from-transparent via-accent/50 to-transparent rotate-45 blur-sm"></div>
-          <div className="absolute top-1/2 left-1/2 w-48 h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent -rotate-45 blur-sm"></div>
-          <div className="absolute top-1/2 left-1/2 w-56 h-1 bg-gradient-to-r from-transparent via-accent/30 to-transparent rotate-12 blur-sm"></div>
+          {/* Speed particles */}
+          <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-accent rounded-full animate-ping"></div>
+          <div className="absolute bottom-1/3 right-1/3 w-2 h-2 bg-primary rounded-full animate-ping" style={{ animationDelay: '-1s' }}></div>
+          <div className="absolute top-1/3 right-1/4 w-2 h-2 bg-accent rounded-full animate-ping" style={{ animationDelay: '-3s' }}></div>
         </div>
         
         <div className="container mx-auto px-4 text-center relative z-10">
@@ -28,23 +29,23 @@ const HeroSection = () => {
             <div className="relative">
               <h1 className="text-5xl md:text-7xl font-bold leading-tight">
                 <span className="text-cosmic font-serif flex items-center justify-center gap-3">
-                  <Lightbulb className="w-12 h-12 md:w-16 md:h-16 text-accent animate-pulse" />
+                  <Zap className="w-12 h-12 md:w-16 md:h-16 text-accent animate-pulse" />
                   Transform Ideas
                 </span>
                 <br />
                 <span className="text-white">Into Viral Content</span>
                 <br />
-                <span className="text-accent">Across the Universe</span>
+                <span className="text-accent">At Light Speed</span>
               </h1>
             </div>
             
             <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              Watch your brilliant ideas gleam and sparkle as they spread across Twitter, Instagram, 
-              LinkedIn, and Facebook. Our AI captures your creative essence and amplifies it 
-              to reach every corner of the digital multiverse.
+              Watch your brilliant ideas accelerate from concept to viral content in seconds. 
+              Our AI captures your creative essence and propels it across Twitter, Instagram, 
+              LinkedIn, and Facebook at the speed of light.
             </p>
 
-            {/* Visual concept representation */}
+            {/* Visual concept representation - Speed Theme */}
             <div className="flex justify-center items-center space-x-8 my-12">
               <div className="text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mb-2 mx-auto animate-pulse">
@@ -53,18 +54,17 @@ const HeroSection = () => {
                 <p className="text-sm text-gray-400">Your Ideas</p>
               </div>
               
-              <div className="flex space-x-2">
-                <div className="w-2 h-2 bg-accent rounded-full animate-ping"></div>
-                <div className="w-2 h-2 bg-primary rounded-full animate-ping" style={{ animationDelay: '0.2s' }}></div>
-                <div className="w-2 h-2 bg-accent rounded-full animate-ping" style={{ animationDelay: '0.4s' }}></div>
-                <div className="w-2 h-2 bg-primary rounded-full animate-ping" style={{ animationDelay: '0.6s' }}></div>
+              <div className="flex space-x-1">
+                <div className="w-8 h-1 bg-gradient-to-r from-accent to-transparent animate-pulse"></div>
+                <div className="w-8 h-1 bg-gradient-to-r from-primary to-transparent animate-pulse" style={{ animationDelay: '0.1s' }}></div>
+                <div className="w-8 h-1 bg-gradient-to-r from-accent to-transparent animate-pulse" style={{ animationDelay: '0.2s' }}></div>
               </div>
               
               <div className="text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center mb-2 mx-auto">
                   <Target className="w-8 h-8 text-white" />
                 </div>
-                <p className="text-sm text-gray-400">Global Reach</p>
+                <p className="text-sm text-gray-400">Instant Impact</p>
               </div>
             </div>
             
@@ -95,7 +95,7 @@ const HeroSection = () => {
 
             {/* Social platform indicators */}
             <div className="flex justify-center items-center space-x-6 pt-8 opacity-70">
-              <div className="text-sm text-gray-400">Spreading to:</div>
+              <div className="text-sm text-gray-400">Publishing to:</div>
               <div className="flex space-x-4">
                 {/* Facebook Icon */}
                 <div className="w-8 h-8 bg-[#1877F2] rounded flex items-center justify-center">
