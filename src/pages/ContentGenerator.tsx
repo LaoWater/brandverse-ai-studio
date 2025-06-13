@@ -275,20 +275,16 @@ const ContentGenerator = () => {
                           <div key={platform.id} className="space-y-3">
                             <div 
                               className="flex items-center space-x-3 p-4 rounded-lg bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handlePlatformChange(platform.id, !isSelected);
-                              }}
+                              onClick={() => handlePlatformChange(platform.id, !isSelected)}
                             >
                               <Checkbox
                                 id={platform.id}
                                 checked={isSelected}
-                                readOnly
                                 className="border-white/20 pointer-events-none"
                               />
                               <div className="flex items-center space-x-2 flex-1 pointer-events-none">
                                 <IconComponent className={`w-5 h-5 ${platform.color}`} />
-                                <label className="text-white">
+                                <label className="text-white cursor-pointer">
                                   {platform.label}
                                 </label>
                               </div>
@@ -304,26 +300,20 @@ const ContentGenerator = () => {
                                 >
                                   <div 
                                     className="flex items-center space-x-2 cursor-pointer"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      handleMediaChange(platform.id, selectedMedia === 'image' ? null : 'image');
-                                    }}
+                                    onClick={() => handleMediaChange(platform.id, selectedMedia === 'image' ? null : 'image')}
                                   >
                                     <RadioGroupItem value="image" id={`${platform.id}-image`} className="border-white/20 pointer-events-none" />
-                                    <Label htmlFor={`${platform.id}-image`} className="text-gray-300 text-sm flex items-center pointer-events-none">
+                                    <Label htmlFor={`${platform.id}-image`} className="text-gray-300 text-sm flex items-center cursor-pointer pointer-events-none">
                                       <Image className="w-4 h-4 mr-1" />
                                       Image
                                     </Label>
                                   </div>
                                   <div 
                                     className="flex items-center space-x-2 cursor-pointer"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      handleMediaChange(platform.id, selectedMedia === 'video' ? null : 'video');
-                                    }}
+                                    onClick={() => handleMediaChange(platform.id, selectedMedia === 'video' ? null : 'video')}
                                   >
                                     <RadioGroupItem value="video" id={`${platform.id}-video`} className="border-white/20 pointer-events-none" />
-                                    <Label htmlFor={`${platform.id}-video`} className="text-gray-300 text-sm flex items-center pointer-events-none">
+                                    <Label htmlFor={`${platform.id}-video`} className="text-gray-300 text-sm flex items-center cursor-pointer pointer-events-none">
                                       <Video className="w-4 h-4 mr-1" />
                                       Video
                                     </Label>
