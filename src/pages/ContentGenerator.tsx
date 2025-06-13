@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -27,7 +26,6 @@ const ContentGenerator = () => {
     topic: "",
     contentType: "",
     tone: "",
-    length: "",
     language: "en",
     platforms: [] as string[],
     platformMedia: {} as Record<string, 'image' | 'video' | null>
@@ -95,13 +93,6 @@ const ContentGenerator = () => {
     "Urgent",
     "Conversational",
     "Authoritative"
-  ];
-
-  const lengths = [
-    "Short (1-2 sentences)",
-    "Medium (3-5 sentences)",
-    "Long (6+ sentences)",
-    "Thread/Carousel"
   ];
 
   const handlePlatformChange = (platformId: string, checked: boolean) => {
@@ -250,9 +241,19 @@ const ContentGenerator = () => {
                     </div>
                   </div>
 
-                  <div className="grid md:grid-cols-3 gap-6">
+                  <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-3">
-                      <Label htmlFor="tone" className="text-white font-medium">Tone of Voice</Label>
+                      <div className="flex items-center space-x-2">
+                        <Label htmlFor="tone" className="text-white font-medium">Sentiment/Tonality</Label>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="w-4 h-4 text-gray-400 hover:text-white" />
+                          </TooltipTrigger>
+                          <TooltipContent className="bg-gray-800 border-white/20 text-white max-w-xs">
+                            <p>Expand more on your company's presence, philosophy, and beliefs - the more depth you provide, the more accurate our models will perform.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                       <Select value={formData.tone} onValueChange={(value) => setFormData(prev => ({ ...prev, tone: value }))}>
                         <SelectTrigger className="bg-white/5 border-white/20 text-white h-12">
                           <SelectValue placeholder="Select tone" />
@@ -261,22 +262,6 @@ const ContentGenerator = () => {
                           {tones.map((tone) => (
                             <SelectItem key={tone} value={tone} className="text-white hover:bg-white/10">
                               {tone}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label htmlFor="length" className="text-white font-medium">Content Length</Label>
-                      <Select value={formData.length} onValueChange={(value) => setFormData(prev => ({ ...prev, length: value }))}>
-                        <SelectTrigger className="bg-white/5 border-white/20 text-white h-12">
-                          <SelectValue placeholder="Select length" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-gray-900 border-white/20">
-                          {lengths.map((length) => (
-                            <SelectItem key={length} value={length} className="text-white hover:bg-white/10">
-                              {length}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -320,16 +305,19 @@ const ContentGenerator = () => {
                         
                         return (
                           <div key={platform.id} className="space-y-3">
-                            <div className="flex items-center space-x-3 p-4 rounded-lg bg-white/5 border border-white/10">
+                            <div 
+                              className="flex items-center space-x-3 p-4 rounded-lg bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors"
+                              onClick={() => handlePlatformChange(platform.id, !isSelected)}
+                            >
                               <Checkbox
                                 id={platform.id}
                                 checked={isSelected}
                                 onCheckedChange={(checked) => handlePlatformChange(platform.id, checked as boolean)}
-                                className="border-white/20"
+                                className="border-white/20 pointer-events-none"
                               />
                               <div className="flex items-center space-x-2 flex-1">
                                 <IconComponent className={`w-5 h-5 ${platform.color}`} />
-                                <label htmlFor={platform.id} className="text-white cursor-pointer">
+                                <label className="text-white cursor-pointer pointer-events-none">
                                   {platform.label}
                                 </label>
                               </div>
@@ -343,16 +331,22 @@ const ContentGenerator = () => {
                                   onValueChange={(value) => handleMediaChange(platform.id, value as 'image' | 'video' | null)}
                                   className="flex space-x-4"
                                 >
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="image" id={`${platform.id}-image`} className="border-white/20" />
-                                    <Label htmlFor={`${platform.id}-image`} className="text-gray-300 text-sm flex items-center">
+                                  <div 
+                                    className="flex items-center space-x-2 cursor-pointer"
+                                    onClick={() => handleMediaChange(platform.id, selectedMedia === 'image' ? null : 'image')}
+                                  >
+                                    <RadioGroupItem value="image" id={`${platform.id}-image`} className="border-white/20 pointer-events-none" />
+                                    <Label htmlFor={`${platform.id}-image`} className="text-gray-300 text-sm flex items-center cursor-pointer pointer-events-none">
                                       <Image className="w-4 h-4 mr-1" />
                                       Image
                                     </Label>
                                   </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="video" id={`${platform.id}-video`} className="border-white/20" />
-                                    <Label htmlFor={`${platform.id}-video`} className="text-gray-300 text-sm flex items-center">
+                                  <div 
+                                    className="flex items-center space-x-2 cursor-pointer"
+                                    onClick={() => handleMediaChange(platform.id, selectedMedia === 'video' ? null : 'video')}
+                                  >
+                                    <RadioGroupItem value="video" id={`${platform.id}-video`} className="border-white/20 pointer-events-none" />
+                                    <Label htmlFor={`${platform.id}-video`} className="text-gray-300 text-sm flex items-center cursor-pointer pointer-events-none">
                                       <Video className="w-4 h-4 mr-1" />
                                       Video
                                     </Label>

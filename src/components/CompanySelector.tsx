@@ -43,7 +43,7 @@ export const CompanySelector = () => {
       <DropdownMenuTrigger asChild>
         <Button 
           variant="outline" 
-          className="justify-between bg-white/5 border-white/20 text-white hover:bg-white/10 min-w-[200px]"
+          className="justify-between bg-white/5 border-white/20 text-white hover:bg-white/10 hover:text-white min-w-[200px]"
         >
           <div className="flex items-center space-x-2">
             <Building2 className="w-4 h-4" />
@@ -59,7 +59,7 @@ export const CompanySelector = () => {
           <DropdownMenuItem
             key={company.id}
             onClick={() => selectCompany(company)}
-            className="text-white hover:bg-white/10 cursor-pointer"
+            className="text-white hover:bg-blue-600/20 hover:text-white cursor-pointer"
           >
             <div className="flex items-center justify-between w-full">
               <span className="truncate">{company.name}</span>
@@ -74,7 +74,7 @@ export const CompanySelector = () => {
         <DropdownMenuSeparator className="bg-white/20" />
         <DropdownMenuItem
           onClick={() => navigate('/brand-setup')}
-          className="text-accent hover:bg-white/10 cursor-pointer"
+          className="text-accent hover:bg-blue-600/20 hover:text-accent cursor-pointer"
         >
           <Plus className="w-4 h-4 mr-2" />
           Add New Company
