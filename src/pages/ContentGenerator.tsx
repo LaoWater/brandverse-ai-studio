@@ -24,7 +24,6 @@ const ContentGenerator = () => {
   
   const [formData, setFormData] = useState({
     topic: "",
-    contentType: "",
     tone: "",
     language: "en",
     platforms: [] as string[],
@@ -69,19 +68,6 @@ const ContentGenerator = () => {
     { id: "linkedin", label: "LinkedIn", icon: Linkedin, color: "text-blue-600" },
     { id: "twitter", label: "Twitter", icon: Twitter, color: "text-sky-500" },
     { id: "facebook", label: "Facebook", icon: Facebook, color: "text-blue-700" }
-  ];
-
-  const contentTypes = [
-    "Educational Post",
-    "Promotional Content",
-    "Behind the Scenes",
-    "User-Generated Content",
-    "Thought Leadership",
-    "Product Announcement",
-    "How-to Guide",
-    "Industry News",
-    "Company Update",
-    "Event Promotion"
   ];
 
   const tones = [
@@ -225,50 +211,6 @@ const ContentGenerator = () => {
                     </div>
 
                     <div className="space-y-3">
-                      <Label htmlFor="contentType" className="text-white font-medium">Content Type</Label>
-                      <Select value={formData.contentType} onValueChange={(value) => setFormData(prev => ({ ...prev, contentType: value }))}>
-                        <SelectTrigger className="bg-white/5 border-white/20 text-white h-12">
-                          <SelectValue placeholder="Select content type" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-gray-900 border-white/20">
-                          {contentTypes.map((type) => (
-                            <SelectItem key={type} value={type} className="text-white hover:bg-white/10">
-                              {type}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-2">
-                        <Label htmlFor="tone" className="text-white font-medium">Sentiment/Tonality</Label>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="w-4 h-4 text-gray-400 hover:text-white" />
-                          </TooltipTrigger>
-                          <TooltipContent className="bg-gray-800 border-white/20 text-white max-w-xs">
-                            <p>Expand more on your company's presence, philosophy, and beliefs - the more depth you provide, the more accurate our models will perform.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <Select value={formData.tone} onValueChange={(value) => setFormData(prev => ({ ...prev, tone: value }))}>
-                        <SelectTrigger className="bg-white/5 border-white/20 text-white h-12">
-                          <SelectValue placeholder="Select tone" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-gray-900 border-white/20">
-                          {tones.map((tone) => (
-                            <SelectItem key={tone} value={tone} className="text-white hover:bg-white/10">
-                              {tone}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-3">
                       <div className="flex items-center space-x-2">
                         <Label htmlFor="language" className="text-white font-medium">Language</Label>
                         <Tooltip>
@@ -295,6 +237,32 @@ const ContentGenerator = () => {
                     </div>
                   </div>
 
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Label htmlFor="tone" className="text-white font-medium">Sentiment/Tonality</Label>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="w-4 h-4 text-gray-400 hover:text-white" />
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-gray-800 border-white/20 text-white max-w-xs">
+                          <p>Expand more on your company's presence, philosophy, and beliefs - the more depth you provide, the more accurate our models will perform.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <Select value={formData.tone} onValueChange={(value) => setFormData(prev => ({ ...prev, tone: value }))}>
+                      <SelectTrigger className="bg-white/5 border-white/20 text-white h-12">
+                        <SelectValue placeholder="Select tone" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-900 border-white/20">
+                        {tones.map((tone) => (
+                          <SelectItem key={tone} value={tone} className="text-white hover:bg-white/10">
+                            {tone}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <div className="space-y-4">
                     <Label className="text-white font-medium">Target Platforms</Label>
                     <div className="grid grid-cols-2 gap-4">
@@ -307,17 +275,20 @@ const ContentGenerator = () => {
                           <div key={platform.id} className="space-y-3">
                             <div 
                               className="flex items-center space-x-3 p-4 rounded-lg bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors"
-                              onClick={() => handlePlatformChange(platform.id, !isSelected)}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handlePlatformChange(platform.id, !isSelected);
+                              }}
                             >
                               <Checkbox
                                 id={platform.id}
                                 checked={isSelected}
-                                onCheckedChange={(checked) => handlePlatformChange(platform.id, checked as boolean)}
+                                readOnly
                                 className="border-white/20 pointer-events-none"
                               />
-                              <div className="flex items-center space-x-2 flex-1">
+                              <div className="flex items-center space-x-2 flex-1 pointer-events-none">
                                 <IconComponent className={`w-5 h-5 ${platform.color}`} />
-                                <label className="text-white cursor-pointer pointer-events-none">
+                                <label className="text-white">
                                   {platform.label}
                                 </label>
                               </div>
@@ -333,20 +304,26 @@ const ContentGenerator = () => {
                                 >
                                   <div 
                                     className="flex items-center space-x-2 cursor-pointer"
-                                    onClick={() => handleMediaChange(platform.id, selectedMedia === 'image' ? null : 'image')}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      handleMediaChange(platform.id, selectedMedia === 'image' ? null : 'image');
+                                    }}
                                   >
                                     <RadioGroupItem value="image" id={`${platform.id}-image`} className="border-white/20 pointer-events-none" />
-                                    <Label htmlFor={`${platform.id}-image`} className="text-gray-300 text-sm flex items-center cursor-pointer pointer-events-none">
+                                    <Label htmlFor={`${platform.id}-image`} className="text-gray-300 text-sm flex items-center pointer-events-none">
                                       <Image className="w-4 h-4 mr-1" />
                                       Image
                                     </Label>
                                   </div>
                                   <div 
                                     className="flex items-center space-x-2 cursor-pointer"
-                                    onClick={() => handleMediaChange(platform.id, selectedMedia === 'video' ? null : 'video')}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      handleMediaChange(platform.id, selectedMedia === 'video' ? null : 'video');
+                                    }}
                                   >
                                     <RadioGroupItem value="video" id={`${platform.id}-video`} className="border-white/20 pointer-events-none" />
-                                    <Label htmlFor={`${platform.id}-video`} className="text-gray-300 text-sm flex items-center cursor-pointer pointer-events-none">
+                                    <Label htmlFor={`${platform.id}-video`} className="text-gray-300 text-sm flex items-center pointer-events-none">
                                       <Video className="w-4 h-4 mr-1" />
                                       Video
                                     </Label>
