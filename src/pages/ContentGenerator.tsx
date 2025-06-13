@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -10,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ArrowRight, Sparkles, Instagram, Facebook, Twitter, Linkedin, Info, Image, Video } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -293,17 +291,15 @@ const ContentGenerator = () => {
                             {isSelected && (
                               <div className="ml-4 space-y-2">
                                 <Label className="text-gray-300 text-sm">Media Type (optional)</Label>
-                                <RadioGroup 
-                                  value={selectedMedia || ""} 
-                                  onValueChange={(value) => handleMediaChange(platform.id, value as 'image' | 'video' | null)}
-                                  className="flex space-x-4"
-                                >
+                                <div className="flex space-x-4">
                                   <div 
                                     className="flex items-center space-x-2 cursor-pointer"
                                     onClick={() => handleMediaChange(platform.id, selectedMedia === 'image' ? null : 'image')}
                                   >
-                                    <RadioGroupItem value="image" id={`${platform.id}-image`} className="border-white/20 pointer-events-none" />
-                                    <Label htmlFor={`${platform.id}-image`} className="text-gray-300 text-sm flex items-center cursor-pointer pointer-events-none">
+                                    <div className={`w-4 h-4 rounded-full border-2 border-white/20 flex items-center justify-center ${selectedMedia === 'image' ? 'bg-white' : ''}`}>
+                                      {selectedMedia === 'image' && <div className="w-2 h-2 bg-gray-900 rounded-full" />}
+                                    </div>
+                                    <Label className="text-gray-300 text-sm flex items-center cursor-pointer">
                                       <Image className="w-4 h-4 mr-1" />
                                       Image
                                     </Label>
@@ -312,13 +308,15 @@ const ContentGenerator = () => {
                                     className="flex items-center space-x-2 cursor-pointer"
                                     onClick={() => handleMediaChange(platform.id, selectedMedia === 'video' ? null : 'video')}
                                   >
-                                    <RadioGroupItem value="video" id={`${platform.id}-video`} className="border-white/20 pointer-events-none" />
-                                    <Label htmlFor={`${platform.id}-video`} className="text-gray-300 text-sm flex items-center cursor-pointer pointer-events-none">
+                                    <div className={`w-4 h-4 rounded-full border-2 border-white/20 flex items-center justify-center ${selectedMedia === 'video' ? 'bg-white' : ''}`}>
+                                      {selectedMedia === 'video' && <div className="w-2 h-2 bg-gray-900 rounded-full" />}
+                                    </div>
+                                    <Label className="text-gray-300 text-sm flex items-center cursor-pointer">
                                       <Video className="w-4 h-4 mr-1" />
                                       Video
                                     </Label>
                                   </div>
-                                </RadioGroup>
+                                </div>
                               </div>
                             )}
                           </div>
