@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -10,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ArrowRight, Sparkles, Instagram, Facebook, Twitter, Linkedin, Info, Image, Video, Wand2 } from "lucide-react";
+import { ArrowRight, Sparkles, Instagram, Facebook, Twitter, Linkedin, Info, Image, Video, Type, Wand2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -26,7 +25,7 @@ const ContentGenerator = () => {
     tone: "",
     language: "en",
     platforms: [] as string[],
-    platformMedia: {} as Record<string, 'auto' | 'image' | 'video' | null>
+    platformMedia: {} as Record<string, 'auto' | 'text' | 'image' | 'video'>
   });
 
   const languages = [
@@ -103,7 +102,7 @@ const ContentGenerator = () => {
     });
   };
 
-  const handleMediaChange = (platformId: string, mediaType: 'auto' | 'image' | 'video' | null) => {
+  const handleMediaChange = (platformId: string, mediaType: 'auto' | 'text' | 'image' | 'video') => {
     console.log("Media change:", platformId, mediaType);
     setFormData(prev => ({
       ...prev,
@@ -276,16 +275,19 @@ const ContentGenerator = () => {
                         
                         return (
                           <div key={platform.id} className="space-y-3">
-                            <div className="flex items-center space-x-3 p-4 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+                            <div 
+                              className="flex items-center space-x-3 p-4 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer"
+                              onClick={() => handlePlatformChange(platform.id, !isSelected)}
+                            >
                               <Checkbox
                                 id={platform.id}
                                 checked={isSelected}
-                                onCheckedChange={(checked) => handlePlatformChange(platform.id, !!checked)}
-                                className="border-white/20"
+                                onChange={() => {}} // Controlled by parent click
+                                className="border-white/20 pointer-events-none"
                               />
                               <div className="flex items-center space-x-2 flex-1">
                                 <IconComponent className={`w-5 h-5 ${platform.color}`} />
-                                <label htmlFor={platform.id} className="text-white cursor-pointer">
+                                <label className="text-white cursor-pointer">
                                   {platform.label}
                                 </label>
                               </div>
@@ -294,13 +296,10 @@ const ContentGenerator = () => {
                             {isSelected && (
                               <div className="ml-4 space-y-2">
                                 <Label className="text-gray-300 text-sm">Media Type</Label>
-                                <div className="flex space-x-4">
+                                <div className="grid grid-cols-2 gap-2">
                                   <div 
-                                    className="flex items-center space-x-2 cursor-pointer"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleMediaChange(platform.id, selectedMedia === 'auto' ? null : 'auto');
-                                    }}
+                                    className="flex items-center space-x-2 cursor-pointer p-2 rounded hover:bg-white/5"
+                                    onClick={() => handleMediaChange(platform.id, 'auto')}
                                   >
                                     <div className={`w-4 h-4 rounded-full border-2 border-white/20 flex items-center justify-center ${selectedMedia === 'auto' ? 'bg-white' : ''}`}>
                                       {selectedMedia === 'auto' && <div className="w-2 h-2 bg-gray-900 rounded-full" />}
@@ -311,11 +310,20 @@ const ContentGenerator = () => {
                                     </Label>
                                   </div>
                                   <div 
-                                    className="flex items-center space-x-2 cursor-pointer"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleMediaChange(platform.id, selectedMedia === 'image' ? null : 'image');
-                                    }}
+                                    className="flex items-center space-x-2 cursor-pointer p-2 rounded hover:bg-white/5"
+                                    onClick={() => handleMediaChange(platform.id, 'text')}
+                                  >
+                                    <div className={`w-4 h-4 rounded-full border-2 border-white/20 flex items-center justify-center ${selectedMedia === 'text' ? 'bg-white' : ''}`}>
+                                      {selectedMedia === 'text' && <div className="w-2 h-2 bg-gray-900 rounded-full" />}
+                                    </div>
+                                    <Label className="text-gray-300 text-sm flex items-center cursor-pointer">
+                                      <Type className="w-4 h-4 mr-1" />
+                                      Text
+                                    </Label>
+                                  </div>
+                                  <div 
+                                    className="flex items-center space-x-2 cursor-pointer p-2 rounded hover:bg-white/5"
+                                    onClick={() => handleMediaChange(platform.id, 'image')}
                                   >
                                     <div className={`w-4 h-4 rounded-full border-2 border-white/20 flex items-center justify-center ${selectedMedia === 'image' ? 'bg-white' : ''}`}>
                                       {selectedMedia === 'image' && <div className="w-2 h-2 bg-gray-900 rounded-full" />}
@@ -326,11 +334,8 @@ const ContentGenerator = () => {
                                     </Label>
                                   </div>
                                   <div 
-                                    className="flex items-center space-x-2 cursor-pointer"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleMediaChange(platform.id, selectedMedia === 'video' ? null : 'video');
-                                    }}
+                                    className="flex items-center space-x-2 cursor-pointer p-2 rounded hover:bg-white/5"
+                                    onClick={() => handleMediaChange(platform.id, 'video')}
                                   >
                                     <div className={`w-4 h-4 rounded-full border-2 border-white/20 flex items-center justify-center ${selectedMedia === 'video' ? 'bg-white' : ''}`}>
                                       {selectedMedia === 'video' && <div className="w-2 h-2 bg-gray-900 rounded-full" />}
