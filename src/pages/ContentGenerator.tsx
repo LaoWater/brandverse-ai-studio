@@ -1,179 +1,365 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
+import { CompanySelector } from "@/components/CompanySelector";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowRight, Image, Calendar, Check, X, Instagram, Facebook, Twitter, Linkedin } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ArrowRight, Sparkles, Instagram, Facebook, Twitter, Linkedin, Info, Image, Video } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCompany } from "@/contexts/CompanyContext";
 
 const ContentGenerator = () => {
-  const [topic, setTopic] = useState("");
-  const [intent, setIntent] = useState("");
-  const [generatedContent, setGeneratedContent] = useState<any>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [selectedPlatforms, setSelectedPlatforms] = useState({
-    instagram: true,
-    facebook: true,
-    twitter: true,
-    linkedin: true
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { selectedCompany } = useCompany();
+  const [loading, setLoading] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    topic: "",
+    contentType: "",
+    tone: "",
+    length: "",
+    language: "en",
+    platforms: [] as string[],
+    platformMedia: {} as Record<string, 'image' | 'video' | null>
   });
 
-  const platforms = [
-    { id: 'instagram', name: 'Instagram', icon: Instagram, color: 'from-pink-500 to-purple-600' },
-    { id: 'facebook', name: 'Facebook', icon: Facebook, color: 'from-blue-600 to-blue-700' },
-    { id: 'twitter', name: 'Twitter', icon: Twitter, color: 'from-sky-400 to-sky-600' },
-    { id: 'linkedin', name: 'LinkedIn', icon: Linkedin, color: 'from-blue-700 to-blue-800' }
+  const languages = [
+    { code: "en", name: "English", isDefault: true },
+    { code: "es", name: "Spanish" },
+    { code: "fr", name: "French" },
+    { code: "de", name: "German" },
+    { code: "it", name: "Italian" },
+    { code: "pt", name: "Portuguese" },
+    { code: "ru", name: "Russian" },
+    { code: "ja", name: "Japanese" },
+    { code: "ko", name: "Korean" },
+    { code: "zh", name: "Chinese (Simplified)" },
+    { code: "zh-tw", name: "Chinese (Traditional)" },
+    { code: "ar", name: "Arabic" },
+    { code: "hi", name: "Hindi" },
+    { code: "nl", name: "Dutch" },
+    { code: "sv", name: "Swedish" },
+    { code: "da", name: "Danish" },
+    { code: "no", name: "Norwegian" },
+    { code: "fi", name: "Finnish" },
+    { code: "pl", name: "Polish" },
+    { code: "tr", name: "Turkish" },
+    { code: "he", name: "Hebrew" },
+    { code: "th", name: "Thai" },
+    { code: "vi", name: "Vietnamese" },
+    { code: "uk", name: "Ukrainian" },
+    { code: "cs", name: "Czech" },
+    { code: "hu", name: "Hungarian" },
+    { code: "ro", name: "Romanian" },
+    { code: "bg", name: "Bulgarian" },
+    { code: "hr", name: "Croatian" },
+    { code: "sk", name: "Slovak" }
   ];
 
-  const mockContent = {
-    instagram: {
-      caption: "🚀 Ready to transform your content strategy? Creators Multiverse makes it effortless to scale your brand across platforms. From vision to viral - we've got you covered! ✨\n\n#CreatorsMultiverse #ContentStrategy #AIContent #SocialMediaGrowth #DigitalMarketing",
-      hashtags: ["#CreatorsMultiverse", "#ContentStrategy", "#AIContent", "#SocialMediaGrowth", "#DigitalMarketing"],
-      imagePrompt: "Futuristic digital workspace with holographic social media icons floating around a content creator"
-    },
-    facebook: {
-      caption: "Transform your content strategy with Creators Multiverse! 🌟\n\nWe're revolutionizing how brands connect with their audience across social platforms. Our AI-powered tools help you create authentic, engaging content that resonates with your community.\n\nReady to take your social media game to the next level? Let's make your brand shine! ✨",
-      hashtags: ["#ContentStrategy", "#DigitalMarketing", "#SocialMedia", "#BrandGrowth"],
-      imagePrompt: "Professional brand visualization with multiple social media platforms connected"
-    },
-    linkedin: {
-      caption: "The future of content creation is here. At Creators Multiverse, we believe every brand deserves content that truly represents their vision and values.\n\nOur AI-powered platform helps solopreneurs and marketing teams create authentic, platform-optimized content at scale.\n\nWhat's your biggest content creation challenge?",
-      hashtags: ["#ContentCreation", "#DigitalMarketing", "#AI", "#Entrepreneurship"],
-      imagePrompt: "Professional minimalist graphic showing content flowing across multiple platform icons"
-    },
-    twitter: {
-      caption: "Content creation shouldn't be a bottleneck for your business growth 🚀\n\nWith Creators Multiverse, generate brand-aligned posts for Instagram, LinkedIn, Twitter & more in minutes.\n\nWhat platform do you struggle with most?",
-      hashtags: ["#ContentCreation", "#AI", "#SocialMedia"],
-      imagePrompt: "Dynamic graphic showing content multiplying across different social platforms"
-    }
-  };
+  const platforms = [
+    { id: "instagram", label: "Instagram", icon: Instagram, color: "text-pink-500" },
+    { id: "linkedin", label: "LinkedIn", icon: Linkedin, color: "text-blue-600" },
+    { id: "twitter", label: "Twitter", icon: Twitter, color: "text-sky-500" },
+    { id: "facebook", label: "Facebook", icon: Facebook, color: "text-blue-700" }
+  ];
+
+  const contentTypes = [
+    "Educational Post",
+    "Promotional Content",
+    "Behind the Scenes",
+    "User-Generated Content",
+    "Thought Leadership",
+    "Product Announcement",
+    "How-to Guide",
+    "Industry News",
+    "Company Update",
+    "Event Promotion"
+  ];
+
+  const tones = [
+    "Professional",
+    "Casual & Friendly",
+    "Inspirational",
+    "Humorous",
+    "Educational",
+    "Urgent",
+    "Conversational",
+    "Authoritative"
+  ];
+
+  const lengths = [
+    "Short (1-2 sentences)",
+    "Medium (3-5 sentences)",
+    "Long (6+ sentences)",
+    "Thread/Carousel"
+  ];
 
   const handlePlatformChange = (platformId: string, checked: boolean) => {
-    setSelectedPlatforms(prev => ({
-      ...prev,
-      [platformId]: checked
-    }));
-  };
-
-  const handleGenerate = async () => {
-    if (!topic.trim()) {
-      toast({
-        title: "Please enter a topic",
-        description: "We need a topic to generate amazing content for you!",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const selectedCount = Object.values(selectedPlatforms).filter(Boolean).length;
-    if (selectedCount === 0) {
-      toast({
-        title: "Please select at least one platform",
-        description: "Choose which platforms you want to create content for!",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsGenerating(true);
-    
-    // Simulate AI generation delay
-    setTimeout(() => {
-      setGeneratedContent(mockContent);
-      setIsGenerating(false);
-      toast({
-        title: "Content Generated! ✨",
-        description: `Content created for ${selectedCount} platform${selectedCount > 1 ? 's' : ''}.`
-      });
-    }, 2000);
-  };
-
-  const handleApprove = (platform: string) => {
-    toast({
-      title: "Content Approved! 🎉",
-      description: `${platform} post has been added to your campaign calendar.`
+    setFormData(prev => {
+      const newPlatforms = checked 
+        ? [...prev.platforms, platformId]
+        : prev.platforms.filter(p => p !== platformId);
+      
+      // Remove media selection if platform is unchecked
+      const newPlatformMedia = { ...prev.platformMedia };
+      if (!checked) {
+        delete newPlatformMedia[platformId];
+      }
+      
+      return {
+        ...prev,
+        platforms: newPlatforms,
+        platformMedia: newPlatformMedia
+      };
     });
   };
 
-  const handleAbort = () => {
-    setGeneratedContent(null);
-    setTopic("");
-    setIntent("");
+  const handleMediaChange = (platformId: string, mediaType: 'image' | 'video' | null) => {
+    setFormData(prev => ({
+      ...prev,
+      platformMedia: {
+        ...prev.platformMedia,
+        [platformId]: mediaType
+      }
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to generate content.",
+        variant: "destructive",
+      });
+      navigate('/auth');
+      return;
+    }
+
+    if (!selectedCompany) {
+      toast({
+        title: "Company Required",
+        description: "Please select a company to generate content for.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.platforms.length === 0) {
+      toast({
+        title: "Platform Required",
+        description: "Please select at least one platform.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    console.log("Generating content with data:", { ...formData, company: selectedCompany.name });
+
+    // Simulate content generation
+    setTimeout(() => {
+      toast({
+        title: "Content Generated! ✨",
+        description: "Your content has been created and is ready for review."
+      });
+      setLoading(false);
+      navigate("/post-manager");
+    }, 2000);
   };
 
   return (
-    <div className="min-h-screen">
-      <Navigation />
-      
-      <div className="container mx-auto px-4 pt-24 pb-12">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-white mb-4">
-              Content <span className="text-cosmic font-serif">Generator</span>
-            </h1>
-            <p className="text-gray-300 text-lg">
-              Transform your ideas into platform-optimized content instantly
-            </p>
-          </div>
+    <TooltipProvider>
+      <div className="min-h-screen">
+        <Navigation />
+        
+        <div className="container mx-auto px-4 pt-24 pb-12">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-8">
+              <h1 className="text-4xl font-bold text-white mb-4">
+                Generate <span className="text-cosmic font-serif">Content</span>
+              </h1>
+              <p className="text-gray-300 text-lg">
+                Create engaging content powered by AI that matches your brand voice
+              </p>
+            </div>
 
-          {!generatedContent ? (
-            <div className="max-w-2xl mx-auto">
-              <Card className="cosmic-card">
-                <CardHeader>
-                  <CardTitle className="text-white">Generate Content</CardTitle>
-                  <CardDescription className="text-gray-300">
-                    Tell us what you want to create
-                  </CardDescription>
-                </CardHeader>
-                
-                <CardContent className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="topic" className="text-white">Topic/Subject</Label>
-                    <Input
-                      id="topic"
-                      value={topic}
-                      onChange={(e) => setTopic(e.target.value)}
-                      placeholder="e.g., Product launch, Company update, Tips & tricks"
-                      className="bg-white/5 border-white/20 text-white placeholder:text-gray-400"
-                    />
+            <Card className="cosmic-card border-0 cosmic-glow mb-6">
+              <CardHeader className="cosmic-card-header">
+                <CardTitle className="text-white text-xl">Company Selection</CardTitle>
+                <CardDescription className="text-gray-300">
+                  Choose the company you want to generate content for
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CompanySelector />
+              </CardContent>
+            </Card>
+
+            <Card className="cosmic-card border-0 cosmic-glow">
+              <CardHeader className="cosmic-card-header">
+                <CardTitle className="text-white text-2xl font-bold flex items-center">
+                  <Sparkles className="w-6 h-6 mr-2 text-accent" />
+                  Content Details
+                </CardTitle>
+                <CardDescription className="text-gray-300 text-base">
+                  Provide details about the content you want to generate
+                </CardDescription>
+              </CardHeader>
+              
+              <CardContent className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      <Label htmlFor="topic" className="text-white font-medium">Topic/Subject</Label>
+                      <Input
+                        id="topic"
+                        value={formData.topic}
+                        onChange={(e) => setFormData(prev => ({ ...prev, topic: e.target.value }))}
+                        placeholder="What do you want to post about?"
+                        className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 h-12"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label htmlFor="contentType" className="text-white font-medium">Content Type</Label>
+                      <Select value={formData.contentType} onValueChange={(value) => setFormData(prev => ({ ...prev, contentType: value }))}>
+                        <SelectTrigger className="bg-white/5 border-white/20 text-white h-12">
+                          <SelectValue placeholder="Select content type" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-gray-900 border-white/20">
+                          {contentTypes.map((type) => (
+                            <SelectItem key={type} value={type} className="text-white hover:bg-white/10">
+                              {type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="intent" className="text-white">Intent & Direction</Label>
-                    <Textarea
-                      id="intent"
-                      value={intent}
-                      onChange={(e) => setIntent(e.target.value)}
-                      placeholder="What's the goal? Who's the audience? Any specific tone or style?"
-                      className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 min-h-[100px]"
-                    />
+                  <div className="grid md:grid-cols-3 gap-6">
+                    <div className="space-y-3">
+                      <Label htmlFor="tone" className="text-white font-medium">Tone of Voice</Label>
+                      <Select value={formData.tone} onValueChange={(value) => setFormData(prev => ({ ...prev, tone: value }))}>
+                        <SelectTrigger className="bg-white/5 border-white/20 text-white h-12">
+                          <SelectValue placeholder="Select tone" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-gray-900 border-white/20">
+                          {tones.map((tone) => (
+                            <SelectItem key={tone} value={tone} className="text-white hover:bg-white/10">
+                              {tone}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label htmlFor="length" className="text-white font-medium">Content Length</Label>
+                      <Select value={formData.length} onValueChange={(value) => setFormData(prev => ({ ...prev, length: value }))}>
+                        <SelectTrigger className="bg-white/5 border-white/20 text-white h-12">
+                          <SelectValue placeholder="Select length" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-gray-900 border-white/20">
+                          {lengths.map((length) => (
+                            <SelectItem key={length} value={length} className="text-white hover:bg-white/10">
+                              {length}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2">
+                        <Label htmlFor="language" className="text-white font-medium">Language</Label>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="w-4 h-4 text-gray-400 hover:text-white" />
+                          </TooltipTrigger>
+                          <TooltipContent className="bg-gray-800 border-white/20 text-white max-w-xs">
+                            <p>Model performance might not be state-of-the-art for non-English tasks</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <Select value={formData.language} onValueChange={(value) => setFormData(prev => ({ ...prev, language: value }))}>
+                        <SelectTrigger className="bg-white/5 border-white/20 text-white h-12">
+                          <SelectValue placeholder="Select language" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-gray-900 border-white/20 max-h-60">
+                          {languages.map((lang) => (
+                            <SelectItem key={lang.code} value={lang.code} className="text-white hover:bg-white/10">
+                              {lang.name} {lang.isDefault && "(Default)"}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <Label className="text-white font-semibold">Target Platforms</Label>
+                  <div className="space-y-4">
+                    <Label className="text-white font-medium">Target Platforms</Label>
                     <div className="grid grid-cols-2 gap-4">
                       {platforms.map((platform) => {
                         const IconComponent = platform.icon;
+                        const isSelected = formData.platforms.includes(platform.id);
+                        const selectedMedia = formData.platformMedia[platform.id];
+                        
                         return (
-                          <div key={platform.id} className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
-                            <Checkbox
-                              id={platform.id}
-                              checked={selectedPlatforms[platform.id as keyof typeof selectedPlatforms]}
-                              onCheckedChange={(checked) => handlePlatformChange(platform.id, checked as boolean)}
-                              className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                            />
-                            <label
-                              htmlFor={platform.id}
-                              className="flex items-center space-x-2 text-white cursor-pointer flex-1"
-                            >
-                              <IconComponent className="w-5 h-5" />
-                              <span className="font-medium">{platform.name}</span>
-                            </label>
+                          <div key={platform.id} className="space-y-3">
+                            <div className="flex items-center space-x-3 p-4 rounded-lg bg-white/5 border border-white/10">
+                              <Checkbox
+                                id={platform.id}
+                                checked={isSelected}
+                                onCheckedChange={(checked) => handlePlatformChange(platform.id, checked as boolean)}
+                                className="border-white/20"
+                              />
+                              <div className="flex items-center space-x-2 flex-1">
+                                <IconComponent className={`w-5 h-5 ${platform.color}`} />
+                                <label htmlFor={platform.id} className="text-white cursor-pointer">
+                                  {platform.label}
+                                </label>
+                              </div>
+                            </div>
+                            
+                            {isSelected && (
+                              <div className="ml-4 space-y-2">
+                                <Label className="text-gray-300 text-sm">Media Type (optional)</Label>
+                                <RadioGroup 
+                                  value={selectedMedia || ""} 
+                                  onValueChange={(value) => handleMediaChange(platform.id, value as 'image' | 'video' | null)}
+                                  className="flex space-x-4"
+                                >
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="image" id={`${platform.id}-image`} className="border-white/20" />
+                                    <Label htmlFor={`${platform.id}-image`} className="text-gray-300 text-sm flex items-center">
+                                      <Image className="w-4 h-4 mr-1" />
+                                      Image
+                                    </Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="video" id={`${platform.id}-video`} className="border-white/20" />
+                                    <Label htmlFor={`${platform.id}-video`} className="text-gray-300 text-sm flex items-center">
+                                      <Video className="w-4 h-4 mr-1" />
+                                      Video
+                                    </Label>
+                                  </div>
+                                </RadioGroup>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -181,103 +367,21 @@ const ContentGenerator = () => {
                   </div>
 
                   <Button 
-                    onClick={handleGenerate}
-                    disabled={isGenerating}
+                    type="submit" 
                     size="lg" 
-                    className="w-full bg-primary hover:bg-primary/90 text-white glow-effect"
+                    className="w-full cosmic-button text-white font-semibold h-12 mt-8"
+                    disabled={loading || !selectedCompany || formData.platforms.length === 0}
                   >
-                    {isGenerating ? "Generating..." : "Generate Content"}
+                    {loading ? 'Generating Content...' : 'Generate Content'} 
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Button>
-                </CardContent>
-              </Card>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {/* Header with Abort Button */}
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-white">Generated Content</h2>
-                <Button 
-                  onClick={handleAbort}
-                  variant="outline"
-                  className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
-                >
-                  <X className="w-4 h-4 mr-2" />
-                  Abort & Start Over
-                </Button>
-              </div>
-
-              {/* All Platform Cards */}
-              <div className="grid lg:grid-cols-2 gap-6">
-                {platforms
-                  .filter(platform => selectedPlatforms[platform.id as keyof typeof selectedPlatforms])
-                  .map((platform) => {
-                    const content = generatedContent[platform.id as keyof typeof generatedContent];
-                    const IconComponent = platform.icon;
-                    return (
-                      <Card key={platform.id} className="cosmic-card">
-                        <CardHeader>
-                          <div className="flex items-center justify-between">
-                            <CardTitle className="text-white flex items-center gap-3">
-                              <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${platform.color} flex items-center justify-center text-white font-semibold`}>
-                                <IconComponent className="w-5 h-5" />
-                              </div>
-                              {platform.name} Post
-                            </CardTitle>
-                            <Button 
-                              onClick={() => handleApprove(platform.name)}
-                              size="sm" 
-                              className="bg-accent hover:bg-accent/90 text-black"
-                            >
-                              <Check className="w-4 h-4 mr-2" />
-                              Approve
-                            </Button>
-                          </div>
-                        </CardHeader>
-                        
-                        <CardContent className="space-y-4">
-                          {/* Caption */}
-                          <div className="space-y-2">
-                            <Label className="text-white font-semibold">Caption</Label>
-                            <Textarea
-                              value={content.caption}
-                              readOnly
-                              className="bg-white/5 border-white/20 text-white min-h-[120px] resize-none"
-                            />
-                          </div>
-
-                          {/* Hashtags */}
-                          <div className="space-y-2">
-                            <Label className="text-white font-semibold">Hashtags</Label>
-                            <div className="flex flex-wrap gap-2">
-                              {content.hashtags.map((tag: string, index: number) => (
-                                <Badge key={index} variant="outline" className="border-accent text-accent">
-                                  {tag}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Visual Preview */}
-                          <div className="space-y-2">
-                            <Label className="text-white font-semibold">Visual Concept</Label>
-                            <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
-                              <div className="flex items-center space-x-3 text-gray-300">
-                                <Image className="w-5 h-5" />
-                                <span className="text-sm">{content.imagePrompt}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-              </div>
-            </div>
-          )}
+                </form>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 };
 
