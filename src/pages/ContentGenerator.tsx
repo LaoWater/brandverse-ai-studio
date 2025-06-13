@@ -7,9 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ArrowRight, Sparkles, Instagram, Facebook, Twitter, Linkedin, Info, Image, Video, Type, Wand2 } from "lucide-react";
+import { ArrowRight, Sparkles, Instagram, Facebook, Twitter, Linkedin, Info, Image, Video, Type, Wand2, Check } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -25,7 +24,7 @@ const ContentGenerator = () => {
     tone: "",
     language: "en",
     platforms: [] as string[],
-    platformMedia: {} as Record<string, 'auto' | 'text' | 'image' | 'video'>
+    platformMedia: {} as Record<string, 'text' | 'image' | 'video' | 'auto'>
   });
 
   const languages = [
@@ -79,31 +78,38 @@ const ContentGenerator = () => {
     "Authoritative"
   ];
 
-  const handlePlatformChange = (platformId: string, checked: boolean) => {
-    console.log("Platform change:", platformId, checked);
+  const handlePlatformToggle = (platformId: string) => {
+    console.log("Platform toggle:", platformId);
+    const isCurrentlySelected = formData.platforms.includes(platformId);
+    
     setFormData(prev => {
-      const newPlatforms = checked 
-        ? [...prev.platforms, platformId]
-        : prev.platforms.filter(p => p !== platformId);
-      
-      // Set default media type to 'auto' when platform is selected, remove when unchecked
-      const newPlatformMedia = { ...prev.platformMedia };
-      if (checked) {
-        newPlatformMedia[platformId] = 'auto';
-      } else {
+      if (isCurrentlySelected) {
+        // Remove platform
+        const newPlatforms = prev.platforms.filter(p => p !== platformId);
+        const newPlatformMedia = { ...prev.platformMedia };
         delete newPlatformMedia[platformId];
+        
+        return {
+          ...prev,
+          platforms: newPlatforms,
+          platformMedia: newPlatformMedia
+        };
+      } else {
+        // Add platform with default media type
+        return {
+          ...prev,
+          platforms: [...prev.platforms, platformId],
+          platformMedia: {
+            ...prev.platformMedia,
+            [platformId]: 'auto' // Set "Let Model Decide" as default
+          }
+        };
       }
-      
-      return {
-        ...prev,
-        platforms: newPlatforms,
-        platformMedia: newPlatformMedia
-      };
     });
   };
 
-  const handleMediaChange = (platformId: string, mediaType: 'auto' | 'text' | 'image' | 'video') => {
-    console.log("Media change:", platformId, mediaType);
+  const handleMediaTypeSelect = (platformId: string, mediaType: 'text' | 'image' | 'video' | 'auto') => {
+    console.log("Media type select:", platformId, mediaType);
     setFormData(prev => ({
       ...prev,
       platformMedia: {
@@ -259,7 +265,7 @@ const ContentGenerator = () => {
                         {tones.map((tone) => (
                           <SelectItem key={tone} value={tone} className="text-white hover:bg-white/10">
                             {tone}
-                          </SelectItem>
+                          SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -277,19 +283,16 @@ const ContentGenerator = () => {
                           <div key={platform.id} className="space-y-3">
                             <div 
                               className="flex items-center space-x-3 p-4 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer"
-                              onClick={() => handlePlatformChange(platform.id, !isSelected)}
+                              onClick={() => handlePlatformToggle(platform.id)}
                             >
-                              <Checkbox
-                                id={platform.id}
-                                checked={isSelected}
-                                onChange={() => {}} // Controlled by parent click
-                                className="border-white/20 pointer-events-none"
-                              />
+                              <div className={`w-5 h-5 rounded border-2 border-white/20 flex items-center justify-center ${isSelected ? 'bg-white' : ''}`}>
+                                {isSelected && <Check className="w-3 h-3 text-gray-900" />}
+                              </div>
                               <div className="flex items-center space-x-2 flex-1">
                                 <IconComponent className={`w-5 h-5 ${platform.color}`} />
-                                <label className="text-white cursor-pointer">
+                                <span className="text-white">
                                   {platform.label}
-                                </label>
+                                </span>
                               </div>
                             </div>
                             
@@ -297,54 +300,26 @@ const ContentGenerator = () => {
                               <div className="ml-4 space-y-2">
                                 <Label className="text-gray-300 text-sm">Media Type</Label>
                                 <div className="grid grid-cols-2 gap-2">
-                                  <div 
-                                    className="flex items-center space-x-2 cursor-pointer p-2 rounded hover:bg-white/5"
-                                    onClick={() => handleMediaChange(platform.id, 'auto')}
-                                  >
-                                    <div className={`w-4 h-4 rounded-full border-2 border-white/20 flex items-center justify-center ${selectedMedia === 'auto' ? 'bg-white' : ''}`}>
-                                      {selectedMedia === 'auto' && <div className="w-2 h-2 bg-gray-900 rounded-full" />}
+                                  {[
+                                    { value: 'auto', label: 'Let Model Decide', icon: Wand2 },
+                                    { value: 'text', label: 'Text', icon: Type },
+                                    { value: 'image', label: 'Image', icon: Image },
+                                    { value: 'video', label: 'Video', icon: Video }
+                                  ].map(({ value, label, icon: Icon }) => (
+                                    <div 
+                                      key={value}
+                                      className="flex items-center space-x-2 cursor-pointer p-2 rounded hover:bg-white/5"
+                                      onClick={() => handleMediaTypeSelect(platform.id, value as 'text' | 'image' | 'video' | 'auto')}
+                                    >
+                                      <div className={`w-4 h-4 rounded-full border-2 border-white/20 flex items-center justify-center ${selectedMedia === value ? 'bg-white' : ''}`}>
+                                        {selectedMedia === value && <div className="w-2 h-2 bg-gray-900 rounded-full" />}
+                                      </div>
+                                      <Label className="text-gray-300 text-sm flex items-center cursor-pointer">
+                                        <Icon className="w-4 h-4 mr-1" />
+                                        {label}
+                                      </Label>
                                     </div>
-                                    <Label className="text-gray-300 text-sm flex items-center cursor-pointer">
-                                      <Wand2 className="w-4 h-4 mr-1" />
-                                      Let Model Decide
-                                    </Label>
-                                  </div>
-                                  <div 
-                                    className="flex items-center space-x-2 cursor-pointer p-2 rounded hover:bg-white/5"
-                                    onClick={() => handleMediaChange(platform.id, 'text')}
-                                  >
-                                    <div className={`w-4 h-4 rounded-full border-2 border-white/20 flex items-center justify-center ${selectedMedia === 'text' ? 'bg-white' : ''}`}>
-                                      {selectedMedia === 'text' && <div className="w-2 h-2 bg-gray-900 rounded-full" />}
-                                    </div>
-                                    <Label className="text-gray-300 text-sm flex items-center cursor-pointer">
-                                      <Type className="w-4 h-4 mr-1" />
-                                      Text
-                                    </Label>
-                                  </div>
-                                  <div 
-                                    className="flex items-center space-x-2 cursor-pointer p-2 rounded hover:bg-white/5"
-                                    onClick={() => handleMediaChange(platform.id, 'image')}
-                                  >
-                                    <div className={`w-4 h-4 rounded-full border-2 border-white/20 flex items-center justify-center ${selectedMedia === 'image' ? 'bg-white' : ''}`}>
-                                      {selectedMedia === 'image' && <div className="w-2 h-2 bg-gray-900 rounded-full" />}
-                                    </div>
-                                    <Label className="text-gray-300 text-sm flex items-center cursor-pointer">
-                                      <Image className="w-4 h-4 mr-1" />
-                                      Image
-                                    </Label>
-                                  </div>
-                                  <div 
-                                    className="flex items-center space-x-2 cursor-pointer p-2 rounded hover:bg-white/5"
-                                    onClick={() => handleMediaChange(platform.id, 'video')}
-                                  >
-                                    <div className={`w-4 h-4 rounded-full border-2 border-white/20 flex items-center justify-center ${selectedMedia === 'video' ? 'bg-white' : ''}`}>
-                                      {selectedMedia === 'video' && <div className="w-2 h-2 bg-gray-900 rounded-full" />}
-                                    </div>
-                                    <Label className="text-gray-300 text-sm flex items-center cursor-pointer">
-                                      <Video className="w-4 h-4 mr-1" />
-                                      Video
-                                    </Label>
-                                  </div>
+                                  ))}
                                 </div>
                               </div>
                             )}
