@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -265,7 +266,7 @@ const ContentGenerator = () => {
                         {tones.map((tone) => (
                           <SelectItem key={tone} value={tone} className="text-white hover:bg-white/10">
                             {tone}
-                          SelectItem>
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
