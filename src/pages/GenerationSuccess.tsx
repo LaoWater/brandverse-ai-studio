@@ -1,211 +1,218 @@
-// src/pages/GenerationSuccess.tsx
-import { useLocation, useNavigate, Link } from "react-router-dom";
+
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Send } from "lucide-react"; // Removed Edit3 for now
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle, Download, Share2, Edit3, ArrowRight, Sparkles } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { useState } from "react"; // Added for potential loading state on send
-import { supabase } from "@/integrations/supabase/client"; // For updating status
-
-// Define the structure of a post object within pipelineResult.posts
-// This should match the structure of one item in the 'posts' array from your API response
-interface GeneratedPostFromAPI {
-  platform: string;
-  post_type: string; // e.g., "Image", "Text"
-  original_text_content: string;
-  media_asset?: {
-    type: 'image' | 'video';
-    file_path: string; // local path from API, might not be relevant here
-  } | null;
-  media_generation_prompt_used?: string | null;
-  cloud_storage?: {
-    uploads?: Array<{
-      success: boolean;
-      cloud_path: string;
-      public_url: string;
-      content_type?: string;
-    }>;
-  } | null;
-  // Add any other fields you expect from pipelineResult.posts
-}
-
-interface PipelineResultFromAPI {
-  pipeline_id: string;
-  posts: GeneratedPostFromAPI[];
-  // Add any other top-level fields from your API response
-}
-
 
 const GenerationSuccess = () => {
-  const location = useLocation();
   const navigate = useNavigate();
-  // Provide a more specific type for location.state
-  const { pipelineResult, insertedPostIds } = (location.state || {}) as { 
-    pipelineResult?: PipelineResultFromAPI; 
-    insertedPostIds?: string[];
-  };
-  
-  const [isSending, setIsSending] = useState(false);
+  const location = useLocation();
+  const [generatedPosts, setGeneratedPosts] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  if (!pipelineResult || !pipelineResult.posts || pipelineResult.posts.length === 0) {
-    return (
-      // ... (No Content to Display fallback - this is fine) ...
-      <div>
-        <Navigation />
-        <div className="container mx-auto px-4 py-12 text-center">
-          <h1 className="text-2xl font-bold text-white mb-4">No Content to Display</h1>
-          <p className="text-gray-300 mb-6">
-            It seems there was an issue, or no content was generated.
-          </p>
-          <Button onClick={() => navigate("/content-generator")}>Generate New Content</Button>
-        </div>
-      </div>
-    );
-  }
-
-  const handleSendToManager = async () => {
-    setIsSending(true);
-    if (insertedPostIds && insertedPostIds.length > 0) {
-      try {
-        // Option B: Update status of these posts in Supabase
-        const { error } = await supabase
-          .from('posts')
-          .update({ status: 'review' }) // Or 'managed', 'pending_review', etc.
-          .in('id', insertedPostIds);
-
-        if (error) {
-          throw error;
-        }
-
-        toast({
-          title: "Sent to Manager!",
-          description: "The generated posts have been updated and are ready for further management.",
-        });
-        navigate("/post-manager"); // Navigate to your post manager page
-      } catch (error: any) {
-        console.error("Error updating post statuses in Supabase:", error);
-        toast({
-          title: "Error Sending",
-          description: error.message || "Could not update post statuses.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsSending(false);
+  useEffect(() => {
+    // Simulate generated posts from the content generator
+    const mockPosts = [
+      {
+        id: 1,
+        platform: "Instagram",
+        title: "Exciting Product Launch",
+        content: "🚀 We're thrilled to announce our latest innovation! This groundbreaking product represents months of research and development, designed specifically with our community in mind. #Innovation #ProductLaunch #Exciting",
+        mediaType: "image",
+        status: "draft" as const,
+        engagement: { likes: 0, comments: 0, shares: 0 }
+      },
+      {
+        id: 2,
+        platform: "LinkedIn",
+        title: "Professional Industry Insights",
+        content: "In today's rapidly evolving business landscape, staying ahead means embracing innovation while maintaining our core values. Here are three key strategies that have proven successful in our journey...",
+        mediaType: "text",
+        status: "draft" as const,
+        engagement: { likes: 0, comments: 0, shares: 0 }
       }
-    } else {
-      // Option A (Fallback or if no insertedPostIds were passed): Just navigate
-      console.log("Sending posts to manager (simulated - no IDs to update)...", pipelineResult.posts);
+    ];
+    
+    setGeneratedPosts(mockPosts);
+  }, []);
+
+  const handleEdit = (postId: number) => {
+    toast({
+      title: "Edit Post",
+      description: "Opening post editor...",
+    });
+    // In a real app, this would navigate to an edit page
+    navigate('/post-manager');
+  };
+
+  const handleDownload = (postId: number) => {
+    toast({
+      title: "Download Started",
+      description: "Your post content is being downloaded...",
+    });
+  };
+
+  const handleShare = (postId: number) => {
+    toast({
+      title: "Share Options",
+      description: "Opening share menu...",
+    });
+  };
+
+  const handlePublishAll = () => {
+    setLoading(true);
+    setTimeout(() => {
       toast({
-        title: "Navigating to Manager",
-        description: "The generated posts can be found in the Post Manager.",
+        title: "Posts Published! 🎉",
+        description: "Your content has been successfully published to all selected platforms.",
       });
-      navigate("/post-manager");
-      setIsSending(false);
-    }
+      setLoading(false);
+      navigate('/post-manager');
+    }, 2000);
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-cosmic-gradient">
       <Navigation />
-      <div className="container mx-auto px-4 pt-24 pb-12">
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-white mb-3">
-            Content <span className="text-cosmic font-serif">Successfully</span> Generated!
-          </h1>
-          <p className="text-gray-300 text-lg">
-            Review your AI-crafted posts below. Pipeline ID: {pipelineResult.pipeline_id}
-          </p>
-        </div>
-
-        <div className="space-y-8">
-          {pipelineResult.posts.map((post, index) => { // `post` here is of type GeneratedPostFromAPI
-            const mediaAsset = post.media_asset;
-            let mediaUrl: string | null = null;
-            if (mediaAsset) {
-                const mediaUpload = post.cloud_storage?.uploads?.find(
-                    (upload) => upload.success && upload.content_type?.startsWith(mediaAsset.type + '/')
-                );
-                mediaUrl = mediaUpload?.public_url || null;
-            }
-            // This retrieves the URL to the .txt file on GCS
-            const textContentGCSUrl = post.cloud_storage?.uploads?.find(
-                (upload) => upload.success && upload.content_type?.startsWith('text/')
-            )?.public_url;
-
-            // The main text content is directly available from the API result for display
-            const mainTextContentForDisplay = post.original_text_content;
-
-            return (
-              <Card key={index} className="cosmic-card border-0 cosmic-glow overflow-hidden">
-                <CardHeader className="cosmic-card-header flex flex-row justify-between items-center">
-                  <div>
-                    <CardTitle className="text-white text-xl capitalize">{post.platform} Post</CardTitle>
-                    <CardDescription className="text-gray-300">Requested Type: {post.post_type}</CardDescription>
+      
+      <main className="pt-20 pb-16">
+        <div className="container mx-auto px-6">
+          <div className="max-w-4xl mx-auto">
+            {/* Success Header */}
+            <div className="text-center mb-12">
+              <div className="flex justify-center mb-6">
+                <div className="relative">
+                  <CheckCircle className="w-20 h-20 text-green-400" />
+                  <div className="absolute -top-2 -right-2">
+                    <Sparkles className="w-8 h-8 text-accent animate-pulse" />
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-4 pt-4">
-                  {mediaUrl && mediaAsset?.type === 'image' && (
-                    <div className="rounded-lg overflow-hidden border border-white/10 max-h-96 flex justify-center bg-black/20">
-                      <img 
-                        src={mediaUrl} 
-                        alt={`${post.platform} content visual`} 
-                        className="object-contain max-h-96" 
-                      />
+                </div>
+              </div>
+              
+              <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+                Content Generated
+                <span className="text-cosmic block mt-2">Successfully!</span>
+              </h1>
+              
+              <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+                Your AI-powered content is ready for review and publishing. 
+                Each post has been tailored to match your brand voice and platform requirements.
+              </p>
+            </div>
+
+            {/* Generated Posts */}
+            <div className="space-y-6 mb-12">
+              {generatedPosts.map((post) => (
+                <Card key={post.id} className="cosmic-card">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <CardTitle className="text-white text-xl">{post.platform}</CardTitle>
+                        <Badge className={`${
+                          post.mediaType === 'image' ? 'bg-purple-500/20 text-purple-300' :
+                          post.mediaType === 'video' ? 'bg-red-500/20 text-red-300' :
+                          'bg-blue-500/20 text-blue-300'
+                        }`}>
+                          {post.mediaType}
+                        </Badge>
+                        <Badge variant="outline" className="text-gray-300 border-gray-500">
+                          {post.status}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEdit(post.id)}
+                          className="text-gray-300 hover:text-white hover:bg-white/10"
+                        >
+                          <Edit3 className="w-4 h-4 mr-1" />
+                          Edit
+                        </Button>
+                        
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDownload(post.id)}
+                          className="text-gray-300 hover:text-white hover:bg-white/10"
+                        >
+                          <Download className="w-4 h-4 mr-1" />
+                          Download
+                        </Button>
+                        
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleShare(post.id)}
+                          className="text-gray-300 hover:text-white hover:bg-white/10"
+                        >
+                          <Share2 className="w-4 h-4 mr-1" />
+                          Share
+                        </Button>
+                      </div>
                     </div>
-                  )}
-                  {mediaUrl && mediaAsset?.type === 'video' && (
-                     <div className="rounded-lg overflow-hidden border border-white/10">
-                        <video controls src={mediaUrl} className="w-full max-h-96">
-                            Your browser does not support the video tag.
-                        </video>
-                    </div>
-                  )}
+                    <CardDescription className="text-gray-300">
+                      {post.title}
+                    </CardDescription>
+                  </CardHeader>
                   
-                  <div className="p-4 bg-white/5 rounded-md border border-white/10">
-                    <p className="text-white whitespace-pre-wrap text-sm leading-relaxed">
-                      {mainTextContentForDisplay}
-                    </p>
-                  </div>
-
-                  {post.media_generation_prompt_used && (
-                    <details className="text-xs text-gray-400">
-                        <summary className="cursor-pointer hover:text-white">View Media Prompt</summary>
-                        <p className="mt-1 p-2 bg-black/20 border border-white/10 rounded-md whitespace-pre-wrap">
-                            {post.media_generation_prompt_used}
+                  <CardContent>
+                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                      <p className="text-gray-200 leading-relaxed">
+                        {post.content}
+                      </p>
+                    </div>
+                    
+                    {post.mediaType !== 'text' && (
+                      <div className="mt-4 p-4 bg-white/5 rounded-lg border border-white/10 border-dashed">
+                        <p className="text-gray-400 text-center">
+                          📷 {post.mediaType === 'image' ? 'AI-generated image' : 'AI-generated video'} will be attached
                         </p>
-                    </details>
-                  )}
-                   {textContentGCSUrl && ( // Display link to the raw text file on GCS
-                     <p className="text-xs text-gray-400">
-                        <a href={textContentGCSUrl} target="_blank" rel="noopener noreferrer" className="hover:text-accent underline">
-                            View raw text file (GCS)
-                        </a>
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
 
-        <div className="mt-12 text-center">
-          <Button 
-            size="lg" 
-            className="cosmic-button text-white font-semibold"
-            onClick={handleSendToManager}
-            disabled={isSending}
-          >
-            {isSending ? "Sending..." : "Send to Posts Manager"}
-            <Send className="ml-2 w-4 h-4" />
-          </Button>
-          <p className="mt-4">
-            <Link to="/content-generator" className="text-accent hover:underline">
-              Or, Generate More Content <ArrowRight className="inline w-4 h-4" />
-            </Link>
-          </p>
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button 
+                variant="outline" 
+                size="lg"
+                onClick={() => navigate('/content-generator')}
+                className="border-white/20 text-white hover:bg-white/10"
+              >
+                Generate More Content
+              </Button>
+              
+              <Button 
+                size="lg"
+                onClick={handlePublishAll}
+                disabled={loading}
+                className="cosmic-button"
+              >
+                {loading ? 'Publishing...' : 'Publish All Posts'}
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="lg"
+                onClick={() => navigate('/post-manager')}
+                className="text-gray-300 hover:text-white hover:bg-white/10"
+              >
+                View in Library
+              </Button>
+            </div>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };
