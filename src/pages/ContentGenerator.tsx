@@ -8,65 +8,67 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ArrowRight, Sparkles, Instagram, Facebook, Twitter, Linkedin, Info, Image, Video, Type, Wand2, Check } from "lucide-react";
+import { 
+    ArrowRight, Sparkles, Instagram, Facebook, Twitter, Linkedin, Info, 
+    Image as ImageIconLucide, Video as VideoIconLucide, Type as TypeIconLucide, 
+    Wand2, Check, FileText, Bot, Palette, Globe, SaveIcon, Loader2 // Added Loader2 for button
+} from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
 
-import { saveGeneratedPostsToSupabase } from '@/services/supabaseService'
-import GenerationProgressModal, { ProgressStage } from '@/components/GenerationProgressModal'; // Import modal and type
+import { saveGeneratedPostsToSupabase } from '@/services/supabaseService'; // Ensure this path is correct
+import GenerationProgressModal, { ProgressStage } from '@/components/GenerationProgressModal';
 
+const API_BASE_URL = "http://localhost:8000";
 
-// Define the API endpoint URL
-// In a real app, this would come from an environment variable: process.env.REACT_APP_API_URL or similar
-const API_BASE_URL = "http://localhost:8000"; // Or your deployed Docker container's URL
-
-// Define types for API request (matching Pydantic models - optional but good practice)
-interface RequirementItem {
-  type: string;
-  detail: string;
-}
-
-interface PostHistoryItem {
-  platform: string;
-  text: string;
-  // ... other fields
-}
-
+interface RequirementItem { type: string; detail: string; }
+interface PostHistoryItem { platform: string; text: string; /* ... other fields */ }
 interface PipelineRequestBody {
   company_name: string;
   company_mission: string;
-  company_sentiment: string; // This corresponds to company.tone_of_voice in your CompanyContext
+  company_sentiment: string;
   language: string;
   platforms_post_types_map: Array<Record<string, string>>;
   subject: string;
-  tone: string; // This is the user-selected tone for the post
+  tone: string;
   requirements?: RequirementItem[] | null;
   posts_history?: PostHistoryItem[] | null;
   upload_to_cloud: boolean;
 }
 
+// Define initial stages configuration outside the component
+const getDefaultStages = (): ProgressStage[] => [
+  { id: 'init', label: 'Initializing', description: 'Preparing your request...', status: 'pending', icon: FileText },
+  { id: 'planning', label: 'Strategic Planning', description: 'Architecting core content strategy...', status: 'pending', icon: Bot },
+  { id: 'crafting', label: 'Platform Crafting', description: 'Tailoring content for each platform...', status: 'pending', icon: Wand2 },
+  { id: 'media', label: 'Visual Asset Generation', description: 'Creating stunning visuals (if applicable)...', status: 'pending', icon: Palette },
+  { id: 'finalizing', label: 'Finalizing & Translating', description: 'Polishing and adapting language...', status: 'pending', icon: Globe },
+  { id: "saving", label: "Saving Creations", description: "Storing your new posts in the database...", status: "pending", icon: SaveIcon }
+];
 
 const ContentGenerator = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { selectedCompany } = useCompany(); // selectedCompany has: name, mission, tone_of_voice
-  const [loading, setLoading] = useState(false);
+  const { selectedCompany } = useCompany();
+  
+  const [isGenerating, setIsGenerating] = useState(false); // Used for modal and button state
+  const [progressStages, setProgressStages] = useState<ProgressStage[]>(getDefaultStages());
+  const [currentStageId, setCurrentStageId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
-    subject: "", // Renamed from topic to match API
-    tone: "",    // This is the post-specific tone
-    language: "en", // Default from languages[0].code
+    subject: "",
+    tone: "",
+    language: "en",
     platforms: [] as string[],
-    platformMedia: {} as Record<string, 'Text' | 'Image' | 'Video' | 'Auto' | 'Let Model Decide'>
+    // Updated type to match API expectations more closely after mapping
+    platformMedia: {} as Record<string, 'Text' | 'Image' | 'Video' | 'Let Model Decide' | 'auto'> 
   });
 
-  // Default language from your languages array
   useEffect(() => {
     const defaultLang = languages.find(l => l.isDefault)?.code || 'en';
     setFormData(prev => ({ ...prev, language: defaultLang }));
-  }, []);
-
+  }, []); // languages is defined below, so this is fine.
 
   const languages = [
     { code: "en", name: "English", isDefault: true },
@@ -90,15 +92,8 @@ const ContentGenerator = () => {
   ];
 
   const tones = [
-    "Professional",
-    "Casual & Friendly",
-    "Inspirational",
-    "Humorous",
-    "Educational",
-    "Urgent",
-    "Conversational",
-    "Authoritative",
-    "Neutral" // Added Neutral as a default option if needed
+    "Professional", "Casual & Friendly", "Inspirational", "Humorous",
+    "Educational", "Urgent", "Conversational", "Authoritative", "Neutral"
   ];
 
   const handlePlatformToggle = (platformId: string) => {
@@ -120,10 +115,28 @@ const ContentGenerator = () => {
   };
 
   const handleMediaTypeSelect = (platformId: string, mediaType: 'text' | 'image' | 'video' | 'auto') => {
+    // Note: The value stored in state for platformMedia is 'text', 'image', 'video', 'auto'.
+    // The mapping to "Text", "Image", "Video", "Let Model Decide" happens during payload construction.
     setFormData(prev => ({
       ...prev,
-      platformMedia: { ...prev.platformMedia, [platformId]: mediaType }
+      platformMedia: { ...prev.platformMedia, [platformId]: mediaType as any } // Cast to any to satisfy wider type
     }));
+  };
+  
+  const updateStage = (stageId: string, status: ProgressStage['status'], delay = 0): Promise<void> => {
+    return new Promise(resolve => {
+        setTimeout(() => {
+            setProgressStages(prevStages =>
+                prevStages.map(stage =>
+                    stage.id === stageId ? { ...stage, status } : stage
+                )
+            );
+            if (status === 'in-progress') {
+                setCurrentStageId(stageId);
+            }
+            resolve();
+        }, delay);
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -155,72 +168,70 @@ const ContentGenerator = () => {
       return;
     }
 
-    setLoading(true);
+    setIsGenerating(true);
+    setProgressStages(getDefaultStages()); // Reset stages
 
-    // Prepare platforms_post_types_map for the API
+    await updateStage('init', 'in-progress', 0);
+    // Simulate some initial client-side prep if any
+    await new Promise(resolve => setTimeout(resolve, 300)); 
+    await updateStage('init', 'completed', 200); 
+
+    await updateStage('planning', 'in-progress', 100);
+
     const platforms_post_types_map = formData.platforms.map(platformId => {
-      let mediaType = formData.platformMedia[platformId];
-      // Convert 'auto' to 'Let Model Decide' or handle as per API expectation
-      // Your API expects "Image", "Text", "Video", or "Let Model Decide"
-      if (mediaType === 'auto') {
-        mediaType = 'Let Model Decide';
-      } else if (mediaType === 'text') {
-        mediaType = 'Text';
-      } else if (mediaType === 'image') {
-        mediaType = 'Image';
-      } else if (mediaType === 'video') {
-        mediaType = 'Video';
-      }
-      return { [platformId]: mediaType };
+      let mediaTypeApiValue: string = formData.platformMedia[platformId] || 'auto';
+      if (mediaTypeApiValue === 'auto') mediaTypeApiValue = 'Let Model Decide';
+      else if (mediaTypeApiValue === 'text') mediaTypeApiValue = 'Text';
+      else if (mediaTypeApiValue === 'image') mediaTypeApiValue = 'Image';
+      else if (mediaTypeApiValue === 'video') mediaTypeApiValue = 'Video';
+      return { [platformId]: mediaTypeApiValue };
     });
 
     const payload: PipelineRequestBody = {
       company_name: selectedCompany.name,
-      company_mission: selectedCompany.mission || "Default mission if not available", // Provide a fallback or ensure it's always there
-      company_sentiment: selectedCompany.tone_of_voice || "Neutral", // API expects company_sentiment, map from tone_of_voice
+      company_mission: selectedCompany.mission || "Mission not set",
+      company_sentiment: selectedCompany.tone_of_voice || "Neutral",
       language: formData.language,
-      platforms_post_types_map: platforms_post_types_map as Array<Record<string, string>>, // Cast if necessary
+      platforms_post_types_map: platforms_post_types_map as Array<Record<string, string>>,
       subject: formData.subject,
-      tone: formData.tone, // This is the post-specific tone selected by the user
-      requirements: null, // Defaulting to null as per your request
-      posts_history: null, // Defaulting to null
-      upload_to_cloud: true, // Defaulting to true
+      tone: formData.tone,
+      requirements: null,
+      posts_history: null,
+      upload_to_cloud: true,
     };
-
     console.log("Sending payload to API:", payload);
 
     try {
       const response = await fetch(`${API_BASE_URL}/generate-posts`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Add Authorization header if your API requires it (e.g., JWT token)
-          // 'Authorization': `Bearer ${user.token}` 
-        },
+        headers: { 'Content-Type': 'application/json', /* 'Authorization': `Bearer ${user.token}` */ },
         body: JSON.stringify(payload),
       });
 
-      setLoading(false);
+      await updateStage('planning', 'completed', 0); 
+      await updateStage('crafting', 'in-progress', 100);
+      await new Promise(resolve => setTimeout(resolve, Math.random() * 500 + 300)); // Simulate variable time
+      await updateStage('crafting', 'completed', 0); 
+      
+      await updateStage('media', 'in-progress', 100);
+      await new Promise(resolve => setTimeout(resolve, Math.random() * 800 + 500)); // Simulate variable time
+      await updateStage('media', 'completed', 0);    
+      
+      await updateStage('finalizing', 'in-progress', 100);
+      await new Promise(resolve => setTimeout(resolve, Math.random() * 500 + 300)); // Simulate variable time
+      await updateStage('finalizing', 'completed', 0);
 
       if (!response.ok) {
-        // Try to parse error message from backend if available
-        let errorData;
-        try {
-          errorData = await response.json();
-        } catch (parseError) {
-          // If response is not JSON or empty
-          console.error("Could not parse error response:", parseError);
-        }
-        console.error("API Error Response:", errorData);
-        toast({
-          title: "Generation Failed",
-          description: errorData?.detail || `Server responded with ${response.status}`,
-          variant: "destructive",
-        });
-        return;
+        const errorData = await response.json().catch(() => ({ detail: "Content generation pipeline failed." }));
+        // Mark all remaining 'in-progress' or 'pending' stages as error before throwing
+        setProgressStages(prev => prev.map(s => (s.status === 'in-progress' || s.status === 'pending') ? {...s, status: 'error'} : s));
+        throw new Error(errorData?.detail || `Server error: ${response.status}`);
       }
 
       const result = await response.json();
+      console.log("API Success Response:", result);
+
+      await updateStage('saving', 'in-progress', 100);
       const postsToInsert = result.posts.map(generatedPost => {
         let picture_url: string | null = null;
         let video_url: string | null = null;
@@ -268,61 +279,55 @@ const ContentGenerator = () => {
         };
       });
       
-      console.log("Posts to insert into Supabase (Corrected for details):", postsToInsert);
+      const { data: insertedPosts, error: supabaseError } = await saveGeneratedPostsToSupabase(postsToInsert);
       
-      try {
-        const { data: insertedPosts, error: supabaseError } = await saveGeneratedPostsToSupabase(postsToInsert);
-    
-        if (supabaseError || !insertedPosts) {
-            toast({
-                title: "Saving Failed",
-                description: "Could not save generated posts to the database. " + (supabaseError?.message || ""),
-                variant: "destructive",
-            });
-            // setLoading(false); // Already handled in the main try-catch
-            return; // Or decide how to proceed. Content is generated but not saved.
-        }
-    
-        // Now navigate with the insertedPosts data or the original pipelineResult
-        toast({
-            title: "Content Generated & Saved! ✨",
-            description: `Your content (ID: ${result.pipeline_id}) has been created and saved.`,
-        });
-        // Pass the original pipeline result for display, and perhaps IDs of inserted posts
-        navigate("/generation-success", { 
-            state: { 
-                pipelineResult: result, // For displaying generated content
-                insertedPostIds: insertedPosts.map(p => p.id) // If needed on next page
-            } 
-        });
-    
-    } catch (supabaseError) { // Add this catch block
+      if (supabaseError || !insertedPosts) {
+        await updateStage('saving', 'error', 0);
+        throw new Error(supabaseError?.message || "Failed to save posts to the database.");
+      }
+      await updateStage('saving', 'completed', 300);
+
       toast({
-        title: "Saving Failed",
-        description: "An error occurred while saving to the database.",
+        title: "Content Universe Expanded! ✨",
+        description: `Your new creations (ID: ${result.pipeline_id}) are ready.`,
+      });
+      navigate("/generation-success", { state: { pipelineResult: result, insertedPostIds: insertedPosts.map((p: any) => p.id) } });
+
+    } catch (error: any) {
+      console.error("Error during content generation or saving:", error);
+      toast({
+        title: "Mission Aborted",
+        description: error.message || "An unexpected error occurred.",
         variant: "destructive",
       });
-    }
-        
-    } catch (apiError) { // This catch is for the fetch API call
-        setLoading(false);
-        console.error("API call or Supabase save error:", apiError);
-        toast({
-            title: "Operation Failed",
-            description: "An error occurred during content generation or saving.",
-            variant: "destructive",
-        });
+      // Ensure the current or last active stage is marked as error
+      setProgressStages(prevStages =>
+        prevStages.map(stage => {
+          if (stage.id === currentStageId && stage.status === 'in-progress') {
+            return { ...stage, status: 'error' };
+          }
+          // If no specific currentStageId, mark first pending/in-progress as error
+          if ((stage.status === 'in-progress' || stage.status === 'pending') && !prevStages.find(s=>s.id === currentStageId && s.status === 'in-progress')) {
+             if (!prevStages.some(s => s.status === 'error')) return { ...stage, status: 'error' }; // Mark only the first one
+          }
+          return stage;
+        })
+      );
+    } finally {
+      setTimeout(() => {
+          setIsGenerating(false);
+      }, 1500); 
     }
   };
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen">
+      {isGenerating && <GenerationProgressModal stages={progressStages} currentStageId={currentStageId} />}
+      <div className={`min-h-screen ${isGenerating ? 'blur-sm pointer-events-none' : ''}`}>
         <Navigation />
         
         <div className="container mx-auto px-4 pt-24 pb-12">
           <div className="max-w-4xl mx-auto">
-            {/* ... (Company Selection Card - no changes needed here) ... */}
              <Card className="cosmic-card border-0 cosmic-glow mb-6">
               <CardHeader className="cosmic-card-header">
                 <CardTitle className="text-white text-xl">Company Selection</CardTitle>
@@ -350,12 +355,12 @@ const ContentGenerator = () => {
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-3">
-                      <Label htmlFor="subject" className="text-white font-medium">Topic/Subject</Label> {/* Changed from topic to subject */}
+                      <Label htmlFor="subject" className="text-white font-medium">Topic/Subject</Label>
                       <Input
-                        id="subject" // Changed from topic to subject
+                        id="subject"
                         value={formData.subject}
                         onChange={(e) => setFormData(prev => ({ ...prev, subject: e.target.value }))}
-                        placeholder="What do you want to post about?"
+                        placeholder="e.g., New Product Launch, Event Announcement"
                         className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 h-12"
                         required
                       />
@@ -365,11 +370,13 @@ const ContentGenerator = () => {
                       <div className="flex items-center space-x-2">
                         <Label htmlFor="language" className="text-white font-medium">Language</Label>
                         <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="w-4 h-4 text-gray-400 hover:text-white" />
+                          <TooltipTrigger asChild>
+                             <Button variant="ghost" size="icon" className="w-6 h-6 p-0 text-gray-400 hover:text-white">
+                                <Info className="w-4 h-4" />
+                             </Button>
                           </TooltipTrigger>
                           <TooltipContent className="bg-gray-800 border-white/20 text-white max-w-xs">
-                            <p>Model performance might not be state-of-the-art for non-English tasks</p>
+                            <p>Model performance might vary for non-English tasks.</p>
                           </TooltipContent>
                         </Tooltip>
                       </div>
@@ -391,21 +398,23 @@ const ContentGenerator = () => {
                   <div className="space-y-3">
                     <div className="flex items-center space-x-2">
                       <Label htmlFor="tone" className="text-white font-medium">Sentiment/Tonality (for this post)</Label>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="w-4 h-4 text-gray-400 hover:text-white" />
-                        </TooltipTrigger>
-                        <TooltipContent className="bg-gray-800 border-white/20 text-white max-w-xs">
-                          <p>Choose the specific tone for this particular piece of content.</p>
-                        </TooltipContent>
-                      </Tooltip>
+                       <Tooltip>
+                          <TooltipTrigger asChild>
+                             <Button variant="ghost" size="icon" className="w-6 h-6 p-0 text-gray-400 hover:text-white">
+                                <Info className="w-4 h-4" />
+                             </Button>
+                          </TooltipTrigger>
+                          <TooltipContent className="bg-gray-800 border-white/20 text-white max-w-xs">
+                            <p>Choose the specific tone for this particular piece of content.</p>
+                          </TooltipContent>
+                        </Tooltip>
                     </div>
                     <Select value={formData.tone} onValueChange={(value) => setFormData(prev => ({ ...prev, tone: value }))} required>
                       <SelectTrigger className="bg-white/5 border-white/20 text-white h-12">
                         <SelectValue placeholder="Select tone for this post" />
                       </SelectTrigger>
                       <SelectContent className="bg-gray-900 border-white/20">
-                        {tones.map((toneItem) => ( // Renamed tone to toneItem to avoid conflict
+                        {tones.map((toneItem) => (
                           <SelectItem key={toneItem} value={toneItem} className="text-white hover:bg-white/10">
                             {toneItem}
                           </SelectItem>
@@ -414,10 +423,9 @@ const ContentGenerator = () => {
                     </Select>
                   </div>
 
-                  {/* ... (Platform selection - no major changes needed, just ensure values map correctly) ... */}
                   <div className="space-y-4">
                     <Label className="text-white font-medium">Target Platforms & Media Types</Label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4"> {/* Changed to 1 column on small screens */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {platforms.map((platform) => {
                         const IconComponent = platform.icon;
                         const isSelected = formData.platforms.includes(platform.id);
@@ -445,17 +453,17 @@ const ContentGenerator = () => {
                             </div>
                             
                             {isSelected && (
-                              <div className="mt-3 pl-8 space-y-2"> {/* Indent media options */}
+                              <div className="mt-3 pl-8 space-y-2">
                                 <div className="grid grid-cols-2 gap-2">
                                   {[
-                                    { value: 'auto', label: 'Auto', icon: Wand2 },
-                                    { value: 'text', label: 'Text', icon: Type },
-                                    { value: 'image', label: 'Image', icon: Image },
-                                    { value: 'video', label: 'Video', icon: Video }
+                                    { value: 'auto', label: 'Decide', icon: Wand2 },
+                                    { value: 'text', label: 'Text', icon: TypeIconLucide },
+                                    { value: 'image', label: 'Image', icon: ImageIconLucide },
+                                    { value: 'video', label: 'Video', icon: VideoIconLucide }
                                   ].map(({ value, label, icon: Icon }) => (
                                     <Button 
+                                      type="button" // Important!
                                       key={value}
-                                      type="button" 
                                       variant="ghost"
                                       size="sm"
                                       className={`w-full justify-start text-xs
@@ -475,15 +483,14 @@ const ContentGenerator = () => {
                     </div>
                   </div>
 
-
                   <Button 
                     type="submit" 
                     size="lg" 
                     className="w-full cosmic-button text-white font-semibold h-12 mt-8"
-                    disabled={loading || !selectedCompany || formData.platforms.length === 0 || !formData.subject.trim() || !formData.tone}
+                    disabled={isGenerating || !selectedCompany || formData.platforms.length === 0 || !formData.subject.trim() || !formData.tone}
                   >
-                    {loading ? 'Generating Content...' : 'Generate Content'} 
-                    <ArrowRight className="ml-2 w-5 h-5" />
+                    {isGenerating ? 'Conjuring Content...' : 'Generate Content'} 
+                    {isGenerating ? <Loader2 className="ml-2 w-5 h-5 animate-spin" /> : <ArrowRight className="ml-2 w-5 h-5" />}
                   </Button>
                 </form>
               </CardContent>
