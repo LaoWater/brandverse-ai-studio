@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -17,13 +16,16 @@ import {
 } from "@/components/ui/collapsible";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
+import { useAdmin } from "@/hooks/useAdmin";
 import CreatorsMultiverseLogo from "@/components/CreatorsMultiverseLogo";
+import CreditsDisplay from "@/components/CreditsDisplay";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isHomeMenuOpen, setIsHomeMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
   const { selectedCompany } = useCompany();
+  const { isAdmin } = useAdmin();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -31,6 +33,7 @@ const Navigation = () => {
     navigate('/');
   };
 
+  // ... keep existing code (publicNavItems, authNavItems arrays)
   const publicNavItems = [
     { name: "Home", href: "/" },
     { name: "Features", href: "/features" },
@@ -114,6 +117,9 @@ const Navigation = () => {
           <div className="hidden md:flex items-center space-x-4">
             {user ? (
               <div className="flex items-center space-x-4">
+                {/* Credits Display for Admins */}
+                {isAdmin && <CreditsDisplay />}
+                
                 <div className="text-right">
                   <span className="text-white text-sm block">Welcome, {user.email}</span>
                   {selectedCompany && (
@@ -161,6 +167,7 @@ const Navigation = () => {
                 </DropdownMenu>
               </div>
             ) : (
+              // ... keep existing code (sign in buttons)
               <>
                 <Link to="/auth">
                   <button className="px-4 py-2 text-white hover:bg-white/10 rounded-md transition-colors">
@@ -193,6 +200,13 @@ const Navigation = () => {
             <div className="flex flex-col space-y-4">
               {user ? (
                 <>
+                  {/* Mobile Credits Display for Admins */}
+                  {isAdmin && (
+                    <div className="px-4 py-2 border-b border-primary/20">
+                      <CreditsDisplay />
+                    </div>
+                  )}
+                  
                   {/* Mobile Home Menu */}
                   <Collapsible>
                     <CollapsibleTrigger asChild>
@@ -231,7 +245,7 @@ const Navigation = () => {
                   ))}
                 </>
               ) : (
-                // Mobile public navigation
+                // ... keep existing code (mobile public navigation)
                 publicNavItems.map((item) => (
                   <Link
                     key={item.name}

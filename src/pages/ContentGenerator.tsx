@@ -11,19 +11,20 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { 
     ArrowRight, Sparkles, Instagram, Facebook, Twitter, Linkedin, Info, 
     Image as ImageIconLucide, Video as VideoIconLucide, Type as TypeIconLucide, 
-    Wand2, Check, FileText, Bot, Palette, Globe, SaveIcon, Loader2 // Added Loader2 for button
+    Wand2, Check, FileText, Bot, Palette, Globe, SaveIcon, Loader2, Coins
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
+import { calculateCreditsNeeded, deductCredits, getUserCredits } from "@/services/creditsService";
 
-import { saveGeneratedPostsToSupabase } from '@/services/supabaseService'; // Ensure this path is correct
+import { saveGeneratedPostsToSupabase } from '@/services/supabaseService';
 import GenerationProgressModal, { ProgressStage } from '@/components/GenerationProgressModal';
 
 const API_BASE_URL = "http://localhost:8000";
 
 interface RequirementItem { type: string; detail: string; }
-interface PostHistoryItem { platform: string; text: string; /* ... other fields */ }
+interface PostHistoryItem { platform: string; text: string; }
 interface PipelineRequestBody {
   company_name: string;
   company_mission: string;
@@ -37,7 +38,6 @@ interface PipelineRequestBody {
   upload_to_cloud: boolean;
 }
 
-// Define initial stages configuration outside the component
 const getDefaultStages = (): ProgressStage[] => [
   { id: 'init', label: 'Initializing', description: 'Preparing your request...', status: 'pending', icon: FileText },
   { id: 'planning', label: 'Strategic Planning', description: 'Architecting core content strategy...', status: 'pending', icon: Bot },
@@ -52,23 +52,34 @@ const ContentGenerator = () => {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   
-  const [isGenerating, setIsGenerating] = useState(false); // Used for modal and button state
+  const [isGenerating, setIsGenerating] = useState(false);
   const [progressStages, setProgressStages] = useState<ProgressStage[]>(getDefaultStages());
   const [currentStageId, setCurrentStageId] = useState<string | null>(null);
+  const [userCredits, setUserCredits] = useState(0);
   
   const [formData, setFormData] = useState({
     subject: "",
     tone: "",
     language: "en",
     platforms: [] as string[],
-    // Updated type to match API expectations more closely after mapping
     platformMedia: {} as Record<string, 'Text' | 'Image' | 'Video' | 'Let Model Decide' | 'auto'> 
   });
 
   useEffect(() => {
     const defaultLang = languages.find(l => l.isDefault)?.code || 'en';
     setFormData(prev => ({ ...prev, language: defaultLang }));
-  }, []); // languages is defined below, so this is fine.
+  }, []);
+
+  useEffect(() => {
+    const fetchUserCredits = async () => {
+      const credits = await getUserCredits();
+      setUserCredits(credits?.available_credits ?? 0);
+    };
+    
+    if (user) {
+      fetchUserCredits();
+    }
+  }, [user]);
 
   const languages = [
     { code: "en", name: "English", isDefault: true },
@@ -77,7 +88,6 @@ const ContentGenerator = () => {
     { code: "de", name: "German" },
     { code: "it", name: "Italian" },
     { code: "pt", name: "Portuguese" },
-    // ... (keep your full list)
      { code: "ro", name: "Romanian" },
      { code: "bg", name: "Bulgarian" },
      { code: "hr", name: "Croatian" },
@@ -95,6 +105,9 @@ const ContentGenerator = () => {
     "Professional", "Casual & Friendly", "Inspirational", "Humorous",
     "Educational", "Urgent", "Conversational", "Authoritative", "Neutral"
   ];
+
+  const creditsNeeded = calculateCreditsNeeded(formData.platforms, formData.platformMedia);
+  const hasEnoughCredits = userCredits >= creditsNeeded;
 
   const handlePlatformToggle = (platformId: string) => {
     const isCurrentlySelected = formData.platforms.includes(platformId);
@@ -115,11 +128,9 @@ const ContentGenerator = () => {
   };
 
   const handleMediaTypeSelect = (platformId: string, mediaType: 'text' | 'image' | 'video' | 'auto') => {
-    // Note: The value stored in state for platformMedia is 'text', 'image', 'video', 'auto'.
-    // The mapping to "Text", "Image", "Video", "Let Model Decide" happens during payload construction.
     setFormData(prev => ({
       ...prev,
-      platformMedia: { ...prev.platformMedia, [platformId]: mediaType as any } // Cast to any to satisfy wider type
+      platformMedia: { ...prev.platformMedia, [platformId]: mediaType as any }
     }));
   };
   
@@ -152,27 +163,47 @@ const ContentGenerator = () => {
       toast({ title: "Company Required", description: "Please select a company to generate content for.", variant: "destructive" });
       return;
     }
-     // Validate subject and tone
+
     if (!formData.subject.trim()) {
       toast({ title: "Topic Required", description: "Please enter a topic/subject for your post.", variant: "destructive" });
       return;
     }
-    if (!formData.tone) { // Check if tone is selected
+    
+    if (!formData.tone) {
       toast({ title: "Tone Required", description: "Please select a sentiment/tonality for your post.", variant: "destructive" });
       return;
     }
-
 
     if (formData.platforms.length === 0) {
       toast({ title: "Platform Required", description: "Please select at least one platform.", variant: "destructive" });
       return;
     }
 
+    if (!hasEnoughCredits) {
+      toast({ 
+        title: "Insufficient Credits", 
+        description: `You need ${creditsNeeded} credits but only have ${userCredits}. Credits reset daily if under 10.`,
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    const creditDeducted = await deductCredits(creditsNeeded);
+    if (!creditDeducted) {
+      toast({ 
+        title: "Credit Deduction Failed", 
+        description: "Unable to deduct credits. Please try again.",
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    setUserCredits(prev => prev - creditsNeeded);
+
     setIsGenerating(true);
-    setProgressStages(getDefaultStages()); // Reset stages
+    setProgressStages(getDefaultStages());
 
     await updateStage('init', 'in-progress', 0);
-    // Simulate some initial client-side prep if any
     await new Promise(resolve => setTimeout(resolve, 300)); 
     await updateStage('init', 'completed', 200); 
 
@@ -204,26 +235,25 @@ const ContentGenerator = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/generate-posts`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', /* 'Authorization': `Bearer ${user.token}` */ },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
       await updateStage('planning', 'completed', 0); 
       await updateStage('crafting', 'in-progress', 100);
-      await new Promise(resolve => setTimeout(resolve, Math.random() * 500 + 300)); // Simulate variable time
+      await new Promise(resolve => setTimeout(resolve, Math.random() * 500 + 300));
       await updateStage('crafting', 'completed', 0); 
       
       await updateStage('media', 'in-progress', 100);
-      await new Promise(resolve => setTimeout(resolve, Math.random() * 800 + 500)); // Simulate variable time
+      await new Promise(resolve => setTimeout(resolve, Math.random() * 800 + 500));
       await updateStage('media', 'completed', 0);    
       
       await updateStage('finalizing', 'in-progress', 100);
-      await new Promise(resolve => setTimeout(resolve, Math.random() * 500 + 300)); // Simulate variable time
+      await new Promise(resolve => setTimeout(resolve, Math.random() * 500 + 300));
       await updateStage('finalizing', 'completed', 0);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ detail: "Content generation pipeline failed." }));
-        // Mark all remaining 'in-progress' or 'pending' stages as error before throwing
         setProgressStages(prev => prev.map(s => (s.status === 'in-progress' || s.status === 'pending') ? {...s, status: 'error'} : s));
         throw new Error(errorData?.detail || `Server error: ${response.status}`);
       }
@@ -232,6 +262,7 @@ const ContentGenerator = () => {
       console.log("API Success Response:", result);
 
       await updateStage('saving', 'in-progress', 100);
+      
       const postsToInsert = result.posts.map(generatedPost => {
         let picture_url: string | null = null;
         let video_url: string | null = null;
@@ -262,19 +293,15 @@ const ContentGenerator = () => {
           company_id: selectedCompany.id,
           title: post_title,
           platform_type: generatedPost.platform,
-          details: main_text_content,        // Main text content
-          has_picture: picture_url,          // GCS Image URL or null
-          has_video: video_url,              // GCS Video URL or null
+          details: main_text_content,
+          has_picture: picture_url,
+          has_video: video_url,
           status: 'draft',
-          metadata: {                       // <<<< All extra info here
+          metadata: {
             pipeline_id: result.pipeline_id,
-            post_type_from_api: generatedPost.post_type, // e.g., "Image", "Text"
+            post_type_from_api: generatedPost.post_type,
             media_generation_prompt_used: generatedPost.media_generation_prompt_used,
-            text_content_cloud_url: text_content_cloud_url, // Link to the raw .txt file in GCS
-            // Add any other fields from generatedPost you want to preserve
-            // For example, the local file paths if they were useful for some reason, though less so now
-            // local_text_file_path: generatedPost.text_file_path,
-            // local_media_file_path: generatedPost.media_asset?.file_path,
+            text_content_cloud_url: text_content_cloud_url,
           }
         };
       });
@@ -300,15 +327,13 @@ const ContentGenerator = () => {
         description: error.message || "An unexpected error occurred.",
         variant: "destructive",
       });
-      // Ensure the current or last active stage is marked as error
       setProgressStages(prevStages =>
         prevStages.map(stage => {
           if (stage.id === currentStageId && stage.status === 'in-progress') {
             return { ...stage, status: 'error' };
           }
-          // If no specific currentStageId, mark first pending/in-progress as error
           if ((stage.status === 'in-progress' || stage.status === 'pending') && !prevStages.find(s=>s.id === currentStageId && s.status === 'in-progress')) {
-             if (!prevStages.some(s => s.status === 'error')) return { ...stage, status: 'error' }; // Mark only the first one
+             if (!prevStages.some(s => s.status === 'error')) return { ...stage, status: 'error' };
           }
           return stage;
         })
@@ -353,6 +378,27 @@ const ContentGenerator = () => {
               
               <CardContent className="space-y-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {creditsNeeded > 0 && (
+                    <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Coins className="w-5 h-5 text-accent" />
+                          <span className="text-white font-medium">Credits Required</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className={`font-semibold ${hasEnoughCredits ? 'text-accent' : 'text-red-400'}`}>
+                            {creditsNeeded} / {userCredits}
+                          </span>
+                        </div>
+                      </div>
+                      {!hasEnoughCredits && (
+                        <p className="text-red-400 text-sm mt-2">
+                          Insufficient credits. Credits reset daily if under 10.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-3">
                       <Label htmlFor="subject" className="text-white font-medium">Topic/Subject</Label>
@@ -456,13 +502,13 @@ const ContentGenerator = () => {
                               <div className="mt-3 pl-8 space-y-2">
                                 <div className="grid grid-cols-2 gap-2">
                                   {[
-                                    { value: 'auto', label: 'Decide', icon: Wand2 },
-                                    { value: 'text', label: 'Text', icon: TypeIconLucide },
-                                    { value: 'image', label: 'Image', icon: ImageIconLucide },
-                                    { value: 'video', label: 'Video', icon: VideoIconLucide }
-                                  ].map(({ value, label, icon: Icon }) => (
+                                    { value: 'auto', label: 'Decide', icon: Wand2, credits: 3 },
+                                    { value: 'text', label: 'Text', icon: TypeIconLucide, credits: 1 },
+                                    { value: 'image', label: 'Image', icon: ImageIconLucide, credits: 3 },
+                                    { value: 'video', label: 'Video', icon: VideoIconLucide, credits: 3 }
+                                  ].map(({ value, label, icon: Icon, credits }) => (
                                     <Button 
-                                      type="button" // Important!
+                                      type="button"
                                       key={value}
                                       variant="ghost"
                                       size="sm"
@@ -471,7 +517,7 @@ const ContentGenerator = () => {
                                       onClick={() => handleMediaTypeSelect(platform.id, value as 'text' | 'image' | 'video' | 'auto')}
                                     >
                                       <Icon className="w-3 h-3 mr-2" />
-                                      {label}
+                                      {label} ({credits}c)
                                     </Button>
                                   ))}
                                 </div>
@@ -487,7 +533,7 @@ const ContentGenerator = () => {
                     type="submit" 
                     size="lg" 
                     className="w-full cosmic-button text-white font-semibold h-12 mt-8"
-                    disabled={isGenerating || !selectedCompany || formData.platforms.length === 0 || !formData.subject.trim() || !formData.tone}
+                    disabled={isGenerating || !selectedCompany || formData.platforms.length === 0 || !formData.subject.trim() || !formData.tone || !hasEnoughCredits}
                   >
                     {isGenerating ? 'Conjuring Content...' : 'Generate Content'} 
                     {isGenerating ? <Loader2 className="ml-2 w-5 h-5 animate-spin" /> : <ArrowRight className="ml-2 w-5 h-5" />}

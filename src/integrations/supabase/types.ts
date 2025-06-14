@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      available_credits: {
+        Row: {
+          available_credits: number
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          available_credits?: number
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          available_credits?: number
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           created_at: string | null
@@ -102,6 +126,7 @@ export type Database = {
           has_picture: string | null
           has_video: string | null
           id: string
+          metadata: Json | null
           platform_type: Database["public"]["Enums"]["platform_type"]
           status: Database["public"]["Enums"]["post_status"] | null
           title: string
@@ -114,6 +139,7 @@ export type Database = {
           has_picture?: string | null
           has_video?: string | null
           id?: string
+          metadata?: Json | null
           platform_type: Database["public"]["Enums"]["platform_type"]
           status?: Database["public"]["Enums"]["post_status"] | null
           title: string
@@ -126,6 +152,7 @@ export type Database = {
           has_picture?: string | null
           has_video?: string | null
           id?: string
+          metadata?: Json | null
           platform_type?: Database["public"]["Enums"]["platform_type"]
           status?: Database["public"]["Enums"]["post_status"] | null
           title?: string
@@ -185,7 +212,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      deduct_credits: {
+        Args: { _user_id: string; _credits_to_deduct: number }
+        Returns: boolean
+      }
+      reset_daily_credits: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       platform_type:

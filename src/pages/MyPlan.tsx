@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import Navigation from "@/components/Navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,16 +15,19 @@ import {
   Crown,
   Star,
   Check,
-  ArrowRight
+  ArrowRight,
+  Coins
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { getUserCredits, UserCredits } from "@/services/creditsService";
 
 const MyPlan = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
+  const [userCredits, setUserCredits] = useState<UserCredits | null>(null);
   const [planData, setPlanData] = useState({
     plan: "free",
     renewalDate: "2024-01-15",
@@ -46,6 +48,17 @@ const MyPlan = () => {
       navigate('/auth');
     }
   }, [user, navigate]);
+
+  useEffect(() => {
+    const fetchCredits = async () => {
+      if (user) {
+        const credits = await getUserCredits();
+        setUserCredits(credits);
+      }
+    };
+    
+    fetchCredits();
+  }, [user]);
 
   const handleUpgrade = () => {
     navigate('/pricing');
@@ -79,12 +92,14 @@ const MyPlan = () => {
           name: "Free Plan",
           icon: <Zap className="w-5 h-5" />,
           color: "bg-gray-500",
-          features: ["50 content generations/month", "3 companies", "Email support"]
+          features: ["Daily credits refresh", "3 companies", "Email support"]
         };
     }
   };
 
   const currentPlan = getPlanInfo(planData.plan);
+  const creditsCount = userCredits?.available_credits ?? 0;
+  const isLowCredits = creditsCount <= 3;
 
   if (!user) return null;
 
@@ -152,6 +167,37 @@ const MyPlan = () => {
 
             {/* Quick Stats */}
             <div className="space-y-4">
+              {/* Credits Card */}
+              <Card className="cosmic-card border-0">
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-3">
+                    <Coins className={`w-8 h-8 ${isLowCredits ? 'text-yellow-400' : 'text-accent'}`} />
+                    <div>
+                      <p className="text-white font-semibold">Available Credits</p>
+                      <p className="text-gray-400 text-sm">Resets daily if under 10</p>
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-gray-300">Current Balance</span>
+                      <Badge 
+                        className={`font-semibold ${
+                          isLowCredits 
+                            ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' 
+                            : 'bg-accent/20 text-accent border-accent/30'
+                        }`}
+                      >
+                        {creditsCount}
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-gray-400 mt-2">
+                      <p>• Text posts: 1 credit each</p>
+                      <p>• Image/Video/Auto: 3 credits each</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               <Card className="cosmic-card border-0">
                 <CardContent className="p-4">
                   <div className="flex items-center space-x-3">
@@ -295,6 +341,10 @@ const MyPlan = () => {
                           <div className="flex justify-between">
                             <span className="text-gray-300">Avg. Time Saved</span>
                             <span className="text-white">4.2 hours</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-300">Credits Used</span>
+                            <span className="text-white">{10 - creditsCount}</span>
                           </div>
                         </div>
                       </div>
