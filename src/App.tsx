@@ -18,6 +18,8 @@ import MyPlan from "./pages/MyPlan";
 import Features from "./pages/Features";
 import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
+import GenerationSuccess from './pages/GenerationSuccess';
+
 
 const queryClient = new QueryClient();
 
@@ -41,6 +43,7 @@ const App = () => (
                 <Route path="/my-plan" element={<MyPlan />} />
                 <Route path="/features" element={<Features />} />
                 <Route path="/pricing" element={<Pricing />} />
+                <Route path="/generation-success" element={<GenerationSuccess />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <Footer />
