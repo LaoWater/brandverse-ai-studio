@@ -12,6 +12,14 @@ interface PostData {
   metadata?: any;
 }
 
+type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json }
+  | Json[];
+
 export const createPosts = async (postsData: PostData[]) => {
   const { data, error } = await supabase
     .from('posts')
@@ -66,4 +74,44 @@ export const deletePost = async (postId: string) => {
   }
 
   return data;
+};
+import { Database } from '@/integrations/supabase/types';
+import { PostgrestError } from '@supabase/supabase-js';
+
+
+export const saveGeneratedPostsToSupabase = async (
+  posts: {
+    company_id: string;
+    created_date?: string | null;
+    details?: string | null;
+    has_picture?: string | null;
+    has_video?: string | null;
+    id?: string;
+    metadata?: Json | null;
+    platform_type: Database["public"]["Enums"]["platform_type"];
+    status?: Database["public"]["Enums"]["post_status"] | null;
+    title: string;
+    updated_at?: string | null;
+  }[]
+): Promise<{
+  data: {
+    company_id: string;
+    created_date: string | null;
+    details: string | null;
+    has_picture: string | null;
+    has_video: string | null;
+    id: string;
+    metadata: Json | null;
+    platform_type: Database["public"]["Enums"]["platform_type"];
+    status: Database["public"]["Enums"]["post_status"] | null;
+    title: string;
+    updated_at: string | null;
+  }[] | null;
+  error: PostgrestError | null;
+}> => {
+  const { data, error } = await supabase
+    .from('posts')
+    .insert(posts)
+    .select();
+  return { data, error };
 };

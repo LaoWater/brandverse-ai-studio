@@ -19,6 +19,8 @@ import Features from "./pages/Features";
 import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 import GenerationSuccess from './pages/GenerationSuccess';
+import ChatButton from "./components/ChatButton";
+
 
 
 const queryClient = new QueryClient();
@@ -46,6 +48,7 @@ const App = () => (
                 <Route path="/generation-success" element={<GenerationSuccess />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              <ChatButton />
               <Footer />
             </div>
           </BrowserRouter>
