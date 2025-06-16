@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import { useCompany } from "@/contexts/CompanyContext";
 import { useAdmin } from "@/hooks/useAdmin";
 import CreatorsMultiverseLogo from "@/components/CreatorsMultiverseLogo";
 import CreditsDisplay from "@/components/CreditsDisplay";
+import CreditsBar from "@/components/CreditsBar";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -137,7 +139,10 @@ const Navigation = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   
-                  <DropdownMenuContent align="end" className="w-48 bg-card border-primary/20">
+                  <DropdownMenuContent align="end" className="w-64 bg-card border-primary/20 p-0">
+                    {/* Credits Bar - First item */}
+                    <CreditsBar />
+                    
                     <DropdownMenuItem 
                       onClick={() => navigate('/my-plan')}
                       className="text-white hover:bg-white/10 cursor-pointer"
@@ -206,6 +211,11 @@ const Navigation = () => {
                       <CreditsDisplay />
                     </div>
                   )}
+                  
+                  {/* Mobile Credits Bar */}
+                  <div className="border-b border-primary/20">
+                    <CreditsBar />
+                  </div>
                   
                   {/* Mobile Home Menu */}
                   <Collapsible>

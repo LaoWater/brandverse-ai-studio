@@ -1,4 +1,3 @@
-
 import Navigation from "@/components/Navigation";
 import { Check, Star, Zap, Crown } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,8 +5,86 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const Pricing = () => {
+  const { user } = useAuth();
+
+  const handleUpgrade = async (priceId: string, planName: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to upgrade your plan.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { 
+          priceId: priceId,
+          mode: "subscription"
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        // Open Stripe checkout in a new tab
+        window.open(data.url, '_blank');
+      } else {
+        throw new Error('No checkout URL received');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      toast({
+        title: "Checkout Error",
+        description: "Failed to start checkout process. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCreditPurchase = async (creditAmount: number, price: number) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to purchase credits.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // For credit packs, we'll use one-time payments
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { 
+          priceId: `price_credits_${creditAmount}`, // You'll need to create these in Stripe
+          mode: "payment"
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        // Open Stripe checkout in a new tab
+        window.open(data.url, '_blank');
+      } else {
+        throw new Error('No checkout URL received');
+      }
+    } catch (error) {
+      console.error('Credit purchase error:', error);
+      toast({
+        title: "Purchase Error",
+        description: "Failed to start purchase process. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const plans = [
     {
       name: "Free",
@@ -26,7 +103,8 @@ const Pricing = () => {
       ],
       buttonText: "Get Started Free",
       buttonVariant: "outline" as const,
-      popular: false
+      popular: false,
+      priceId: null
     },
     {
       name: "Standard",
@@ -48,7 +126,8 @@ const Pricing = () => {
       ],
       buttonText: "Upgrade to Standard",
       buttonVariant: "default" as const,
-      popular: true
+      popular: true,
+      priceId: "price_1RaddlEybjfbmfmGeEzFDalD" // Replace with your actual Stripe price ID
     },
     {
       name: "Pro",
@@ -71,7 +150,8 @@ const Pricing = () => {
       ],
       buttonText: "Go Pro",
       buttonVariant: "default" as const,
-      popular: false
+      popular: false,
+      priceId: "price_1RakAAEybjfbmfmGPLiHbxj1" // Actual Pro ID:  price_1Rak0xEybjfbmfmGF5fVAYoR
     }
   ];
 
@@ -137,7 +217,7 @@ const Pricing = () => {
                         }`}
                       >
                         {plan.popular && (
-                          <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                          <div className="absolute -top-0 left-1/2 transform -translate-x-1/2">
                             <Badge className="bg-accent text-black px-4 py-2 font-semibold">
                               <Star className="w-4 h-4 mr-1" />
                               {plan.badge}
@@ -191,6 +271,8 @@ const Pricing = () => {
                           <Button 
                             variant={plan.buttonVariant}
                             className={`w-full cosmic-button ${plan.popular ? 'animate-pulse-glow' : ''}`}
+                            onClick={() => plan.priceId && handleUpgrade(plan.priceId, plan.name)}
+                            disabled={!plan.priceId}
                           >
                             {plan.buttonText}
                           </Button>
@@ -220,7 +302,7 @@ const Pricing = () => {
                         }`}
                       >
                         {pack.popular && (
-                          <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                          <div className="absolute -top-0 left-1/2 transform -translate-x-1/2">
                             <Badge className="bg-accent text-black px-4 py-2 font-semibold">
                               Best Value
                             </Badge>
@@ -263,6 +345,7 @@ const Pricing = () => {
                         <CardFooter>
                           <Button 
                             className={`w-full cosmic-button ${pack.popular ? 'animate-pulse-glow' : ''}`}
+                            onClick={() => handleCreditPurchase(pack.credits, parseFloat(pack.price.replace('$', '')))}
                           >
                             Buy {pack.credits} Credits
                           </Button>

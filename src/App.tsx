@@ -20,6 +20,8 @@ import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 import GenerationSuccess from './pages/GenerationSuccess';
 import ChatButton from "./components/ChatButton";
+import PaymentSuccess from "./pages/PaymentSuccess";
+
 
 
 
@@ -46,6 +48,9 @@ const App = () => (
                 <Route path="/features" element={<Features />} />
                 <Route path="/pricing" element={<Pricing />} />
                 <Route path="/generation-success" element={<GenerationSuccess />} />
+                <Route path="/payment-success" element={<PaymentSuccess />} />
+
+
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <ChatButton />

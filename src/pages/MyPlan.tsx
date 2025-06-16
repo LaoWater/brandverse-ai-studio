@@ -16,18 +16,25 @@ import {
   Star,
   Check,
   ArrowRight,
-  Coins
+  Coins,
+  Settings
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { getUserCredits, UserCredits } from "@/services/creditsService";
+import { supabase } from "@/integrations/supabase/client";
 
 const MyPlan = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
   const [userCredits, setUserCredits] = useState<UserCredits | null>(null);
+  const [subscriptionData, setSubscriptionData] = useState({
+    subscribed: false,
+    subscription_tier: "free",
+    subscription_end: null as string | null
+  });
   const [planData, setPlanData] = useState({
     plan: "free",
     renewalDate: "2024-01-15",
@@ -38,9 +45,9 @@ const MyPlan = () => {
   });
 
   const [billingHistory] = useState([
-    { date: "2023-12-15", amount: "$19.99", status: "Paid", invoice: "INV-001" },
-    { date: "2023-11-15", amount: "$19.99", status: "Paid", invoice: "INV-002" },
-    { date: "2023-10-15", amount: "$19.99", status: "Paid", invoice: "INV-003" },
+    { date: "2023-12-15", amount: "$28.00", status: "Paid", invoice: "INV-001" },
+    { date: "2023-11-15", amount: "$28.00", status: "Paid", invoice: "INV-002" },
+    { date: "2023-10-15", amount: "$28.00", status: "Paid", invoice: "INV-003" },
   ]);
 
   useEffect(() => {
@@ -50,25 +57,59 @@ const MyPlan = () => {
   }, [user, navigate]);
 
   useEffect(() => {
-    const fetchCredits = async () => {
+    const fetchData = async () => {
       if (user) {
+        // Fetch credits
         const credits = await getUserCredits();
         setUserCredits(credits);
+
+        // Check subscription status
+        try {
+          const { data, error } = await supabase.functions.invoke('check-subscription');
+          if (!error && data) {
+            setSubscriptionData(data);
+            setPlanData(prev => ({ 
+              ...prev, 
+              plan: data.subscription_tier || "free" 
+            }));
+          }
+        } catch (error) {
+          console.error('Error checking subscription:', error);
+        }
       }
     };
     
-    fetchCredits();
+    fetchData();
   }, [user]);
 
   const handleUpgrade = () => {
     navigate('/pricing');
   };
 
-  const handleCancelSubscription = () => {
-    toast({
-      title: "Subscription Cancelled",
-      description: "Your subscription will remain active until the end of the current billing period."
-    });
+  const handleManageSubscription = async () => {
+    if (!subscriptionData.subscribed) {
+      navigate('/pricing');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal');
+      
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      } else {
+        throw new Error('No portal URL received');
+      }
+    } catch (error) {
+      console.error('Customer portal error:', error);
+      toast({
+        title: "Portal Error",
+        description: "Unable to open billing portal. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const getPlanInfo = (planType: string) => {
@@ -78,26 +119,26 @@ const MyPlan = () => {
           name: "Pro Plan",
           icon: <Star className="w-5 h-5" />,
           color: "bg-primary",
-          features: ["Unlimited content generation", "5 companies", "Priority support"]
+          features: ["Unlimited content generation", "Unlimited companies", "24/7 support", "API access"]
         };
-      case "enterprise":
+      case "standard":
         return {
-          name: "Enterprise Plan",
+          name: "Standard Plan",
           icon: <Crown className="w-5 h-5" />,
           color: "bg-accent",
-          features: ["Unlimited everything", "Unlimited companies", "24/7 support", "Custom integrations"]
+          features: ["3,000 monthly credits", "10 companies", "Priority support", "Multi-language support"]
         };
       default:
         return {
           name: "Free Plan",
           icon: <Zap className="w-5 h-5" />,
           color: "bg-gray-500",
-          features: ["Daily credits refresh", "3 companies", "Email support"]
+          features: ["10 daily credits", "3 companies", "Email support"]
         };
     }
   };
 
-  const currentPlan = getPlanInfo(planData.plan);
+  const currentPlan = getPlanInfo(subscriptionData.subscription_tier);
   const creditsCount = userCredits?.available_credits ?? 0;
   const isLowCredits = creditsCount <= 3;
 
@@ -130,7 +171,10 @@ const MyPlan = () => {
                     <div>
                       <CardTitle className="text-white">{currentPlan.name}</CardTitle>
                       <CardDescription className="text-gray-300">
-                        {planData.plan === "free" ? "Free forever" : `Renews on ${planData.renewalDate}`}
+                        {subscriptionData.subscribed && subscriptionData.subscription_end
+                          ? `Renews on ${new Date(subscriptionData.subscription_end).toLocaleDateString()}`
+                          : "Free forever"
+                        }
                       </CardDescription>
                     </div>
                   </div>
@@ -150,24 +194,31 @@ const MyPlan = () => {
                   ))}
                 </div>
 
-                {planData.plan === "free" && (
-                  <div className="pt-4 border-t border-primary/20">
+                <div className="pt-4 border-t border-primary/20">
+                  {subscriptionData.subscribed ? (
+                    <Button 
+                      onClick={handleManageSubscription}
+                      className="cosmic-button text-white w-full"
+                    >
+                      <Settings className="w-4 h-4 mr-2" />
+                      Manage Subscription
+                    </Button>
+                  ) : (
                     <Button 
                       onClick={handleUpgrade}
                       className="cosmic-button text-white w-full"
                     >
                       <Crown className="w-4 h-4 mr-2" />
-                      Upgrade to Pro
+                      Upgrade Plan
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
-                  </div>
-                )}
+                  )}
+                </div>
               </CardContent>
             </Card>
 
             {/* Quick Stats */}
             <div className="space-y-4">
-              {/* Credits Card */}
               <Card className="cosmic-card border-0">
                 <CardContent className="p-4">
                   <div className="flex items-center space-x-3">
@@ -276,14 +327,14 @@ const MyPlan = () => {
                     ))}
                   </div>
 
-                  {planData.plan !== "free" && (
+                  {subscriptionData.subscribed && (
                     <div className="mt-6 pt-6 border-t border-primary/20">
                       <Button 
-                        onClick={handleCancelSubscription}
-                        variant="outline" 
-                        className="border-red-500 text-red-500 hover:bg-red-500/10"
+                        onClick={handleManageSubscription}
+                        className="cosmic-button text-white"
                       >
-                        Cancel Subscription
+                        <Settings className="w-4 h-4 mr-2" />
+                        Manage Billing
                       </Button>
                     </div>
                   )}

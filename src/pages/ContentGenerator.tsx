@@ -368,7 +368,6 @@ const ContentGenerator = () => {
             <Card className="cosmic-card border-0 cosmic-glow">
               <CardHeader className="cosmic-card-header">
                 <CardTitle className="text-white text-2xl font-bold flex items-center">
-                  <Sparkles className="w-6 h-6 mr-2 text-accent" />
                   Content Details
                 </CardTitle>
                 <CardDescription className="text-gray-300 text-base">

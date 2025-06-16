@@ -7,6 +7,8 @@ import remarkGfm from 'remark-gfm';
 import { supabase } from "@/integrations/supabase/client";
 
 
+
+
 interface Message {
   content: string;
   sender: 'user' | 'assistant';
@@ -20,7 +22,6 @@ const INITIAL_ASSISTANT_MESSAGE: Message = {
   timestamp: new Date()
 };
 
-// Removed dark mode variations from prose classes for a consistent look
 const markdownProseClasses = (sender: 'user' | 'assistant') => `
   prose prose-sm
   max-w-none
@@ -28,10 +29,13 @@ const markdownProseClasses = (sender: 'user' | 'assistant') => `
   prose-p:my-1.5
   prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-li:leading-snug
   prose-blockquote:my-1.5 prose-blockquote:pl-3 prose-blockquote:border-l-2 prose-blockquote:italic
-  ${sender === 'user' ? 'prose-blockquote:border-white/50 prose-invert' : 'prose-blockquote:border-gray-300'}
+  ${sender === 'user' 
+    ? 'prose-invert prose-blockquote:border-white/50' 
+    : 'prose-blockquote:border-slate-300'} {/* Adjusted assistant blockquote border for bg-slate-50 */}
   prose-code:font-mono prose-code:text-xs prose-code:px-1 prose-code:py-0.5 prose-code:rounded-sm
   prose-code:before:content-[''] prose-code:after:content-['']
   prose-pre:font-mono prose-pre:text-xs prose-pre:my-2 prose-pre:p-0 prose-pre:bg-transparent prose-pre:rounded-md prose-pre:overflow-x-auto
+  ${sender === 'user' ? 'prose-invert' : ''} // Apply prose-invert only to user messages (dark background)
 `;
 
 
@@ -149,10 +153,10 @@ const ChatButton = () => {
   return (
     <div className="fixed bottom-12 right-8 z-[999]">
       {isOpen && (
-        <div className="mb-4 w-[90vw] max-w-[900px] h-[80vh] max-h-[800px] bg-slate-100 rounded-xl shadow-2xl border border-slate-300 animate-fade-in overflow-hidden flex flex-col">
+        // MODIFIED: Main chat window background and border
+        <div className="mb-4 w-[90vw] max-w-[900px] h-[80vh] max-h-[800px] bg-slate-200 rounded-xl shadow-2xl border border-slate-400 animate-fade-in overflow-hidden flex flex-col">
           <div className="p-4 bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 text-white flex justify-between items-center shrink-0">
             <div className="flex items-center">
-              {/* UPDATED: Header icon now uses the PNG image */}
               <div className="w-8 h-8 rounded-full flex items-center justify-center mr-3">
                 <img src="/chat-assistant.png" alt="Assistant" className="w-full h-full rounded-full" />
               </div>
@@ -191,15 +195,16 @@ const ChatButton = () => {
             </div>
           </div>
 
-          {/* UPDATED: Chat area background toned down */}
-          <div className="flex-grow p-4 sm:p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
+          {/* MODIFIED: Scrollbar thumb color for new background */}
+          <div className="flex-grow p-4 sm:p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-500 scrollbar-track-transparent">
             <div className="flex flex-col space-y-4">
               {messages.map((message, index) => (
                 <div key={index} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  {/* MODIFIED: Assistant message bubble background, border, and text color */}
                   <div className={`p-3 rounded-xl max-w-[85%] shadow-md text-sm ${
                       message.sender === 'user'
                         ? 'bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 text-white'
-                        : 'bg-white border border-gray-200 text-gray-800' // Removed dark mode classes
+                        : 'bg-slate-50 border border-slate-200 text-slate-800' 
                   }`}>
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
@@ -217,7 +222,8 @@ const ChatButton = () => {
                               setTimeout(() => setCopied(false), 2000);
                             } catch (err) { console.error('Failed to copy: ', err); }
                           };
-                          const preBg = message.sender === 'user' ? 'bg-black/30' : 'bg-slate-100';
+                          // MODIFIED: Assistant's pre background to contrast with new bubble color
+                          const preBg = message.sender === 'user' ? 'bg-black/30' : 'bg-slate-200'; 
                           return (
                             <div className="relative group my-2">
                               <pre {...props} className={`${props.className || ''} ${preBg} p-3 pt-9 rounded-md overflow-x-auto text-xs leading-relaxed`}>{children}</pre>
@@ -231,8 +237,11 @@ const ChatButton = () => {
                         },
                       }}
                     >{message.content}</ReactMarkdown>
+                    {/* MODIFIED: Assistant timestamp border and text color */}
                     <p className={`text-xs mt-2 pt-1 border-t text-right ${
-                      message.sender === 'user' ? 'border-white/20 text-blue-100 opacity-75' : 'border-gray-200/50 text-gray-400'
+                      message.sender === 'user' 
+                        ? 'border-white/20 text-blue-100 opacity-75' 
+                        : 'border-slate-200/60 text-slate-500'
                     }`}>
                       {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
@@ -241,8 +250,9 @@ const ChatButton = () => {
               ))}
               {isLoading && (
                  <div className="flex justify-start">
-                   <div className="p-3 rounded-lg max-w-[85%] bg-white border border-gray-200 shadow-md">
-                     <div className="flex items-center space-x-2 text-sm text-gray-500">
+                   {/* MODIFIED: Loading indicator bubble background, border, and text color */}
+                   <div className="p-3 rounded-lg max-w-[85%] bg-slate-50 border border-slate-200 shadow-md">
+                     <div className="flex items-center space-x-2 text-sm text-slate-600">
                        <Loader2 size={16} className="animate-spin" />
                        <span>Assistant is crafting your response...</span>
                      </div>
@@ -253,7 +263,6 @@ const ChatButton = () => {
             </div>
           </div>
 
-          {/* UPDATED: Footer and Input area restyled to be dark */}
           <div className="p-3 border-t border-slate-700 bg-slate-900 shrink-0">
             <div className="flex items-center space-x-3">
               <Input
