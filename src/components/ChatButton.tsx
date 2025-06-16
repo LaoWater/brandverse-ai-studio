@@ -74,7 +74,7 @@ const ChatButton = () => {
   };
 
   const handleHumanSupport = () => {
-    window.open('/support', '_blank');
+    window.open('/contact', '_blank');
   };
 
   const handleSendMessage = async () => {
