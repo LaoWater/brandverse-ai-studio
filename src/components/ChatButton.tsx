@@ -1,51 +1,26 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Send, Bot, Loader2, ClipboardCopy, Check, Trash2 } from 'lucide-react'; // Added Trash2
+import { X, Send, Bot, Loader2, ClipboardCopy, Check, Trash2, Headphones, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input'; // Assuming this is your custom ShadCN Input
-import OpenAI from 'openai';
+import { Input } from '@/components/ui/input';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { supabase } from "@/integrations/supabase/client";
+
 
 interface Message {
   content: string;
   sender: 'user' | 'assistant';
   timestamp: Date;
+  containsHumanSupport?: boolean;
 }
 
 const INITIAL_ASSISTANT_MESSAGE: Message = {
-  content: "Ask me anything about Python, and I'll do my best to help you with clear explanations and code examples.",
+  content: "🚀 **Welcome to Creators Multiverse!**\n\nI'm here to help you transform your brilliant ideas into viral content at light speed. Whether you need guidance on our features, content creation strategies, or getting started - I'm ready to assist!\n\n**Quick Start:**\n- **Multi-Platform Publishing** - Create once, share everywhere\n- **AI-Powered Optimization** - Content designed for maximum engagement  \n- **Creative Command Center** - Your workspace, supercharged\n\nWhat would you like to know about accelerating your content creation journey?",
   sender: 'assistant',
   timestamp: new Date()
 };
 
-const SYSTEM_PROMPT = `You are Blue Pigeon Assistant, a senior Python developer and an expert Python teacher.
-Your primary goal is to help users learn Python, debug their code, understand complex concepts, and write better Python code.
-
-**Formatting Instructions (CRITICAL - Adhere Strictly):**
-- **ALWAYS respond using clear, well-structured Markdown.** Your entire response body MUST be Markdown.
-- **Utilize a variety of Markdown elements for readability and structure:**
-    - Headings (e.g., \`## Main Topic\`, \`### Sub-topic\`) for organization.
-    - Bold text (e.g., \`**important concept**\`) for emphasis.
-    - Italic text (e.g., \`*emphasized term*\`) for nuance.
-    - Unordered lists (e.g., \`- First item\`) for bullet points.
-    - Ordered lists (e.g., \`1. Step one\`) for sequences.
-    - Inline code (e.g., \`variable_name\`, \`my_function()\`) using single backticks for short code mentions.
-    - **Multi-line code blocks for Python code snippets. ALWAYS specify the language, typically 'python':**
-      \`\`\`python
-      # Your Python code here
-      def example_function():
-          return "This is Python code"
-      print(example_function())
-      \`\`\`
-    - Blockquotes (e.g., \`> This is a quote\`) if relevant.
-    - Tables if data is tabular.
-- Ensure code blocks are complete and runnable examples where appropriate. Explain the code clearly.
-- If providing instructions or steps, use ordered or unordered lists.
-- Keep explanations concise but thorough.
-- Maintain a friendly, patient, and encouraging tone.
-- If a user asks something unrelated to Python or programming, politely state that your expertise is in Python and offer to help with Python-related questions.
-`;
-
+// Removed dark mode variations from prose classes for a consistent look
 const markdownProseClasses = (sender: 'user' | 'assistant') => `
   prose prose-sm
   max-w-none
@@ -53,25 +28,22 @@ const markdownProseClasses = (sender: 'user' | 'assistant') => `
   prose-p:my-1.5
   prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-li:leading-snug
   prose-blockquote:my-1.5 prose-blockquote:pl-3 prose-blockquote:border-l-2 prose-blockquote:italic
-  ${sender === 'user' ? 'prose-blockquote:border-white/50' : 'dark:prose-blockquote:border-gray-600 prose-blockquote:border-gray-300'}
+  ${sender === 'user' ? 'prose-blockquote:border-white/50 prose-invert' : 'prose-blockquote:border-gray-300'}
   prose-code:font-mono prose-code:text-xs prose-code:px-1 prose-code:py-0.5 prose-code:rounded-sm
   prose-code:before:content-[''] prose-code:after:content-['']
   prose-pre:font-mono prose-pre:text-xs prose-pre:my-2 prose-pre:p-0 prose-pre:bg-transparent prose-pre:rounded-md prose-pre:overflow-x-auto
-  ${sender === 'user' ? 'prose-invert' : 'dark:prose-invert'}
 `;
+
 
 const ChatButton = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([INITIAL_ASSISTANT_MESSAGE]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [shouldGlowHumanSupport, setShouldGlowHumanSupport] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null); // Ref for the input field
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const openai = new OpenAI({
-    apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-    dangerouslyAllowBrowser: true,
-  });
 
   const toggleChat = () => setIsOpen(!isOpen);
 
@@ -80,65 +52,85 @@ const ChatButton = () => {
   useEffect(() => {
     if (isOpen && messages.length > 0) {
       scrollToBottom();
-      // Focus input when chat opens
-      // Timeout helps ensure the element is rendered and ready for focus
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [messages, isOpen]); // Scroll when messages update or chat opens/closes
+  }, [messages, isOpen]);
 
-  // Separate useEffect for focusing input, depends only on isOpen
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [isOpen]);
 
-
   const handleClearChat = () => {
     setMessages([INITIAL_ASSISTANT_MESSAGE]);
     setInputText('');
-    // Optionally, re-focus input after clearing
+    setShouldGlowHumanSupport(false);
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
+  const handleHumanSupport = () => {
+    window.open('/support', '_blank');
+  };
+
   const handleSendMessage = async () => {
-    if (!inputText.trim() || isLoading) return; // isLoading check here prevents multiple rapid sends
+    if (!inputText.trim() || isLoading) return;
 
-    const newUserMessage: Message = { content: inputText, sender: 'user', timestamp: new Date() };
+    const newUserMessage: Message = { 
+      content: inputText, 
+      sender: 'user', 
+      timestamp: new Date() 
+    };
+    
     setMessages(prev => [...prev, newUserMessage]);
-    const currentInput = inputText; // Capture current input before clearing
-    setInputText(''); // Clear input field immediately
-    setIsLoading(true); // Set loading for the button
-
-    // API call without memory
-    const apiMessages = [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: currentInput } // Use the captured input
-    ];
+    const currentInput = inputText;
+    setInputText('');
+    setIsLoading(true);
+    setShouldGlowHumanSupport(false);
 
     try {
-      const completion = await openai.chat.completions.create({
-        model: "o4-mini",
-        messages: apiMessages as any,
+      const { data, error } = await supabase.functions.invoke('chat-assistant', {
+        body: { message: currentInput }
       });
-      const assistantResponse = completion.choices[0]?.message?.content;
-      if (assistantResponse) {
-        setMessages(prev => [...prev, { content: assistantResponse, sender: 'assistant', timestamp: new Date() }]);
+
+      if (error) throw new Error(error.message || 'Failed to get response from assistant');
+      
+      if (data?.message) {
+        const assistantMessage: Message = {
+          content: data.message,
+          sender: 'assistant',
+          timestamp: new Date(),
+          containsHumanSupport: data.containsHumanSupport || false
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+        if (data.containsHumanSupport) {
+          setShouldGlowHumanSupport(true);
+          setTimeout(() => setShouldGlowHumanSupport(false), 5000);
+        }
       } else {
-        setMessages(prev => [...prev, { content: "I received an empty response. Please try again.", sender: 'assistant', timestamp: new Date() }]);
+        throw new Error('No response received from assistant');
       }
     } catch (error) {
-      console.error("Error calling OpenAI API:", error);
-      let errorMessage = "Sorry, I encountered an error. Please try again.";
-      if (error instanceof OpenAI.APIError) errorMessage = `API Error: ${error.status} ${error.name} - ${error.message}`;
-      setMessages(prev => [...prev, { content: errorMessage, sender: 'assistant', timestamp: new Date() }]);
+      console.error("Error calling assistant:", error);
+      let errorMessage = "Sorry, I encountered an error. Please try again or contact our human support team.";
+      if (error instanceof Error) {
+        errorMessage = `I'm having trouble connecting right now. ${error.message.includes('fetch') ? 'Please check your connection and try again.' : 'Please try again or contact our human support team.'}`;
+      }
+      setMessages(prev => [...prev, { 
+        content: errorMessage, 
+        sender: 'assistant', 
+        timestamp: new Date(),
+        containsHumanSupport: true
+      }]);
+      setShouldGlowHumanSupport(true);
+      setTimeout(() => setShouldGlowHumanSupport(false), 5000);
     } finally {
-      setIsLoading(false); // Reset loading for the button
+      setIsLoading(false);
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey && !isLoading) { // Also check !isLoading here for consistency
+    if (e.key === 'Enter' && !e.shiftKey && !isLoading) {
       e.preventDefault();
       handleSendMessage();
     }
@@ -157,13 +149,30 @@ const ChatButton = () => {
   return (
     <div className="fixed bottom-12 right-8 z-[999]">
       {isOpen && (
-        <div className="mb-4 w-[90vw] max-w-[900px] h-[80vh] max-h-[800px] bg-white dark:bg-gray-950 rounded-lg shadow-2xl border border-border animate-fade-in overflow-hidden flex flex-col">
-          <div className="p-4 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-indigo-800 dark:to-blue-900 text-white dark:text-blue-100 flex justify-between items-center shrink-0">
+        <div className="mb-4 w-[90vw] max-w-[900px] h-[80vh] max-h-[800px] bg-slate-100 rounded-xl shadow-2xl border border-slate-300 animate-fade-in overflow-hidden flex flex-col">
+          <div className="p-4 bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 text-white flex justify-between items-center shrink-0">
             <div className="flex items-center">
-              <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center mr-3"><Bot size={16} className="text-white" /></div>
-              <h3 className="font-medium text-lg">Blue Pigeon Assistant</h3>
+              {/* UPDATED: Header icon now uses the PNG image */}
+              <div className="w-8 h-8 rounded-full flex items-center justify-center mr-3">
+                <img src="/chat-assistant.png" alt="Assistant" className="w-full h-full rounded-full" />
+              </div>
+              <div>
+                <h3 className="font-medium text-lg">Creators Multiverse Assistant</h3>
+                <p className="text-xs text-white/80">Transform ideas into viral content ⚡</p>
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1 sm:space-x-2">
+              <button
+                onClick={handleHumanSupport}
+                className={`
+                  px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-300 text-xs font-medium flex items-center space-x-1.5
+                  ${shouldGlowHumanSupport ? 'animate-pulse bg-yellow-400/30 ring-2 ring-yellow-400/50 shadow-lg shadow-yellow-400/25' : ''}
+                `}
+                title="Get help from our human support team"
+              >
+                <Headphones size={14} />
+                <span className="hidden sm:inline">Human Support</span>
+              </button>
               <button
                 onClick={handleClearChat}
                 className="p-1.5 rounded-full hover:bg-white/15 transition-colors"
@@ -172,20 +181,25 @@ const ChatButton = () => {
               >
                 <Trash2 size={18} />
               </button>
-              <button onClick={toggleChat} className="p-1 rounded-full hover:bg-white/10 transition-colors" aria-label="Close chat">
+              <button 
+                onClick={toggleChat} 
+                className="p-1 rounded-full hover:bg-white/10 transition-colors" 
+                aria-label="Close chat"
+              >
                 <X size={20} />
               </button>
             </div>
           </div>
 
-          <div className="flex-grow p-4 sm:p-6 overflow-y-auto bg-gray-50 dark:bg-gray-900 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
+          {/* UPDATED: Chat area background toned down */}
+          <div className="flex-grow p-4 sm:p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
             <div className="flex flex-col space-y-4">
               {messages.map((message, index) => (
                 <div key={index} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`p-3 rounded-lg max-w-[85%] shadow-md text-sm ${
+                  <div className={`p-3 rounded-xl max-w-[85%] shadow-md text-sm ${
                       message.sender === 'user'
-                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white dark:from-blue-700 dark:to-indigo-700'
-                        : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100'
+                        ? 'bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 text-white'
+                        : 'bg-white border border-gray-200 text-gray-800' // Removed dark mode classes
                   }`}>
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
@@ -203,7 +217,7 @@ const ChatButton = () => {
                               setTimeout(() => setCopied(false), 2000);
                             } catch (err) { console.error('Failed to copy: ', err); }
                           };
-                          const preBg = message.sender === 'user' ? 'bg-black/30' : 'bg-gray-100 dark:bg-slate-800';
+                          const preBg = message.sender === 'user' ? 'bg-black/30' : 'bg-slate-100';
                           return (
                             <div className="relative group my-2">
                               <pre {...props} className={`${props.className || ''} ${preBg} p-3 pt-9 rounded-md overflow-x-auto text-xs leading-relaxed`}>{children}</pre>
@@ -217,37 +231,45 @@ const ChatButton = () => {
                         },
                       }}
                     >{message.content}</ReactMarkdown>
-                    <p className={`text-xs mt-2 pt-1 border-t ${message.sender === 'user' ? 'border-white/20' : 'border-gray-200 dark:border-gray-700/50'} text-right ${
-                      message.sender === 'user' ? 'text-blue-100 dark:text-indigo-200 opacity-75' : 'text-gray-400 dark:text-gray-500'
+                    <p className={`text-xs mt-2 pt-1 border-t text-right ${
+                      message.sender === 'user' ? 'border-white/20 text-blue-100 opacity-75' : 'border-gray-200/50 text-gray-400'
                     }`}>
                       {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
                 </div>
               ))}
-              {isLoading && ( /* This is now just a visual cue, doesn't reflect input state */
-                 <div className="flex justify-start"><div className="p-3 rounded-lg max-w-[85%] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md"><div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400"><Loader2 size={16} className="animate-spin" /><span>Assistant is typing...</span></div></div></div>
+              {isLoading && (
+                 <div className="flex justify-start">
+                   <div className="p-3 rounded-lg max-w-[85%] bg-white border border-gray-200 shadow-md">
+                     <div className="flex items-center space-x-2 text-sm text-gray-500">
+                       <Loader2 size={16} className="animate-spin" />
+                       <span>Assistant is crafting your response...</span>
+                     </div>
+                   </div>
+                 </div>
               )}
               <div ref={messagesEndRef} />
             </div>
           </div>
 
-          <div className="p-3 border-t border-border bg-white dark:bg-gray-900 shrink-0">
-            <div className="flex items-center space-x-2">
+          {/* UPDATED: Footer and Input area restyled to be dark */}
+          <div className="p-3 border-t border-slate-700 bg-slate-900 shrink-0">
+            <div className="flex items-center space-x-3">
               <Input
-                ref={inputRef} // Assign ref to input
+                ref={inputRef}
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={handleKeyPress}
-                placeholder="Ask about Python..."
-                className="flex-grow dark:bg-gray-800 dark:text-gray-50"
-                // Input is NOT disabled by isLoading anymore
+                placeholder="Ask a question..."
+                className="flex-grow bg-slate-800 border-slate-700 text-gray-200 placeholder:text-gray-500 rounded-lg focus:ring-1 focus:ring-blue-500"
               />
               <Button
                 onClick={handleSendMessage}
                 size="icon"
-                disabled={!inputText.trim() || isLoading} // Button is disabled by isLoading
-                className="shrink-0 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-70"
+                disabled={!inputText.trim() || isLoading}
+                className="shrink-0 bg-gradient-to-r from-blue-500 to-purple-600 hover:opacity-90 disabled:opacity-50 rounded-lg w-10 h-10"
+                aria-label="Send message"
               >
                 {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
               </Button>
@@ -256,11 +278,24 @@ const ChatButton = () => {
         </div>
       )}
 
-      <button onClick={toggleChat} className="relative flex items-center justify-center w-16 h-16 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group" aria-label="Open chat assistant">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-800 transition-transform duration-300 group-hover:scale-110"></div>
-        <div className="absolute inset-0 bg-gradient-to-tl from-blue-400 to-indigo-500 opacity-0 group-hover:opacity-40 transition-opacity duration-300"></div>
-        <div className="absolute inset-0 blue-pigeon-glow"></div>
-        <Bot size={28} className="relative z-10 text-white transition-transform duration-300 group-hover:rotate-[-15deg] group-hover:scale-110" />
+      <button 
+        onClick={toggleChat} 
+        className="relative flex items-center justify-center w-16 h-16 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group" 
+        aria-label={isOpen ? "Close chat" : "Open Creators Multiverse assistant"}
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-500 via-blue-500 to-indigo-600 transition-transform duration-300 group-hover:scale-110"></div>
+        <div className="absolute inset-0 bg-gradient-to-tl from-purple-400 via-blue-400 to-indigo-500 opacity-0 group-hover:opacity-40 transition-opacity duration-300"></div>
+        <div className="absolute inset-0 creators-multiverse-glow"></div>
+        
+        {isOpen ? (
+          <X size={32} className="relative z-10 text-white transition-all duration-300 group-hover:scale-110 group-hover:-rotate-12" />
+        ) : (
+          <img
+            src="/chat-assistant.png"
+            alt="Open Creators Multiverse assistant"
+            className="relative z-10 w-full h-full object-cover transition-all duration-300 group-hover:scale-110 group-hover:rotate-6"
+          />
+        )}
       </button>
     </div>
   );
