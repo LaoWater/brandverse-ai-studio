@@ -27,7 +27,7 @@ const HeroSection = () => {
         <div className="container mx-auto px-4 text-center relative z-10">
           <div className="max-w-5xl mx-auto space-y-8 animate-fade-in">
             <div className="relative">
-              <h1 className="text-5xl md:text-7xl font-bold leading-tight">
+              <h1 className="text-5xl md:text-6xl font-bold leading-tight">
                 <span className="text-cosmic font-serif flex items-center justify-center gap-3">
                   <Zap className="w-12 h-12 md:w-16 md:h-16 text-accent animate-pulse" />
                   Transform Ideas
@@ -48,8 +48,8 @@ const HeroSection = () => {
             {/* Visual concept representation - Speed Theme */}
             <div className="flex justify-center items-center space-x-8 my-12">
               <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mb-2 mx-auto animate-pulse">
-                  <Lightbulb className="w-8 h-8 text-white" />
+              <div className="w-16 h-16 bg-gradient-to-br from-sky-400 to-indigo-500 rounded-full flex items-center justify-center mb-2 mx-auto animate-pulse">
+                <Lightbulb className="w-8 h-8 text-white" />
                 </div>
                 <p className="text-sm text-gray-400">Your Ideas</p>
               </div>
@@ -189,7 +189,7 @@ const HeroSection = () => {
             </div>
             <div className="relative">
               <img 
-                src="https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=800&q=80" 
+                src="/CommandCenter.jpg" 
                 alt="Content creator working on laptop"
                 className="rounded-2xl shadow-2xl w-full"
               />

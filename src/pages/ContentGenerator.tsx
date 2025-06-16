@@ -501,10 +501,10 @@ const ContentGenerator = () => {
                               <div className="mt-3 pl-8 space-y-2">
                                 <div className="grid grid-cols-2 gap-2">
                                   {[
-                                    { value: 'auto', label: 'Decide', icon: Wand2, credits: 3 },
                                     { value: 'text', label: 'Text', icon: TypeIconLucide, credits: 1 },
                                     { value: 'image', label: 'Image', icon: ImageIconLucide, credits: 3 },
-                                    { value: 'video', label: 'Video', icon: VideoIconLucide, credits: 3 }
+                                    { value: 'video', label: 'Video', icon: VideoIconLucide, credits: 3 },
+                                    { value: 'auto', label: 'Auto-Decide', icon: Wand2, credits: 3 },
                                   ].map(({ value, label, icon: Icon, credits }) => (
                                     <Button 
                                       type="button"
