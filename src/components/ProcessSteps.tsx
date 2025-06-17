@@ -25,16 +25,9 @@ const ProcessSteps = () => {
   ];
 
   return (
-    <section className="py-24 relative">
+    <section className="py-12 relative">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            How It <span className="text-cosmic font-serif">Works</span>
-          </h2>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-            Three simple steps to transform your content creation workflow
-          </p>
-        </div>
+       
         
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {steps.map((step, index) => (

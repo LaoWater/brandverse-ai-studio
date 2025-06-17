@@ -266,9 +266,9 @@ const HeroSection = () => {
             </div>
             <div className="relative">
               <img 
-                src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=800&q=80" 
+                src="/unleash_your_productivity.jpg" 
                 alt="Professional working on content creation"
-                className="rounded-2xl shadow-2xl w-full"
+                className="rounded-2xl shadow-2xl w-full h-full"
               />
               <div className="absolute top-4 right-4 bg-background/80 backdrop-blur-sm rounded-lg p-3">
                 <div className="flex items-center gap-2 text-sm text-white">
@@ -280,6 +280,9 @@ const HeroSection = () => {
           </div>
         </div>
       </section>
+
+
+
     </div>
   );
 };
