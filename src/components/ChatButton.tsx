@@ -38,7 +38,6 @@ const markdownProseClasses = (sender: 'user' | 'assistant') => `
   ${sender === 'user' ? 'prose-invert' : ''} // Apply prose-invert only to user messages (dark background)
 `;
 
-
 const ChatButton = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([INITIAL_ASSISTANT_MESSAGE]);
@@ -209,7 +208,6 @@ const ChatButton = () => {
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       components={{
-                        wrapper: ({children}) => (<div className={markdownProseClasses(message.sender)}>{children}</div>),
                         pre: ({ node, children, ...props }) => {
                           const codeNode = node?.children?.[0];
                           const textToCopy = codeNode ? extractTextFromHastNode(codeNode) : '';
@@ -236,6 +234,7 @@ const ChatButton = () => {
                           );
                         },
                       }}
+                      className={markdownProseClasses(message.sender)}
                     >{message.content}</ReactMarkdown>
                     {/* MODIFIED: Assistant timestamp border and text color */}
                     <p className={`text-xs mt-2 pt-1 border-t text-right ${

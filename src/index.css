@@ -236,29 +236,79 @@
     display: block !important;
   }
   
-  /* Dropdown menu fixes to avoid the brown color */
+  /* DROPDOWN MENU FIXES - Enhanced specificity to override yellow/brown colors */
   [data-radix-popper-content-wrapper],
-  .radix-dropdown-content {
-    --background: 15 15 25;
-    background-color: rgb(15 15 25);
-  }
-  
-  .dropdown-content,
+  [data-radix-dropdown-menu-content],
+  [data-radix-select-content],
+  [role="listbox"],
   [role="menu"],
-  [data-state="open"] {
-    background-color: rgb(15 15 25) !important;
-    border-color: rgba(91, 95, 238, 0.3) !important;
-  }
-  
-  /* Override defaults for all dropdown menus */
-  div[role="menu"],
-  div[data-radix-menu-content],
-  div[data-radix-dropdown-menu-content] {
+  [data-state="open"],
+  .dropdown-content {
     background-color: rgb(15 15 25) !important;
     border: 1px solid rgba(91, 95, 238, 0.25) !important;
+    color: white !important;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5) !important;
+    z-index: 50 !important;
   }
-  
+
+  /* Override Select component styling */
+  [data-radix-select-content] {
+    background-color: rgb(15 15 25) !important;
+    border: 1px solid rgba(91, 95, 238, 0.25) !important;
+    color: white !important;
+  }
+
+  [data-radix-select-item] {
+    color: white !important;
+    background-color: transparent !important;
+  }
+
+  [data-radix-select-item][data-highlighted] {
+    background-color: rgba(91, 95, 238, 0.2) !important;
+    color: white !important;
+  }
+
+  [data-radix-select-item][data-state="checked"] {
+    background-color: rgba(91, 95, 238, 0.3) !important;
+    color: white !important;
+  }
+
+  /* Override Dropdown Menu component styling */
+  [data-radix-dropdown-menu-item] {
+    color: white !important;
+    background-color: transparent !important;
+  }
+
+  [data-radix-dropdown-menu-item][data-highlighted] {
+    background-color: rgba(91, 95, 238, 0.2) !important;
+    color: white !important;
+  }
+
+  /* Ensure Select triggers have proper text color */
+  [data-radix-select-trigger] {
+    color: white !important;
+  }
+
+  [data-radix-select-trigger][data-placeholder] {
+    color: rgba(156, 163, 175, 1) !important;
+  }
+
+  /* Fix any yellow/brown text in Select components */
+  [data-radix-select-value],
+  [data-radix-select-trigger] span,
+  [data-radix-select-trigger] > span {
+    color: white !important;
+  }
+
+  /* Override any residual text colors in dropdowns */
+  div[role="menu"] *,
+  div[data-radix-menu-content] *,
+  div[data-radix-dropdown-menu-content] *,
+  div[data-radix-select-content] *,
+  [role="listbox"] * {
+    color: white !important;
+  }
+
   /* Override for toggle switch backgrounds */
   [data-state="unchecked"].bg-input {
     background-color: rgb(20 20 35) !important;
