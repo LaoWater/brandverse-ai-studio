@@ -19,9 +19,8 @@ const HeroSection = () => {
           <div className="absolute top-1/3 right-1/4 w-48 h-1 bg-gradient-to-r from-transparent via-accent/50 to-transparent rotate-12 blur-sm animate-pulse" style={{ animationDelay: '-4s' }}></div>
           
           {/* Speed particles */}
-          <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-accent rounded-full animate-ping"></div>
           <div className="absolute bottom-1/3 right-1/3 w-2 h-2 bg-primary rounded-full animate-ping" style={{ animationDelay: '-1s' }}></div>
-          <div className="absolute top-1/3 right-1/4 w-2 h-2 bg-accent rounded-full animate-ping" style={{ animationDelay: '-3s' }}></div>
+          <div className="absolute top-1/3 right-1/4 w-2 h-2 bg-accent rounded-full animate-pulse" style={{ animationDelay: '-3s' }}></div>
         </div>
         
         <div className="container mx-auto px-4 text-center relative z-10">

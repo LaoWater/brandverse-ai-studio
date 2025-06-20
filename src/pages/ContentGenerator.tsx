@@ -21,7 +21,7 @@ import { calculateCreditsNeeded, deductCredits, getUserCredits } from "@/service
 import { saveGeneratedPostsToSupabase } from '@/services/supabaseService';
 import GenerationProgressModal, { ProgressStage } from '@/components/GenerationProgressModal';
 
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = "https://gcs-gemini-openai-app-1006785094868.europe-central2.run.app";
 
 interface RequirementItem { type: string; detail: string; }
 interface PostHistoryItem { platform: string; text: string; }
@@ -83,15 +83,15 @@ const ContentGenerator = () => {
 
   const languages = [
     { code: "en", name: "English", isDefault: true },
+    { code: "ro", name: "Romanian" },
     { code: "es", name: "Spanish" },
     { code: "fr", name: "French" },
     { code: "de", name: "German" },
     { code: "it", name: "Italian" },
     { code: "pt", name: "Portuguese" },
-     { code: "ro", name: "Romanian" },
-     { code: "bg", name: "Bulgarian" },
-     { code: "hr", name: "Croatian" },
-     { code: "sk", name: "Slovak" }
+    { code: "bg", name: "Bulgarian" },
+    { code: "hr", name: "Croatian" },
+    { code: "sk", name: "Slovak" }
   ];
 
   const platforms = [
@@ -104,6 +104,13 @@ const ContentGenerator = () => {
   const tones = [
     "Professional", "Casual & Friendly", "Inspirational", "Humorous",
     "Educational", "Urgent", "Conversational", "Authoritative", "Neutral"
+  ];
+
+  const mediaOptions = [
+    { value: 'text', label: 'Text', icon: TypeIconLucide, credits: 1 },
+    { value: 'image', label: 'Image + Text', icon: ImageIconLucide, credits: 3 },
+    { value: 'video', label: 'Video + Text', icon: VideoIconLucide, credits: 3, comingSoon: true }, // Added comingSoon flag
+    { value: 'auto', label: 'Auto-Decide', icon: Wand2, credits: 3 },
   ];
 
   const creditsNeeded = calculateCreditsNeeded(formData.platforms, formData.platformMedia);
@@ -121,7 +128,7 @@ const ContentGenerator = () => {
         return {
           ...prev,
           platforms: [...prev.platforms, platformId],
-          platformMedia: { ...prev.platformMedia, [platformId]: 'auto' }
+          platformMedia: { ...prev.platformMedia, [platformId]: 'Text' }
         };
       }
     });
@@ -498,30 +505,57 @@ const ContentGenerator = () => {
                             </div>
                             
                             {isSelected && (
-                              <div className="mt-3 pl-8 space-y-2">
-                                <div className="grid grid-cols-2 gap-2">
-                                  {[
-                                    { value: 'text', label: 'Text', icon: TypeIconLucide, credits: 1 },
-                                    { value: 'image', label: 'Image', icon: ImageIconLucide, credits: 3 },
-                                    { value: 'video', label: 'Video', icon: VideoIconLucide, credits: 3 },
-                                    { value: 'auto', label: 'Auto-Decide', icon: Wand2, credits: 3 },
-                                  ].map(({ value, label, icon: Icon, credits }) => (
-                                    <Button 
-                                      type="button"
-                                      key={value}
-                                      variant="ghost"
-                                      size="sm"
-                                      className={`w-full justify-start text-xs
-                                                  ${selectedMedia === value ? 'bg-accent text-accent-foreground hover:bg-accent/90' : 'text-gray-300 hover:bg-white/5 hover:text-white'}`}
-                                      onClick={() => handleMediaTypeSelect(platform.id, value as 'text' | 'image' | 'video' | 'auto')}
-                                    >
-                                      <Icon className="w-3 h-3 mr-2" />
-                                      {label} ({credits}c)
-                                    </Button>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
+                          <div className="mt-3 pl-8 space-y-2">
+                            <div className="grid grid-cols-2 gap-2">
+                              {mediaOptions.map(({ value, label, icon: Icon, credits, comingSoon }) => {
+                                if (comingSoon) {
+                                  return (
+                                    <Tooltip key={value} delayDuration={100}>
+                                      <TooltipTrigger asChild>
+                                        {/* 
+                                          This span acts as the event target for the tooltip.
+                                          The Button inside is disabled and has pointer-events: none 
+                                          so events "pass through" to this span.
+                                        */}
+                                        <span className="w-full inline-block"> {/* Ensure span takes up the button's space */}
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="w-full justify-start text-xs text-gray-500 opacity-60 cursor-not-allowed pointer-events-none"
+                                            disabled // Button is functionally disabled
+                                            aria-disabled="true" // Good for accessibility
+                                            // No onClick needed here as it's disabled
+                                          >
+                                            <Icon className="w-3 h-3 mr-2" />
+                                            {label} ({credits}c)
+                                          </Button>
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent className="bg-gray-800 border-white/20 text-white">
+                                        <p>Coming soon!</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  );
+                                }
+                                return (
+                                  <Button
+                                    type="button"
+                                    key={value}
+                                    variant="ghost"
+                                    size="sm"
+                                    className={`w-full justify-start text-xs
+                                                ${selectedMedia === value ? 'bg-accent text-accent-foreground hover:bg-accent/90' : 'text-gray-300 hover:bg-white/5 hover:text-white'}`}
+                                    onClick={() => handleMediaTypeSelect(platform.id, value as 'text' | 'image' | 'video' | 'auto')}
+                                  >
+                                    <Icon className="w-3 h-3 mr-2" />
+                                    {label} ({credits}c)
+                                  </Button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                           </div>
                         );
                       })}

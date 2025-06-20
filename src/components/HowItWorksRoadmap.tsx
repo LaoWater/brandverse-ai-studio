@@ -188,7 +188,7 @@ export function HowItWorksRoadmap() {
         <div ref={roadmapRef} className="relative max-w-5xl mx-auto"> {/* Using max-w-5xl for wider layout */}
           <motion.div
             // Updated gradient to end with purple
-            className="absolute top-0 left-1/2 -translate-x-1/2 w-1 bg-gradient-to-b from-sky-500 via-purple-500 via-emerald-500 to-purple-500 rounded-full"
+            className="absolute top-0 left-1/2 -translate-x-1/2 w-1 bg-gradient-to-b from-sky-500 via-purple-500 to-emerald-500 to-sky-500 rounded-full"
             style={{ height: lineHeight, opacity: lineOpacity }}
             aria-hidden="true"
           />
