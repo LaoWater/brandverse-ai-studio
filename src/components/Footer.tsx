@@ -1,6 +1,8 @@
-
 import { Link } from "react-router-dom";
-import { Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
+// Keep the lucide icons you still need
+import { Facebook, Instagram, Linkedin } from "lucide-react";
+// Import the correct X logo from react-icons
+import { FaXTwitter } from "react-icons/fa6";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -43,15 +45,18 @@ const Footer = () => {
               >
                 <Linkedin className="w-5 h-5" />
               </a>
+              {/* === UPDATED SECTION === */}
               <a
                 href="https://x.com/Creators_M777"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-accent transition-colors"
-                aria-label="Twitter"
+                aria-label="X"
               >
-                <Twitter className="w-5 h-5" />
+                {/* Use the new icon component */}
+                <FaXTwitter className="w-5 h-5" />
               </a>
+              {/* === END UPDATED SECTION === */}
             </div>
           </div>
           
@@ -103,7 +108,7 @@ const Footer = () => {
         </div>
         
         <div className="mt-5 pt-8 border-t border-primary/10 flex flex-col md:flex-row md:items-center md:justify-between text-gray-400 text-sm">
-          <p>&copy; {currentYear} Creators Multiverse. All rights reserved.</p>
+          <p>© {currentYear} Creators Multiverse. All rights reserved.</p>
           <p className="mt-2 md:mt-0">Created & Maintained by Free2Play</p>
         </div>
       </div>

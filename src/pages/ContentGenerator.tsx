@@ -13,6 +13,8 @@ import {
     Image as ImageIconLucide, Video as VideoIconLucide, Type as TypeIconLucide, 
     Wand2, Check, FileText, Bot, Palette, Globe, SaveIcon, Loader2, Coins
 } from "lucide-react";
+import { FaXTwitter } from "react-icons/fa6";
+
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -97,7 +99,7 @@ const ContentGenerator = () => {
   const platforms = [
     { id: "instagram", label: "Instagram", icon: Instagram, color: "text-pink-500" },
     { id: "linkedin", label: "LinkedIn", icon: Linkedin, color: "text-blue-600" },
-    { id: "twitter", label: "Twitter", icon: Twitter, color: "text-sky-500" },
+    { id: "twitter", label: "Twitter", icon: FaXTwitter, color: "text-sky-500" },
     { id: "facebook", label: "Facebook", icon: Facebook, color: "text-blue-700" }
   ];
 
