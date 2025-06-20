@@ -1,0 +1,17 @@
+[
+    {
+      "origin": [
+        "http://localhost:8080",  
+        "https://creators-multiverse.com" 
+      ],
+      "method": [
+        "GET",
+        "HEAD"
+      ],
+      "responseHeader": [
+        "Content-Type",
+        "Content-Disposition" 
+      ],
+      "maxAgeSeconds": 3600
+    }
+  ]

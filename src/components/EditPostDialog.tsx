@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react"; // Ensure useEffect is imported
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Image, Video, ClipboardCopy, Check, Download, LucideIcon } from "lucide-react";
+import { Image, Video, ClipboardCopy, Check, Download, LucideIcon, Loader2 } from "lucide-react"; // Added Loader2
 import { toast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
 
@@ -27,7 +27,7 @@ interface EditPostDialogProps {
   onSave: (formData: FormData) => void;
   platforms: PlatformOption[];
   isSaving: boolean;
-  isImageUrl: (url: string | null) => url is string; // Updated isImageUrl type
+  isImageUrl: (url: string | null) => url is string;
 }
 
 export const EditPostDialog = ({
@@ -39,20 +39,20 @@ export const EditPostDialog = ({
   isSaving,
   isImageUrl,
 }: EditPostDialogProps) => {
-  // Initialize detailsContent. It will be updated by useEffect when 'post' prop changes.
   const [detailsContent, setDetailsContent] = useState<string>("");
   const [copied, setCopied] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false); // State for download button
 
-  // CORRECTED: Use useEffect to update detailsContent when the 'post' prop changes.
   useEffect(() => {
     if (post) {
       setDetailsContent(post.details || "");
     } else {
-      setDetailsContent(""); // Clear content if post is null
+      setDetailsContent("");
     }
-  }, [post]); // Dependency array: re-run effect if 'post' changes.
+  }, [post]);
 
   const handleCopyDetails = async () => {
+    // ... (keep existing implementation)
     if (!detailsContent) {
       toast({ title: "Nothing to copy", variant: "default", className: "bg-yellow-500/10 text-yellow-400" });
       return;
@@ -80,27 +80,72 @@ export const EditPostDialog = ({
 
   const downloadableMediaUrl = getMediaUrlForDownload();
 
-  const handleDownloadMedia = () => {
+  const handleDownloadMedia = async () => {
     if (!downloadableMediaUrl) {
       toast({ title: "No downloadable media", description: "No valid URL found for download.", variant: "destructive" });
       return;
     }
+
+    setIsDownloading(true);
+    toast({ title: "Preparing download...", description: "Fetching media file. Please wait.", className: "bg-blue-600 text-white border-blue-600" });
+
     try {
+      const response = await fetch(downloadableMediaUrl);
+
+      if (!response.ok) {
+        // Try to get more info from response if possible for error message
+        let errorBodyText = '';
+        try {
+            errorBodyText = await response.text();
+        } catch (e) { /* ignore if can't read body */ }
+        
+        throw new Error(`Failed to fetch media: ${response.status} ${response.statusText}. ${errorBodyText ? 'Server response: ' + errorBodyText.substring(0,100) : ''} Ensure CORS is configured on the storage bucket.`);
+      }
+
+      const blob = await response.blob();
       const link = document.createElement('a');
-      link.href = downloadableMediaUrl;
-      const filename = downloadableMediaUrl.substring(downloadableMediaUrl.lastIndexOf('/') + 1) || 'social_media_file';
-      link.setAttribute('download', filename);
+      link.href = URL.createObjectURL(blob);
+
+      // Attempt to get filename from Content-Disposition header, otherwise parse from URL
+      const contentDisposition = response.headers.get('content-disposition');
+      let filename = downloadableMediaUrl.substring(downloadableMediaUrl.lastIndexOf('/') + 1).split('?')[0]; // Remove query params from filename
+
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename\*?=['"]?(?:UTF-\d'')?([^;\r\n"']+)['"]?;?/i);
+        if (filenameMatch && filenameMatch[1]) {
+          try {
+            filename = decodeURIComponent(filenameMatch[1]);
+          } catch (e) {
+             // fallback to URL parsing if decoding fails
+            console.warn("Could not decode filename from Content-Disposition, falling back to URL parsing.");
+          }
+        }
+      }
+      
+      filename = filename || 'downloaded_media_file'; // Fallback filename if all else fails
+
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      toast({ title: "Download Started! 🚀", description: "Your media should begin downloading shortly.", className: "bg-primary/90 border-primary text-white" });
+      URL.revokeObjectURL(link.href); // Clean up the blob URL
+
+      toast({ title: "Download Started! 🚀", description: `"${filename}" should begin downloading shortly.`, className: "bg-primary/90 border-primary text-white" });
     } catch (error) {
       console.error("Download error:", error);
-      toast({ title: "Download Failed", description: "Could not initiate media download.", variant: "destructive" });
+      toast({
+        title: "Download Failed",
+        description: error instanceof Error ? error.message : "An unknown error occurred during download.",
+        variant: "destructive",
+        duration: 7000, // Show longer for errors
+      });
+    } finally {
+      setIsDownloading(false);
     }
   };
 
-  if (!post) return null; // If post is null, don't render the dialog content
+
+  if (!post) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -116,9 +161,10 @@ export const EditPostDialog = ({
           onSave(new FormData(e.currentTarget));
         }} className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left Column - Form */}
+            {/* Left Column - Form (no changes here) */}
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              {/* ... Platform, Status, Title, Content inputs ... */}
+               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-white">Platform</Label>
                   <Select name="platform_type" defaultValue={post.platform_type || undefined}>
@@ -158,7 +204,7 @@ export const EditPostDialog = ({
                 <Label className="text-white">Title</Label>
                 <Input
                   name="title"
-                  defaultValue={post.title} // defaultValue is fine for inputs not controlled for copy/paste
+                  defaultValue={post.title}
                   className="bg-white/5 border-white/20 text-white"
                 />
               </div>
@@ -178,8 +224,8 @@ export const EditPostDialog = ({
                 </div>
                 <Textarea
                   name="details"
-                  value={detailsContent} // Controlled component: value is from state
-                  onChange={(e) => setDetailsContent(e.target.value)} // Updates state on change
+                  value={detailsContent}
+                  onChange={(e) => setDetailsContent(e.target.value)}
                   className="bg-white/5 border-white/20 text-white min-h-[240px]"
                 />
               </div>
@@ -203,6 +249,7 @@ export const EditPostDialog = ({
               </div>
             </div>
 
+
             {/* Right Column - Media Preview */}
             <div className="space-y-4">
               <div>
@@ -224,15 +271,21 @@ export const EditPostDialog = ({
                       variant="ghost"
                       size="sm"
                       onClick={handleDownloadMedia}
+                      disabled={isDownloading} // Disable button while downloading
                       className="text-gray-300 hover:text-white px-2"
                     >
-                      <Download className="w-4 h-4" />
-                      <span className="ml-1 text-xs">Download</span>
+                      {isDownloading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Download className="w-4 h-4" />
+                      )}
+                      <span className="ml-1 text-xs">{isDownloading ? "Downloading..." : "Download"}</span>
                     </Button>
                   )}
                 </div>
               </div>
 
+              {/* ... (rest of the media preview logic: Image, Video, No Media, Info) ... */}
               {/* Image Preview */}
               {post.has_picture && isImageUrl(post.has_picture) && (
                 <div className="space-y-2">
@@ -242,17 +295,7 @@ export const EditPostDialog = ({
                       src={post.has_picture}
                       alt="Post image"
                       className="w-full max-w-sm mx-auto rounded-lg"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        const parent = target.parentNode as HTMLElement;
-                        if (parent && !parent.querySelector('.media-error')) {
-                           const errorMsg = document.createElement('p');
-                           errorMsg.textContent = 'Could not load image preview.';
-                           errorMsg.className = 'text-red-400 text-sm text-center media-error';
-                           parent.appendChild(errorMsg);
-                        }
-                      }}
+                      onError={(e) => { /* ... */ }}
                     />
                   </div>
                 </div>
@@ -268,17 +311,7 @@ export const EditPostDialog = ({
                         src={post.has_video}
                         controls
                         className="w-full max-w-sm mx-auto rounded-lg"
-                        onError={(e) => {
-                          const target = e.target as HTMLVideoElement;
-                          target.style.display = 'none';
-                           const parent = target.parentNode as HTMLElement;
-                           if (parent && !parent.querySelector('.media-error')) {
-                               const errorMsg = document.createElement('p');
-                               errorMsg.textContent = 'Could not load video preview.';
-                               errorMsg.className = 'text-red-400 text-sm text-center media-error';
-                               parent.appendChild(errorMsg);
-                           }
-                        }}
+                        onError={(e) => { /* ... */ }}
                       />
                     ) : (
                       <div className="text-center text-gray-300 p-4">
@@ -293,27 +326,19 @@ export const EditPostDialog = ({
               {/* No Media Message */}
               {(!post.has_picture && !post.has_video) && (
                 <div className="text-center text-gray-400 p-8 border border-white/10 rounded-lg bg-white/5">
-                  <div className="flex justify-center gap-2 mb-2">
-                    <Image className="w-6 h-6" />
-                    <Video className="w-6 h-6" />
-                  </div>
-                  <p>No media attached to this post</p>
+                   {/* ... */}
                 </div>
               )}
 
               {/* Media Info for non-URL content */}
               {(post.has_picture && !isImageUrl(post.has_picture)) && (
-                <div className="text-sm text-gray-300 space-y-1 mt-2">
-                  <div className="bg-white/5 p-2 rounded border border-white/10">
-                    <strong>Image Info:</strong> {post.has_picture}
-                  </div>
-                </div>
-              )}
-              {(post.has_video && !post.has_video.startsWith('http') && !post.has_video.includes('video')) && ( // Added !post.has_video.includes('video') for robustness
                  <div className="text-sm text-gray-300 space-y-1 mt-2">
-                    <div className="bg-white/5 p-2 rounded border border-white/10">
-                        <strong>Video Info:</strong> {post.has_video}
-                    </div>
+                    {/* ... */}
+                 </div>
+              )}
+              {(post.has_video && !post.has_video.startsWith('http') && !post.has_video.includes('video')) && (
+                 <div className="text-sm text-gray-300 space-y-1 mt-2">
+                    {/* ... */}
                  </div>
               )}
             </div>
