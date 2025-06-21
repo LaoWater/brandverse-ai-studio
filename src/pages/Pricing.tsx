@@ -33,7 +33,6 @@ const Pricing = () => {
       if (error) throw error;
 
       if (data?.url) {
-        // Open Stripe checkout in a new tab
         window.open(data.url, '_blank');
       } else {
         throw new Error('No checkout URL received');
@@ -48,7 +47,7 @@ const Pricing = () => {
     }
   };
 
-  const handleCreditPurchase = async (creditAmount: number, price: number) => {
+  const handleCreditPurchase = async (productId: string, credits: number) => {
     if (!user) {
       toast({
         title: "Authentication Required",
@@ -59,18 +58,16 @@ const Pricing = () => {
     }
 
     try {
-      // For credit packs, we'll use one-time payments
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
+      const { data, error } = await supabase.functions.invoke('create-credit-checkout', {
         body: { 
-          priceId: `price_credits_${creditAmount}`, // You'll need to create these in Stripe
-          mode: "payment"
+          productId: productId,
+          credits: credits
         },
       });
 
       if (error) throw error;
 
       if (data?.url) {
-        // Open Stripe checkout in a new tab
         window.open(data.url, '_blank');
       } else {
         throw new Error('No checkout URL received');
@@ -160,21 +157,24 @@ const Pricing = () => {
       credits: 100,
       price: "$3",
       value: "3¢ per credit",
-      popular: false
+      popular: false,
+      productId: "prod_SXNQ20skugqshl"
     },
     {
       credits: 300,
       price: "$8",
       value: "2.7¢ per credit",
       popular: true,
-      savings: "Save 10%"
+      savings: "Save 10%",
+      productId: "prod_SXNQqHY08uDDpg"
     },
     {
       credits: 1000,
       price: "$20",
       value: "2¢ per credit",
       popular: false,
-      savings: "Save 33%"
+      savings: "Save 33%",
+      productId: "prod_SXNRQ7G1zjUMC3"
     }
   ];
 
@@ -345,7 +345,7 @@ const Pricing = () => {
                         <CardFooter>
                           <Button 
                             className={`w-full cosmic-button ${pack.popular ? 'animate-pulse-glow' : ''}`}
-                            onClick={() => handleCreditPurchase(pack.credits, parseFloat(pack.price.replace('$', '')))}
+                            onClick={() => handleCreditPurchase(pack.productId, pack.credits)}
                           >
                             Buy {pack.credits} Credits
                           </Button>

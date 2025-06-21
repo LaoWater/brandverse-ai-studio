@@ -4,7 +4,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, ArrowRight, CreditCard } from "lucide-react";
+import { CheckCircle, ArrowRight, CreditCard, Coins } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -12,7 +12,11 @@ const PaymentSuccess = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [isVerifying, setIsVerifying] = useState(true);
+  const [paymentType, setPaymentType] = useState<string | null>(null);
+  const [creditsAdded, setCreditsAdded] = useState<number | null>(null);
   const sessionId = searchParams.get('session_id');
+  const type = searchParams.get('type');
+  const credits = searchParams.get('credits');
 
   useEffect(() => {
     const verifyPayment = async () => {
@@ -27,21 +31,33 @@ const PaymentSuccess = () => {
       }
 
       try {
-        // Check subscription status after payment
-        const { data, error } = await supabase.functions.invoke('check-subscription');
+        setPaymentType(type);
+        setCreditsAdded(credits ? parseInt(credits) : null);
+
+        // Verify payment and update database
+        const { data, error } = await supabase.functions.invoke('verify-payment', {
+          body: { sessionId }
+        });
         
         if (error) {
-          console.error('Subscription check error:', error);
+          console.error('Payment verification error:', error);
           toast({
             title: "Verification Error",
             description: "Unable to verify payment. Please contact support if needed.",
             variant: "destructive",
           });
         } else {
-          toast({
-            title: "Payment Successful!",
-            description: "Your subscription has been activated. Welcome aboard!",
-          });
+          if (type === 'credits') {
+            toast({
+              title: "Credits Purchased!",
+              description: `${credits} credits have been added to your account.`,
+            });
+          } else {
+            toast({
+              title: "Subscription Activated!",
+              description: "Your subscription has been activated. Welcome aboard!",
+            });
+          }
         }
       } catch (error) {
         console.error('Payment verification error:', error);
@@ -56,7 +72,7 @@ const PaymentSuccess = () => {
     };
 
     verifyPayment();
-  }, [sessionId, navigate]);
+  }, [sessionId, navigate, type, credits]);
 
   return (
     <div className="min-h-screen bg-cosmic-gradient">
@@ -76,8 +92,10 @@ const PaymentSuccess = () => {
               </CardTitle>
               <p className="text-gray-300 text-lg">
                 {isVerifying 
-                  ? "We're verifying your payment and setting up your account..."
-                  : "Your subscription has been activated and you're all set to create amazing content!"
+                  ? "We're verifying your payment and updating your account..."
+                  : paymentType === 'credits'
+                    ? `${creditsAdded} credits have been added to your account!`
+                    : "Your subscription has been activated and you're all set to create amazing content!"
                 }
               </p>
             </CardHeader>
@@ -88,18 +106,37 @@ const PaymentSuccess = () => {
                   <div className="bg-card/30 border border-primary/20 rounded-lg p-6">
                     <h3 className="text-white font-semibold mb-4">What's Next?</h3>
                     <div className="space-y-3 text-left">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-2 h-2 bg-accent rounded-full"></div>
-                        <span className="text-gray-300">Access your enhanced content generation tools</span>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <div className="w-2 h-2 bg-accent rounded-full"></div>
-                        <span className="text-gray-300">Create multiple brand profiles</span>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <div className="w-2 h-2 bg-accent rounded-full"></div>
-                        <span className="text-gray-300">Enjoy priority support and advanced features</span>
-                      </div>
+                      {paymentType === 'credits' ? (
+                        <>
+                          <div className="flex items-center space-x-3">
+                            <Coins className="w-5 h-5 text-accent" />
+                            <span className="text-gray-300">Use your new credits to generate content</span>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <div className="w-2 h-2 bg-accent rounded-full"></div>
+                            <span className="text-gray-300">Text posts cost 1 credit each</span>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <div className="w-2 h-2 bg-accent rounded-full"></div>
+                            <span className="text-gray-300">Images/videos cost 3 credits each</span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center space-x-3">
+                            <div className="w-2 h-2 bg-accent rounded-full"></div>
+                            <span className="text-gray-300">Access your enhanced content generation tools</span>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <div className="w-2 h-2 bg-accent rounded-full"></div>
+                            <span className="text-gray-300">Create multiple brand profiles</span>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <div className="w-2 h-2 bg-accent rounded-full"></div>
+                            <span className="text-gray-300">Enjoy priority support and advanced features</span>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
 
