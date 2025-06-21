@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight, Calendar, Zap, Globe, Share2, Lightbulb, Target, Rocket, Play, Users, TrendingUp, Clock, Activity, GitGraph, DatabaseIcon } from "lucide-react";
 import { FaFacebookF, FaInstagram, FaLinkedinIn, FaXTwitter } from "react-icons/fa6";
+import ReviewsSection from "./ReviewsSection";
 
 const HeroSection = () => {
 
@@ -25,7 +26,6 @@ const HeroSection = () => {
     {
       name: "X",
       Icon: FaXTwitter,
-      // Using a subtle white glow for X's black background
       style: "bg-black hover:shadow-[0_0_15px_rgba(255,255,255,0.5)]",
     },
   ];
@@ -66,7 +66,7 @@ const HeroSection = () => {
             
             <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
               Watch your brilliant ideas accelerate from concept to viral content in seconds. 
-              Our AI captures your creative essence and propels it across Twitter, Instagram, 
+              Our AI captures your creative essence and propels it across X, Instagram, 
               LinkedIn, and Facebook at the speed of light.
             </p>
 
@@ -92,34 +92,9 @@ const HeroSection = () => {
                 <p className="text-sm text-gray-400">Instant Impact</p>
               </div>
             </div>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8">
-              <Button 
-                asChild 
-                size="lg" 
-                className="bg-primary hover:bg-primary/90 text-white px-8 py-6 text-lg font-semibold glow-effect animate-pulse-glow"
-              >
-                <Link to="/content-generator">
-                  <Rocket className="mr-2 w-5 h-5" />
-                  Start Creating Magic
-                  <ArrowRight className="ml-2 w-5 h-5" />
-                </Link>
-              </Button>
-              
-              {/* <Button 
-                asChild 
-                variant="outline" 
-                size="lg" 
-                className="border-accent text-accent hover:bg-accent hover:text-black px-8 py-6 text-lg font-semibold"
-              >
-                <Link to="/content-generator">
-                  See the Magic <Calendar className="ml-2 w-5 h-5" />
-                </Link>
-              </Button> */}
-            </div>
 
-   {/* === UPDATED SECTION: Social Platform Indicators === */}
-   <div className="flex justify-center items-center space-x-6 pt-12 opacity-80">
+            {/* === UPDATED SECTION: Social Platform Indicators === */}
+            <div className="flex justify-center items-center space-x-6 pt-12 opacity-80">
               <div className="text-sm text-gray-400">Publishing to:</div>
               <div className="flex items-center justify-center space-x-4">
                 {socialPlatforms.map((platform) => (
@@ -256,6 +231,9 @@ const HeroSection = () => {
         </div>
       </section>
 
+      {/* Reviews Section - NEW */}
+      <ReviewsSection />
+
       {/* Productivity Section */}
       <section className="py-24 relative">
         <div className="container mx-auto px-4">
@@ -295,8 +273,32 @@ const HeroSection = () => {
         </div>
       </section>
 
-
-
+      {/* Call to Action Section */}
+      <section className="py-24 relative">
+        <div className="container mx-auto px-4 text-center">
+          <div className="max-w-4xl mx-auto space-y-8">
+            <h2 className="text-4xl md:text-5xl font-bold text-white">
+              Ready to Join the <span className="text-cosmic font-serif">Multiverse?</span>
+            </h2>
+            <p className="text-xl text-gray-300 leading-relaxed">
+              Transform your content creation process today and watch your ideas reach millions at light speed.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8">
+              <Button 
+                asChild 
+                size="lg" 
+                className="bg-primary hover:bg-primary/90 text-white px-8 py-6 text-lg font-semibold glow-effect animate-pulse-glow"
+              >
+                <Link to="/content-generator">
+                  <Rocket className="mr-2 w-5 h-5" />
+                  Start Creating Magic
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };

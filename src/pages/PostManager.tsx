@@ -5,25 +5,24 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-// Textarea removed as it's now in EditPostDialog
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-// Dialog related imports removed as they are in EditPostDialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Edit, Trash2, Eye, Filter, Plus, Calendar, Image, Video, Instagram, Facebook, Twitter, Linkedin, Search, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
-import { EditPostDialog } from "@/components/EditPostDialog"; // Adjust path if needed
+import { EditPostDialog } from "@/components/EditPostDialog";
 import { FaXTwitter } from "react-icons/fa6";
-
+import { useCompany } from "@/contexts/CompanyContext";
 
 type Post = Database['public']['Tables']['posts']['Row'];
 type PostStatus = Database['public']['Enums']['post_status'];
 type PlatformType = Database['public']['Enums']['platform_type'];
 
 const PostManager = () => {
+  const { selectedCompany } = useCompany();
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [filters, setFilters] = useState({
@@ -31,7 +30,7 @@ const PostManager = () => {
     status: 'all',
     search: '',
     titleFilter: '',
-    detailsFilter: '', // Retained for potential future use, though not directly in table headers
+    detailsFilter: '',
     platformFilter: '',
     statusFilter: ''
   });
@@ -39,17 +38,22 @@ const PostManager = () => {
   const queryClient = useQueryClient();
 
   const { data: allPosts, isLoading, error } = useQuery({
-    queryKey: ['posts'],
+    queryKey: ['posts', selectedCompany?.id],
     queryFn: async () => {
+      if (!selectedCompany?.id) {
+        return [];
+      }
+
       const { data, error } = await supabase
         .from('posts')
         .select('*')
-        .eq('company_id', '7f9e0135-eb5c-4157-a0af-892f712502ea') // Replace with dynamic company_id if needed
+        .eq('company_id', selectedCompany.id)
         .order('created_date', { ascending: false });
 
       if (error) throw error;
       return data;
-    }
+    },
+    enabled: !!selectedCompany?.id
   });
 
   const filteredPosts = useMemo(() => {
@@ -66,7 +70,7 @@ const PostManager = () => {
       const matchesTitle = !filters.titleFilter || 
         post.title.toLowerCase().includes(filters.titleFilter.toLowerCase());
       
-      const matchesDetails = !filters.detailsFilter || // Kept for consistency, not directly used in visible table filters
+      const matchesDetails = !filters.detailsFilter ||
         (post.details && post.details.toLowerCase().includes(filters.detailsFilter.toLowerCase()));
       
       const matchesPlatformFilter = !filters.platformFilter || 
@@ -94,7 +98,7 @@ const PostManager = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['posts', selectedCompany?.id] });
       toast({
         title: "Post Updated! ✨",
         description: "Post has been successfully updated.",
@@ -122,7 +126,7 @@ const PostManager = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['posts', selectedCompany?.id] });
       toast({
         title: "Post Deleted",
         description: "Post has been successfully deleted.",
@@ -141,11 +145,11 @@ const PostManager = () => {
   const platforms = [
     { id: 'instagram', name: 'Instagram', icon: Instagram, color: 'from-pink-500 to-purple-600' },
     { id: 'facebook', name: 'Facebook', icon: Facebook, color: 'from-blue-600 to-blue-700' },
-    { id: 'twitter', name: 'Twitter', icon: FaXTwitter, color: 'from-sky-400 to-sky-600' },
+    { id: 'twitter', name: 'X', icon: FaXTwitter, color: 'from-sky-400 to-sky-600' },
     { id: 'linkedin', name: 'LinkedIn', icon: Linkedin, color: 'from-blue-700 to-blue-800' }
   ];
 
-  const getStatusColor = (status: PostStatus | null | undefined) => { // Allow null/undefined for status
+  const getStatusColor = (status: PostStatus | null | undefined) => {
     switch (status) {
       case 'draft': return 'bg-yellow-500 text-yellow-900 border-yellow-500 shadow-lg shadow-yellow-500/20 font-semibold';
       case 'approved': return 'bg-green-500 text-green-900 border-green-500 shadow-lg shadow-green-500/20 font-semibold';
@@ -156,7 +160,7 @@ const PostManager = () => {
 
   const getPlatformIcon = (platform: PlatformType) => {
     const platformData = platforms.find(p => p.id === platform);
-    return platformData ? platformData.icon : Instagram; // Default to Instagram icon
+    return platformData ? platformData.icon : Instagram;
   };
 
   const handleEditPost = (post: Post) => {
@@ -167,9 +171,6 @@ const PostManager = () => {
   const handleSavePost = (formData: FormData) => {
     if (!selectedPost) return;
 
-    // This logic replicates the original behavior where `has_video` might be nulled
-    // if a 'has_video' form field isn't present.
-    // The EditPostDialog currently only has an input named 'has_picture'.
     const updatedPost: Partial<Post> & { id: string } = {
       id: selectedPost.id,
       title: formData.get('title') as string,
@@ -177,16 +178,13 @@ const PostManager = () => {
       status: formData.get('status') as PostStatus,
       platform_type: formData.get('platform_type') as PlatformType,
       has_picture: formData.get('has_picture') as string || null,
-      has_video: formData.get('has_video') as string || null, // formData.get('has_video') will be null
-                                                              // as there's no input named 'has_video'
+      has_video: formData.get('has_video') as string || null,
     };
 
     updatePostMutation.mutate(updatedPost);
   };
 
   const handleDeletePost = (postId: string) => {
-    // Consider adding a confirmation dialog here instead of window.confirm
-    // For now, keeping original confirm
     if (confirm('Are you sure you want to delete this post?')) {
       deletePostMutation.mutate(postId);
     }
@@ -208,10 +206,24 @@ const PostManager = () => {
     });
   };
 
-  const isImageUrl = (url: string | null): url is string => { // Type guard
+  const isImageUrl = (url: string | null): url is string => {
     if (!url) return false;
     return /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url) || url.includes('image') || url.includes('img');
   };
+
+  if (!selectedCompany) {
+    return (
+      <div className="min-h-screen">
+        <Navigation />
+        <div className="container mx-auto px-4 pt-24 pb-12">
+          <div className="text-center text-white">
+            <h1 className="text-2xl mb-4">Please select a company to view posts</h1>
+            <p className="text-gray-400">Choose a company from the navigation to manage your posts.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -236,7 +248,7 @@ const PostManager = () => {
   }
 
   const groupedPosts = filteredPosts?.reduce((acc, post) => {
-    if (!post.platform_type) return acc; // Skip if platform_type is null
+    if (!post.platform_type) return acc;
     if (!acc[post.platform_type]) {
       acc[post.platform_type] = [];
     }
@@ -255,7 +267,7 @@ const PostManager = () => {
               Post <span className="text-cosmic font-serif">Library</span>
             </h1>
             <p className="text-gray-300 text-lg">
-              Manage all your social media content in one place
+              Manage all your social media content for <span className="text-accent font-semibold">{selectedCompany.name}</span>
             </p>
           </div>
 
@@ -283,11 +295,11 @@ const PostManager = () => {
                 <div>
                   <Label className="text-white">Global Search</Label>
                   <div className="relative">
-                    <Input // Removed Search icon from input as it's often handled by placeholder or external icon
+                    <Input
                       placeholder="Search posts..."
                       value={filters.search}
                       onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                      className="bg-white/5 border-white/20 text-white" // Removed pl-10 if icon is removed
+                      className="bg-white/5 border-white/20 text-white"
                     />
                   </div>
                 </div>
@@ -546,7 +558,6 @@ const PostManager = () => {
                 {platforms.map((platform) => {
                   const platformPosts = groupedPosts[platform.id as PlatformType] || [];
                   if (platformPosts.length === 0 && (filters.platform !== 'all' && filters.platform !== platform.id)) {
-                     // Don't render platform card if it's filtered out and has no posts
                     return null;
                   }
                   const IconComponent = platform.icon;
