@@ -20,7 +20,7 @@ const Auth = () => {
             <p className="text-gray-300 text-lg">
               {isLoginMode 
                 ? 'Sign in to continue your creative journey' 
-                : 'Start your journey as a creator today'
+                : 'Start your journey as a Creator today'
               }
             </p>
           </div>
