@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, Calendar, Zap, Globe, Share2, Lightbulb, Target, Rocket, Play, Users, TrendingUp, Clock } from "lucide-react";
+import { ArrowRight, Calendar, Zap, Globe, Share2, Lightbulb, Target, Rocket, Play, Users, TrendingUp, Clock, Activity, GitGraph, DatabaseIcon } from "lucide-react";
 import { FaFacebookF, FaInstagram, FaLinkedinIn, FaXTwitter } from "react-icons/fa6";
 
 const HeroSection = () => {
@@ -99,14 +99,14 @@ const HeroSection = () => {
                 size="lg" 
                 className="bg-primary hover:bg-primary/90 text-white px-8 py-6 text-lg font-semibold glow-effect animate-pulse-glow"
               >
-                <Link to="/brand-setup">
+                <Link to="/content-generator">
                   <Rocket className="mr-2 w-5 h-5" />
                   Start Creating Magic
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Link>
               </Button>
               
-              <Button 
+              {/* <Button 
                 asChild 
                 variant="outline" 
                 size="lg" 
@@ -115,7 +115,7 @@ const HeroSection = () => {
                 <Link to="/content-generator">
                   See the Magic <Calendar className="ml-2 w-5 h-5" />
                 </Link>
-              </Button>
+              </Button> */}
             </div>
 
    {/* === UPDATED SECTION: Social Platform Indicators === */}
@@ -208,7 +208,7 @@ const HeroSection = () => {
                 className="rounded-2xl shadow-2xl w-full"
               />
               <div className="absolute -top-4 -right-4 w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center">
-                <Lightbulb className="w-8 h-8 text-white" />
+                <GitGraph className="w-8 h-8 text-white" />
               </div>
             </div>
           </div>
@@ -287,7 +287,7 @@ const HeroSection = () => {
               <div className="absolute top-4 right-4 bg-background/80 backdrop-blur-sm rounded-lg p-3">
                 <div className="flex items-center gap-2 text-sm text-white">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  AI Working
+                  Your Message Spreading
                 </div>
               </div>
             </div>

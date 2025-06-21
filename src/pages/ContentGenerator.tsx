@@ -324,10 +324,13 @@ const ContentGenerator = () => {
       await updateStage('saving', 'completed', 300);
 
       toast({
-        title: "Content Universe Expanded! ✨",
+        title: "Content Universe Expanded!",
         description: `Your new creations (ID: ${result.pipeline_id}) are ready.`,
       });
-      navigate("/generation-success", { state: { pipelineResult: result, insertedPostIds: insertedPosts.map((p: any) => p.id) } });
+      navigate("/generation-success", { state: { pipelineResult: result, 
+        insertedPostIds: insertedPosts.map((p: any) => p.id),
+        subjectFromForm: formData.subject 
+      } });
 
     } catch (error: any) {
       console.error("Error during content generation or saving:", error);

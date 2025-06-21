@@ -227,9 +227,9 @@ const Pricing = () => {
                         
                         <CardHeader className="text-center pb-4">
                           <div className="flex items-center justify-center space-x-2 mb-4">
-                            {plan.name === "Free" && <Zap className="w-6 h-6 text-accent" />}
-                            {plan.name === "Standard" && <Crown className="w-6 h-6 text-accent" />}
-                            {plan.name === "Pro" && <Star className="w-6 h-6 text-accent" />}
+                            {plan.name === "Free"}
+                            {plan.name === "Standard" && <Star className="w-6 h-6 text-accent" />}
+                            {plan.name === "Pro" && <Crown className="w-6 h-6 text-accent" />}
                             <CardTitle className="text-2xl font-bold text-white">{plan.name}</CardTitle>
                           </div>
                           <div className="mb-2">
