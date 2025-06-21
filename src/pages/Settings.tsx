@@ -13,7 +13,6 @@ import {
   Building2, 
   Trash2, 
   Plus, 
-  CreditCard,
   Bell,
   Shield,
   Mail
@@ -44,31 +43,17 @@ const Settings = () => {
     primary_color_2: "#00D4FF"
   });
 
-  const [notifications, setNotifications] = useState({
-    emailUpdates: true,
-    contentReady: true,
-    weeklyReports: false,
-    platformAlerts: true
-  });
-
-  const [saving, setSaving] = useState(false);
-
-  const [billingInfo, setBillingInfo] = useState({
-    cardNumber: "**** **** **** 4242",
-    expiryDate: "12/25",
-    cardHolder: "John Doe"
-  });
-
   const [preferences, setPreferences] = useState({
     newsletter: true,
     marketingEmails: false,
     productUpdates: true,
-    weeklyDigest: true
+    automaticBilling: false
   });
 
+  const [saving, setSaving] = useState(false);
+
   const [security, setSecurity] = useState({
-    twoFactorEnabled: false,
-    loginAlerts: true
+    twoFactorEnabled: false
   });
 
   // Redirect if not authenticated
@@ -250,6 +235,30 @@ const Settings = () => {
     navigate('/');
   };
 
+  const handleTwoFactorToggle = (checked: boolean) => {
+    if (checked) {
+      toast({
+        title: "Coming Soon",
+        description: "Two-factor authentication will be available soon!",
+        variant: "default"
+      });
+      return;
+    }
+    setSecurity(prev => ({ ...prev, twoFactorEnabled: checked }));
+  };
+
+  const handleAutomaticBillingToggle = (checked: boolean) => {
+    if (checked) {
+      toast({
+        title: "Coming Soon",
+        description: "Automatic billing will be available soon!",
+        variant: "default"
+      });
+      return;
+    }
+    setPreferences(prev => ({ ...prev, automaticBilling: checked }));
+  };
+
   if (!user) {
     return null;
   }
@@ -273,7 +282,7 @@ const Settings = () => {
           </div>
 
           <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5 cosmic-card border-0">
+            <TabsList className="grid w-full grid-cols-4 cosmic-card border-0">
               <TabsTrigger value="profile" className="data-[state=active]:bg-primary data-[state=active]:text-white text-gray-300">
                 <User className="w-4 h-4 mr-2" />
                 Profile
@@ -282,13 +291,9 @@ const Settings = () => {
                 <Building2 className="w-4 h-4 mr-2" />
                 Company
               </TabsTrigger>
-              <TabsTrigger value="billing" className="data-[state=active]:bg-primary data-[state=active]:text-white text-gray-300">
-                <CreditCard className="w-4 h-4 mr-2" />
-                Billing
-              </TabsTrigger>
-              <TabsTrigger value="notifications" className="data-[state=active]:bg-primary data-[state=active]:text-white text-gray-300">
+              <TabsTrigger value="preferences" className="data-[state=active]:bg-primary data-[state=active]:text-white text-gray-300">
                 <Bell className="w-4 h-4 mr-2" />
-                Notifications
+                Preferences
               </TabsTrigger>
               <TabsTrigger value="security" className="data-[state=active]:bg-primary data-[state=active]:text-white text-gray-300">
                 <Shield className="w-4 h-4 mr-2" />
@@ -525,69 +530,11 @@ const Settings = () => {
               )}
             </TabsContent>
 
-            {/* Billing Tab */}
-            <TabsContent value="billing">
+            {/* Preferences Tab */}
+            <TabsContent value="preferences">
               <Card className="cosmic-card border-0">
                 <CardHeader>
-                  <CardTitle className="text-white">Billing Information</CardTitle>
-                  <CardDescription className="text-gray-300">
-                    Manage your payment methods and billing details
-                  </CardDescription>
-                </CardHeader>
-                
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <div className="p-4 cosmic-card border-0 rounded-lg">
-                      <div className="flex items-center justify-between mb-4">
-                        <h4 className="text-white font-semibold">Primary Payment Method</h4>
-                        <Button variant="outline" size="sm" className="border-accent text-accent hover:bg-accent/10">
-                          Update
-                        </Button>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-gray-300">Card Number: {billingInfo.cardNumber}</p>
-                        <p className="text-gray-300">Expires: {billingInfo.expiryDate}</p>
-                        <p className="text-gray-300">Name: {billingInfo.cardHolder}</p>
-                      </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="billingEmail" className="text-white">Billing Email</Label>
-                        <Input
-                          id="billingEmail"
-                          type="email"
-                          value={profile.email}
-                          className="bg-white/5 border-white/20 text-white focus:border-primary"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="taxId" className="text-white">Tax ID (Optional)</Label>
-                        <Input
-                          id="taxId"
-                          placeholder="Enter tax ID"
-                          className="bg-white/5 border-white/20 text-white focus:border-primary"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <Button 
-                    onClick={() => toast({ title: "Billing Info Saved! ✅" })} 
-                    className="cosmic-button text-white"
-                  >
-                    Save Billing Information
-                  </Button>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Notifications Tab */}
-            <TabsContent value="notifications">
-              <Card className="cosmic-card border-0">
-                <CardHeader>
-                  <CardTitle className="text-white">Notification Preferences</CardTitle>
+                  <CardTitle className="text-white">Preferences</CardTitle>
                   <CardDescription className="text-gray-300">
                     Choose what notifications and emails you'd like to receive
                   </CardDescription>
@@ -603,8 +550,7 @@ const Settings = () => {
                     {[
                       { key: 'newsletter', label: 'Newsletter', description: 'Monthly newsletter with tips and updates' },
                       { key: 'marketingEmails', label: 'Marketing Emails', description: 'Promotional offers and new feature announcements' },
-                      { key: 'productUpdates', label: 'Product Updates', description: 'Important product updates and security notices' },
-                      { key: 'weeklyDigest', label: 'Weekly Digest', description: 'Weekly summary of your content performance' }
+                      { key: 'productUpdates', label: 'Product Updates', description: 'Important product updates and security notices' }
                     ].map((item) => (
                       <div key={item.key} className="flex items-center justify-between p-4 cosmic-card border-0 rounded-lg">
                         <div className="space-y-1">
@@ -620,10 +566,22 @@ const Settings = () => {
                         />
                       </div>
                     ))}
+
+                    <div className="flex items-center justify-between p-4 cosmic-card border-0 rounded-lg">
+                      <div className="space-y-1">
+                        <div className="text-white font-medium">Automatic Billing</div>
+                        <div className="text-gray-400 text-sm">Automatically renew subscriptions and billing</div>
+                      </div>
+                      
+                      <Switch
+                        checked={preferences.automaticBilling}
+                        onCheckedChange={handleAutomaticBillingToggle}
+                      />
+                    </div>
                   </div>
 
                   <Button 
-                    onClick={() => toast({ title: "Notification Preferences Saved! ✅" })} 
+                    onClick={() => toast({ title: "Preferences Saved! ✅" })} 
                     className="cosmic-button text-white"
                   >
                     Save Preferences
@@ -644,34 +602,17 @@ const Settings = () => {
                 
                 <CardContent className="space-y-6">
                   <div className="space-y-4">
-                    {[
-                      { 
-                        key: 'twoFactorEnabled', 
-                        label: 'Two-Factor Authentication', 
-                        description: 'Add an extra layer of security to your account',
-                        value: security.twoFactorEnabled
-                      },
-                      { 
-                        key: 'loginAlerts', 
-                        label: 'Login Alerts', 
-                        description: 'Get notified when your account is accessed from a new device',
-                        value: security.loginAlerts
-                      }
-                    ].map((item) => (
-                      <div key={item.key} className="flex items-center justify-between p-4 cosmic-card border-0 rounded-lg">
-                        <div className="space-y-1">
-                          <div className="text-white font-medium">{item.label}</div>
-                          <div className="text-gray-400 text-sm">{item.description}</div>
-                        </div>
-                        
-                        <Switch
-                          checked={item.value}
-                          onCheckedChange={(checked) => 
-                            setSecurity(prev => ({ ...prev, [item.key]: checked }))
-                          }
-                        />
+                    <div className="flex items-center justify-between p-4 cosmic-card border-0 rounded-lg">
+                      <div className="space-y-1">
+                        <div className="text-white font-medium">Two-Factor Authentication</div>
+                        <div className="text-gray-400 text-sm">Add an extra layer of security to your account</div>
                       </div>
-                    ))}
+                      
+                      <Switch
+                        checked={security.twoFactorEnabled}
+                        onCheckedChange={handleTwoFactorToggle}
+                      />
+                    </div>
                   </div>
 
                   <div className="space-y-4 pt-6 border-t border-red-500/20">
