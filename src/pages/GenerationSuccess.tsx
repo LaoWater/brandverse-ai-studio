@@ -8,6 +8,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CheckCircle, Download, Share2, Edit3, ArrowRight, Sparkles, Calendar, Users, TrendingUp } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { EditPostDialog } from "@/components/EditPostDialog";
+import { FaXTwitter, FaInstagram, FaFacebook, FaLinkedin } from "react-icons/fa6";
+
+
 
 // Interface for the data structure coming from the API (pipelineResult.posts)
 interface ApiPostData {
@@ -109,12 +112,12 @@ const GenerationSuccess = () => {
   const [selectedPost, setSelectedPost] = useState<GeneratedPost | null>(null);
 
   const platforms = [
-    { id: "instagram", name: "Instagram", icon: "📸", color: "#E4405F" },
-    { id: "linkedin", name: "LinkedIn", icon: "💼", color: "#0077B5" },
-    { id: "twitter", name: "Twitter", icon: "🐦", color: "#1DA1F2" },
-    { id: "facebook", name: "Facebook", icon: "👥", color: "#1877F2" },
-    { id: "tiktok", name: "TikTok", icon: "🎵", color: "#000000" }
+    { id: 'instagram', name: 'Instagram', icon: FaInstagram, color: 'from-pink-500 to-purple-600' },
+    { id: 'facebook', name: 'Facebook', icon: FaFacebook, color: 'from-blue-600 to-blue-700' },
+    { id: 'twitter', name: 'X', icon: FaXTwitter, color: 'from-sky-400 to-sky-600' },
+    { id: 'linkedin', name: 'LinkedIn', icon: FaLinkedin, color: 'from-blue-700 to-blue-800' }
   ];
+
 
   useEffect(() => {
     const state = location.state as {
@@ -430,9 +433,6 @@ const GenerationSuccess = () => {
               <div className="flex justify-center mb-6">
                 <div className="relative">
                   <CheckCircle className="w-20 h-20 text-green-400" />
-                  <div className="absolute -top-2 -right-2">
-                    <Sparkles className="w-8 h-8 text-accent animate-pulse" />
-                  </div>
                 </div>
               </div>
               

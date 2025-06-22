@@ -14,7 +14,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { EditPostDialog } from "@/components/EditPostDialog";
-import { FaXTwitter } from "react-icons/fa6";
+import { FaXTwitter, FaInstagram, FaFacebook, FaLinkedin } from "react-icons/fa6";
 import { useCompany } from "@/contexts/CompanyContext";
 
 type Post = Database['public']['Tables']['posts']['Row'];
@@ -143,10 +143,10 @@ const PostManager = () => {
   });
 
   const platforms = [
-    { id: 'instagram', name: 'Instagram', icon: Instagram, color: 'from-pink-500 to-purple-600' },
-    { id: 'facebook', name: 'Facebook', icon: Facebook, color: 'from-blue-600 to-blue-700' },
+    { id: 'instagram', name: 'Instagram', icon: FaInstagram, color: 'from-pink-500 to-purple-600' },
+    { id: 'facebook', name: 'Facebook', icon: FaFacebook, color: 'from-blue-600 to-blue-700' },
     { id: 'twitter', name: 'X', icon: FaXTwitter, color: 'from-sky-400 to-sky-600' },
-    { id: 'linkedin', name: 'LinkedIn', icon: Linkedin, color: 'from-blue-700 to-blue-800' }
+    { id: 'linkedin', name: 'LinkedIn', icon: FaLinkedin, color: 'from-blue-700 to-blue-800' }
   ];
 
   const getStatusColor = (status: PostStatus | null | undefined) => {
