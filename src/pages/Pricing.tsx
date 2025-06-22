@@ -124,7 +124,7 @@ const Pricing = () => {
       buttonText: "Upgrade to Standard",
       buttonVariant: "default" as const,
       popular: true,
-      priceId: "price_1RaddlEybjfbmfmGeEzFDalD" // Replace with your actual Stripe price ID
+      priceId: "price_1RcU8fEybjfbmfmGXpAcMnPa" // Normal One: price_1RaddlEybjfbmfmGeEzFDalD, now testing with dev one.
     },
     {
       name: "Pro",
@@ -151,6 +151,8 @@ const Pricing = () => {
       priceId: "price_1RakAAEybjfbmfmGPLiHbxj1" // Actual Pro ID:  price_1Rak0xEybjfbmfmGF5fVAYoR
     }
   ];
+
+  // Accountant work - not urgent
 
   const creditPacks = [
     {
