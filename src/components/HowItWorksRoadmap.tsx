@@ -117,7 +117,7 @@ const RoadmapStep: React.FC<RoadmapStepProps> = ({ step, index, totalSteps, scro
     <div ref={ref} className="relative flex items-start my-12 md:my-16">
       <motion.div
         style={{ scale: nodeScale, opacity: nodeOpacity }}
-        className={`absolute left-1/2 -translate-x-1/2 z-10 w-8 h-8 md:w-10 md:h-10 rounded-full border-2 ${step.borderColor} ${step.bgColor.replace('/10', '/50')} flex items-center justify-center shadow-lg`}
+        className={`absolute left-1/2 -translate-x-1/2 z-10 w-8 h-8 md:w-10 md:h-10 rounded-full border-2 ${step.borderColor} ${step.bgColor.replace('/10', '/50')} flex items-center justify-center shadow-lg backdrop-blur-sm`}
       >
         <IconComponent className={`w-4 h-4 md:w-5 md:h-5 ${step.iconColor}`} />
       </motion.div>
@@ -134,10 +134,10 @@ const RoadmapStep: React.FC<RoadmapStepProps> = ({ step, index, totalSteps, scro
           index % 2 === 0 ? 'md:mr-auto' : 'md:ml-auto'
         }`}
       >
-        <Card className={`overflow-hidden shadow-2xl ${step.bgColor} ${step.borderColor} border backdrop-blur-sm`}>
+        <Card className={`overflow-hidden shadow-2xl ${step.bgColor} ${step.borderColor} border backdrop-blur-md bg-opacity-80`}>
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-full ${step.bgColor.replace('/10', '/30')} ${step.borderColor} border`}>
+              <div className={`p-2 rounded-full ${step.bgColor.replace('/10', '/30')} ${step.borderColor} border backdrop-blur-sm`}>
                 <IconComponent className={`w-6 h-6 ${step.iconColor}`} />
               </div>
               <div>
@@ -149,7 +149,7 @@ const RoadmapStep: React.FC<RoadmapStepProps> = ({ step, index, totalSteps, scro
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-gray-300 leading-relaxed">{step.description}</p>
+            <p className="text-gray-300 leading-relaxed font-medium">{step.description}</p>
             <ul className="list-disc list-inside space-y-1 text-gray-400 text-sm">
               {step.details.map((detail, i) => (
                 <li key={i}>{detail}</li>
@@ -172,23 +172,92 @@ export function HowItWorksRoadmap() {
   const lineHeight = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
   const lineOpacity = useTransform(scrollYProgress, [0, 0.05, 0.95, 1], [0, 1, 1, 0]);
 
+  // Background image animations
+  const backgroundOpacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0.1, 0.3, 0.3, 0.1]);
+  const backgroundY = useTransform(scrollYProgress, [0, 1], ["-20%", "20%"]);
+  const backgroundScale = useTransform(scrollYProgress, [0, 0.5, 1], [1.1, 1, 1.1]);
+
   return (
     <section id="how-it-works" className="py-24 relative bg-background overflow-hidden">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-16 md:mb-24">
-          <h2 className="text-4xl md:text-5xl font-bold text-white">
-            How It Works
-          </h2>
-          <p className="text-xl text-gray-400 mt-4 max-w-3xl mx-auto leading-relaxed">
-            Four simple steps to transform your content creation workflow, amplify your brand's voice, and continuously refine your strategy in a virtuous cycle of growth.
-          </p>
-        </div>
+      {/* Background Image with Parallax and Progressive Opacity */}
+      <div className="absolute inset-0 overflow-hidden">
+        <motion.div
+          style={{
+            opacity: backgroundOpacity,
+            y: backgroundY,
+            scale: backgroundScale,
+          }}
+          className="absolute inset-0 w-full h-full"
+        >
+          <div
+            className="w-full h-full bg-contain bg-center bg-no-repeat"
+            style={{
+              backgroundImage: "url('/quantum_chip.png')",
+              filter: "blur(0.5px) brightness(0.4) contrast(1.2)",
 
+            }}
+          />
+        </motion.div>
+        
+        {/* Gradient Mask Overlay */}
+        <div
+          className="absolute inset-0 z-10"
+          style={{
+            background: `
+              linear-gradient(to bottom,
+                rgba(0,0,0,0.95) 0%,
+                rgba(0,0,0,0.7) 10%,
+                rgba(0,0,0,0.3) 25%,
+                rgba(0,0,0,0.1) 40%,
+                rgba(0,0,0,0.1) 60%,
+                rgba(0,0,0,0.3) 75%,
+                rgba(0,0,0,0.7) 90%,
+                rgba(0,0,0,0.95) 100%
+              )
+            `,
+          }}
+        />
+        
+        {/* Additional color overlay for theme consistency */}
+        <div
+          className="absolute inset-0 z-20 opacity-40"
+          style={{
+            background: `
+              radial-gradient(circle at top left, rgba(14,165,233,0.15) 0%, transparent 40%),
+              radial-gradient(circle at bottom right, rgba(16,185,129,0.15) 0%, transparent 40%),
+              radial-gradient(circle at top right, rgba(168,85,247,0.15) 0%, transparent 40%),
+              radial-gradient(circle at bottom left, rgba(14,165,233,0.15) 0%, transparent 40%)
+            `,
+          }}
+        />
+      </div>
+
+      <div className="container mx-auto px-4 relative z-30">
+        <div className="text-center mb-16 md:mb-24">
+          <motion.h2 
+            className="text-4xl md:text-5xl font-bold text-white drop-shadow-lg"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            How It Works
+          </motion.h2>
+          <motion.p 
+            className="text-xl text-gray-300 mt-4 max-w-3xl mx-auto leading-relaxed drop-shadow-md"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            viewport={{ once: true }}
+          >
+            Four simple steps to transform your content creation workflow, amplify your brand's voice, and continuously refine your strategy in a virtuous cycle of growth.
+          </motion.p>
+        </div>
 
         <div ref={roadmapRef} className="relative max-w-5xl mx-auto"> {/* Using max-w-5xl for wider layout */}
           <motion.div
             // Updated gradient to end with purple
-            className="absolute top-0 left-1/2 -translate-x-1/2 w-1 bg-gradient-to-b from-sky-500 via-purple-500 to-emerald-500 to-sky-500 rounded-full"
+            className="absolute top-0 left-1/2 -translate-x-1/2 w-1 bg-gradient-to-b from-sky-500 via-purple-500 to-emerald-500 to-sky-500 rounded-full shadow-lg"
             style={{ height: lineHeight, opacity: lineOpacity }}
             aria-hidden="true"
           />
@@ -206,25 +275,25 @@ export function HowItWorksRoadmap() {
           </div>
         </div>
 
-        <div className="text-center mt-16 md:mt-24">
-          <p className="text-xl text-gray-300 mb-8">Ready to experience the Future of Content Creation?</p>
+        <motion.div 
+          className="text-center mt-16 md:mt-24"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          viewport={{ once: true }}
+        >
+          <p className="text-xl text-gray-300 mb-8 drop-shadow-md">Ready to experience the Future of Content Creation?</p>
           <Button
             asChild
             size="lg"
-            className="bg-accent hover:bg-accent/90 text-black px-8 py-4 text-lg font-semibold"
+            className="bg-accent hover:bg-accent/90 text-black px-8 py-4 text-lg font-semibold shadow-2xl hover:shadow-accent/20 transition-all duration-300 hover:scale-105"
           >
             <a href="/brand-setup">
               Start Your Journey <ArrowRight className="ml-2 w-5 h-5" />
             </a>
           </Button>
-        </div>
+        </motion.div>
       </div>
-      <div
-        className="absolute inset-0 -z-10 opacity-10"
-        style={{
-          backgroundImage: 'radial-gradient(circle at top left, #0ea5e9 0%, transparent 30%), radial-gradient(circle at bottom right, #10b981 0%, transparent 30%), radial-gradient(circle at top right, #a855f7 0%, transparent 35%), radial-gradient(circle at bottom left, #0ea5e9 0%, transparent 35%)',
-        }}
-      />
     </section>
   );
 }
