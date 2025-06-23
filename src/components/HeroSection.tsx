@@ -33,7 +33,8 @@ const HeroSection = () => {
   return (
     <div className="min-h-screen">
       {/* Main Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24
+       md:pt-0">
         {/* Enhanced Cosmic Background Elements - Speed Theme */}
         <div className="absolute inset-0 overflow-hidden">
           {/* Central light speed burst */}
@@ -67,7 +68,7 @@ const HeroSection = () => {
             <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
               Watch your brilliant ideas accelerate from concept to viral content in seconds. 
               Our AI captures your creative essence and propels it across X, Instagram, 
-              LinkedIn, and Facebook at the speed of light.
+              LinkedIn, and Facebook.
             </p>
 
             {/* Visual concept representation - Speed Theme */}
@@ -282,7 +283,7 @@ const HeroSection = () => {
               Ready to Join the <span className="text-cosmic font-serif">Multiverse?</span>
             </h2>
             <p className="text-xl text-gray-300 leading-relaxed">
-              Transform your content creation process today and watch your ideas reach millions at light speed.
+              Transform your content creation process today and watch your ideas reach millions.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8">
               <Button 
