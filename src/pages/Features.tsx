@@ -223,15 +223,15 @@ const Features = () => {
               </p>
               <div className="flex justify-center items-center space-x-8 opacity-60">
                 <div className="text-center">
-                  <p className="text-accent font-bold text-2xl">10,000+</p>
+                  <p className="text-accent font-bold text-2xl">1,000+</p>
                   <p className="text-gray-400">Active Creators</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-accent font-bold text-2xl">2M+</p>
+                  <p className="text-accent font-bold text-2xl">300K+</p>
                   <p className="text-gray-400">Posts Generated</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-accent font-bold text-2xl">98%</p>
+                  <p className="text-accent font-bold text-2xl">97%</p>
                   <p className="text-gray-400">Satisfaction Rate</p>
                 </div>
               </div>

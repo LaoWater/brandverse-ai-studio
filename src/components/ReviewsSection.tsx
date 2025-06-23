@@ -138,17 +138,17 @@ const ReviewsSection = () => {
         <div className="text-center mt-12 opacity-80">
           <div className="flex justify-center items-center space-x-8 text-gray-400">
             <div className="text-center">
-              <div className="text-2xl font-bold text-accent">10,000+</div>
+              <div className="text-2xl font-bold text-accent">1,000+</div>
               <div className="text-sm">Active Creators</div>
             </div>
             <div className="w-px h-12 bg-gray-600"></div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-accent">2M+</div>
+              <div className="text-2xl font-bold text-accent">300K+</div>
               <div className="text-sm">Posts Generated</div>
             </div>
             <div className="w-px h-12 bg-gray-600"></div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-accent">50K+</div>
+              <div className="text-2xl font-bold text-accent">10K+</div>
               <div className="text-sm">Hours Saved Monthly</div>
             </div>
           </div>
