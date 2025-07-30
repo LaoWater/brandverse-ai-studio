@@ -23,6 +23,8 @@ import GenerationSuccess from './pages/GenerationSuccess';
 import ChatButton from "./components/ChatButton";
 import PaymentSuccess from "./pages/PaymentSuccess";
 
+import PartnershipAgreementEditor from "./pages/PartnershipAgreementEditor";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -48,6 +50,8 @@ const App = () => (
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/generation-success" element={<GenerationSuccess />} />
                 <Route path="/payment-success" element={<PaymentSuccess />} />
+                <Route path="/partnership-agreement" element={<PartnershipAgreementEditor />} />
+
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <ChatButton />
