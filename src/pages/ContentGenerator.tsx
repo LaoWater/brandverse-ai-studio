@@ -77,8 +77,7 @@ const ContentGenerator = () => {
     guidance: "",
     caption: "",
     ratio: "auto",
-    startingImage: null as File | null,
-    useAiDecision: true
+    startingImage: null as File | null
   });
 
   useEffect(() => {
@@ -436,111 +435,97 @@ const ContentGenerator = () => {
 
                         {imageControlSettings.enabled && (
                           <div className="space-y-6 animate-fade-in">
-                            {/* AI Decision Toggle */}
-                            <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
-                              <div className="space-y-1">
-                                <Label className="text-white font-medium">Let AI Decide</Label>
-                                <p className="text-sm text-gray-400">Allow AI to make intelligent decisions about image style and content</p>
-                              </div>
-                              <Switch 
-                                checked={imageControlSettings.useAiDecision}
-                                onCheckedChange={(checked) => setImageControlSettings(prev => ({ ...prev, useAiDecision: checked }))}
-                              />
+                            {/* Style Guidance */}
+                            <div className="space-y-3">
+                              <Label className="text-white font-medium">Style Guidance</Label>
+                              <Select value={imageControlSettings.style} onValueChange={(value) => setImageControlSettings(prev => ({ ...prev, style: value }))}>
+                                <SelectTrigger className="bg-white/5 border-white/20 text-white">
+                                  <SelectValue placeholder="Choose image style..." />
+                                </SelectTrigger>
+                                <SelectContent className="bg-gray-900 border-white/20">
+                                  <SelectItem value="photorealistic" className="text-white hover:bg-white/10">Photorealistic</SelectItem>
+                                  <SelectItem value="minimalist" className="text-white hover:bg-white/10">Minimalist</SelectItem>
+                                  <SelectItem value="artistic" className="text-white hover:bg-white/10">Artistic</SelectItem>
+                                  <SelectItem value="corporate" className="text-white hover:bg-white/10">Corporate</SelectItem>
+                                  <SelectItem value="vibrant" className="text-white hover:bg-white/10">Vibrant & Colorful</SelectItem>
+                                  <SelectItem value="monochrome" className="text-white hover:bg-white/10">Monochrome</SelectItem>
+                                  <SelectItem value="modern" className="text-white hover:bg-white/10">Modern & Clean</SelectItem>
+                                  <SelectItem value="vintage" className="text-white hover:bg-white/10">Vintage</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </div>
 
-                            {!imageControlSettings.useAiDecision && (
-                              <div className="space-y-6 animate-fade-in">
-                                {/* Style Guidance */}
-                                <div className="space-y-3">
-                                  <Label className="text-white font-medium">Style Guidance</Label>
-                                  <Select value={imageControlSettings.style} onValueChange={(value) => setImageControlSettings(prev => ({ ...prev, style: value }))}>
-                                    <SelectTrigger className="bg-white/5 border-white/20 text-white">
-                                      <SelectValue placeholder="Choose image style..." />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-gray-900 border-white/20">
-                                      <SelectItem value="photorealistic" className="text-white hover:bg-white/10">Photorealistic</SelectItem>
-                                      <SelectItem value="minimalist" className="text-white hover:bg-white/10">Minimalist</SelectItem>
-                                      <SelectItem value="artistic" className="text-white hover:bg-white/10">Artistic</SelectItem>
-                                      <SelectItem value="corporate" className="text-white hover:bg-white/10">Corporate</SelectItem>
-                                      <SelectItem value="vibrant" className="text-white hover:bg-white/10">Vibrant & Colorful</SelectItem>
-                                      <SelectItem value="monochrome" className="text-white hover:bg-white/10">Monochrome</SelectItem>
-                                      <SelectItem value="modern" className="text-white hover:bg-white/10">Modern & Clean</SelectItem>
-                                      <SelectItem value="vintage" className="text-white hover:bg-white/10">Vintage</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
+                            {/* Image Ratio */}
+                            <div className="space-y-3">
+                              <Label className="text-white font-medium">Image Ratio</Label>
+                              <Select value={imageControlSettings.ratio} onValueChange={(value) => setImageControlSettings(prev => ({ ...prev, ratio: value }))}>
+                                <SelectTrigger className="bg-white/5 border-white/20 text-white">
+                                  <SelectValue placeholder="Choose aspect ratio..." />
+                                </SelectTrigger>
+                                <SelectContent className="bg-gray-900 border-white/20">
+                                  <SelectItem value="auto" className="text-white hover:bg-white/10">Auto (Platform Optimized)</SelectItem>
+                                  <SelectItem value="square" className="text-white hover:bg-white/10">Square (1:1)</SelectItem>
+                                  <SelectItem value="landscape" className="text-white hover:bg-white/10">Landscape (16:9)</SelectItem>
+                                  <SelectItem value="portrait" className="text-white hover:bg-white/10">Portrait (9:16)</SelectItem>
+                                  <SelectItem value="story" className="text-white hover:bg-white/10">Story (9:16)</SelectItem>
+                                  <SelectItem value="cover" className="text-white hover:bg-white/10">Cover (16:9)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
 
-                                {/* Image Ratio */}
-                                <div className="space-y-3">
-                                  <Label className="text-white font-medium">Image Ratio</Label>
-                                  <Select value={imageControlSettings.ratio} onValueChange={(value) => setImageControlSettings(prev => ({ ...prev, ratio: value }))}>
-                                    <SelectTrigger className="bg-white/5 border-white/20 text-white">
-                                      <SelectValue placeholder="Choose aspect ratio..." />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-gray-900 border-white/20">
-                                      <SelectItem value="auto" className="text-white hover:bg-white/10">Auto (Platform Optimized)</SelectItem>
-                                      <SelectItem value="square" className="text-white hover:bg-white/10">Square (1:1)</SelectItem>
-                                      <SelectItem value="landscape" className="text-white hover:bg-white/10">Landscape (16:9)</SelectItem>
-                                      <SelectItem value="portrait" className="text-white hover:bg-white/10">Portrait (9:16)</SelectItem>
-                                      <SelectItem value="story" className="text-white hover:bg-white/10">Story (9:16)</SelectItem>
-                                      <SelectItem value="cover" className="text-white hover:bg-white/10">Cover (16:9)</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
+                            {/* Visual Guidance */}
+                            <div className="space-y-3">
+                              <Label className="text-white font-medium">Visual Guidance</Label>
+                              <Textarea
+                                placeholder="Describe the visual elements, mood, colors, or specific objects you want in the image..."
+                                className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 min-h-[100px] resize-none"
+                                value={imageControlSettings.guidance}
+                                onChange={(e) => setImageControlSettings(prev => ({ ...prev, guidance: e.target.value }))}
+                              />
+                              <p className="text-xs text-gray-400 bg-blue-500/10 p-2 rounded-md border border-blue-500/20">
+                                <strong>Note:</strong> This is high-level guidance. The AI will become more specific during Post Generation Setup based on your content.
+                              </p>
+                            </div>
 
-                                {/* Visual Guidance */}
-                                <div className="space-y-3">
-                                  <Label className="text-white font-medium">Visual Guidance</Label>
-                                  <Textarea
-                                    placeholder="Describe the visual elements, mood, colors, or specific objects you want in the image..."
-                                    className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 min-h-[100px] resize-none"
-                                    value={imageControlSettings.guidance}
-                                    onChange={(e) => setImageControlSettings(prev => ({ ...prev, guidance: e.target.value }))}
-                                  />
-                                  <p className="text-xs text-gray-400">Example: "Bright blue background, professional office setting, modern technology elements"</p>
-                                </div>
+                            {/* Caption Guidance */}
+                            <div className="space-y-3">
+                              <Label className="text-white font-medium">Caption/Text Overlay</Label>
+                              <Input
+                                placeholder="Text to overlay on the image (optional)..."
+                                className="bg-white/5 border-white/20 text-white placeholder:text-gray-400"
+                                value={imageControlSettings.caption}
+                                onChange={(e) => setImageControlSettings(prev => ({ ...prev, caption: e.target.value }))}
+                              />
+                              <p className="text-xs text-gray-400">Leave empty for images without text overlay</p>
+                            </div>
 
-                                {/* Caption Guidance */}
-                                <div className="space-y-3">
-                                  <Label className="text-white font-medium">Caption/Text Overlay</Label>
-                                  <Input
-                                    placeholder="Text to overlay on the image (optional)..."
-                                    className="bg-white/5 border-white/20 text-white placeholder:text-gray-400"
-                                    value={imageControlSettings.caption}
-                                    onChange={(e) => setImageControlSettings(prev => ({ ...prev, caption: e.target.value }))}
-                                  />
-                                  <p className="text-xs text-gray-400">Leave empty for images without text overlay</p>
-                                </div>
-
-                                {/* Starting Image Upload */}
-                                <div className="space-y-3">
-                                  <Label className="text-white font-medium">Starting Image (Optional)</Label>
-                                  <div className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-white/40 transition-colors">
-                                    <Input
-                                      type="file"
-                                      accept="image/*"
-                                      className="hidden"
-                                      id="starting-image"
-                                      onChange={(e) => {
-                                        const file = e.target.files?.[0] || null;
-                                        setImageControlSettings(prev => ({ ...prev, startingImage: file }));
-                                      }}
-                                    />
-                                    <Label htmlFor="starting-image" className="cursor-pointer">
-                                      <div className="space-y-2">
-                                        <Image className="w-8 h-8 mx-auto text-gray-400" />
-                                        {imageControlSettings.startingImage ? (
-                                          <p className="text-white font-medium">{imageControlSettings.startingImage.name}</p>
-                                        ) : (
-                                          <p className="text-gray-400">Upload a base image to modify or enhance</p>
-                                        )}
-                                        <p className="text-xs text-gray-500">Click to browse or drag & drop</p>
-                                      </div>
-                                    </Label>
+                            {/* Starting Image Upload */}
+                            <div className="space-y-3">
+                              <Label className="text-white font-medium">Starting Image (Optional)</Label>
+                              <div className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-white/40 transition-colors">
+                                <Input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  id="starting-image"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0] || null;
+                                    setImageControlSettings(prev => ({ ...prev, startingImage: file }));
+                                  }}
+                                />
+                                <Label htmlFor="starting-image" className="cursor-pointer">
+                                  <div className="space-y-2">
+                                    <Image className="w-8 h-8 mx-auto text-gray-400" />
+                                    {imageControlSettings.startingImage ? (
+                                      <p className="text-white font-medium">{imageControlSettings.startingImage.name}</p>
+                                    ) : (
+                                      <p className="text-gray-400">Upload a base image to modify or enhance</p>
+                                    )}
+                                    <p className="text-xs text-gray-500">Click to browse or drag & drop</p>
                                   </div>
-                                </div>
+                                </Label>
                               </div>
-                            )}
+                            </div>
                           </div>
                         )}
 
@@ -685,57 +670,134 @@ const ContentGenerator = () => {
                             </div>
                             
                             {isSelected && (
-                          <div className="mt-3 pl-8 space-y-2">
-                            <div className="grid grid-cols-2 gap-2">
-                              {mediaOptions.map(({ value, label, icon: Icon, credits, comingSoon }) => {
-                                if (comingSoon) {
-                                  return (
-                                    <Tooltip key={value} delayDuration={100}>
-                                      <TooltipTrigger asChild>
-                                        {/* 
-                                          This span acts as the event target for the tooltip.
-                                          The Button inside is disabled and has pointer-events: none 
-                                          so events "pass through" to this span.
-                                        */}
-                                        <span className="w-full inline-block"> {/* Ensure span takes up the button's space */}
-                                          <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            className="w-full justify-start text-xs text-gray-500 opacity-60 cursor-not-allowed pointer-events-none"
-                                            disabled // Button is functionally disabled
-                                            aria-disabled="true" // Good for accessibility
-                                            // No onClick needed here as it's disabled
-                                          >
-                                            <Icon className="w-3 h-3 mr-2" />
-                                            {label} ({credits}c)
-                                          </Button>
-                                        </span>
-                                      </TooltipTrigger>
-                                      <TooltipContent className="bg-gray-800 border-white/20 text-white">
-                                        <p>Coming soon!</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  );
-                                }
-                                return (
-                                  <Button
-                                    type="button"
-                                    key={value}
-                                    variant="ghost"
-                                    size="sm"
-                                    className={`w-full justify-start text-xs
-                                                ${selectedMedia === value ? 'bg-accent text-accent-foreground hover:bg-accent/90' : 'text-gray-300 hover:bg-white/5 hover:text-white'}`}
-                                    onClick={() => handleMediaTypeSelect(platform.id, value as 'text' | 'image' | 'video' | 'auto')}
-                                  >
-                                    <Icon className="w-3 h-3 mr-2" />
-                                    {label} ({credits}c)
-                                  </Button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
+                              <div className="mt-3 pl-8 space-y-2">
+                                <div className="grid grid-cols-2 gap-2">
+                                  {mediaOptions.map(({ value, label, icon: Icon, credits, comingSoon }) => {
+                                    if (comingSoon) {
+                                      return (
+                                        <Tooltip key={value} delayDuration={100}>
+                                          <TooltipTrigger asChild>
+                                            <span className="w-full inline-block">
+                                              <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="w-full justify-start text-xs text-gray-500 opacity-60 cursor-not-allowed pointer-events-none"
+                                                disabled
+                                                aria-disabled="true"
+                                              >
+                                                <Icon className="w-3 h-3 mr-2" />
+                                                {label} ({credits}c)
+                                              </Button>
+                                            </span>
+                                          </TooltipTrigger>
+                                          <TooltipContent className="bg-gray-800 border-white/20 text-white">
+                                            <p>Coming soon!</p>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      );
+                                    }
+                                    return (
+                                      <Button
+                                        type="button"
+                                        key={value}
+                                        variant="ghost"
+                                        size="sm"
+                                        className={`w-full justify-start text-xs
+                                                    ${selectedMedia === value ? 'bg-accent text-accent-foreground hover:bg-accent/90' : 'text-gray-300 hover:bg-white/5 hover:text-white'}`}
+                                        onClick={() => handleMediaTypeSelect(platform.id, value as 'text' | 'image' | 'video' | 'auto')}
+                                      >
+                                        <Icon className="w-3 h-3 mr-2" />
+                                        {label} ({credits}c)
+                                      </Button>
+                                    );
+                                  })}
+                                </div>
+                                
+                                {/* Platform-specific Image Control Button */}
+                                {(selectedMedia === 'Image' || selectedMedia === 'auto') && (
+                                  <div className="mt-2 pt-2 border-t border-white/10">
+                                    <Dialog>
+                                      <DialogTrigger asChild>
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm"
+                                          className="w-full text-xs text-gray-300 hover:text-white hover:bg-white/10 justify-start relative group"
+                                          type="button"
+                                        >
+                                          <div className="absolute inset-0 rounded bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                          <Image className="w-3 h-3 mr-2 relative z-10" />
+                                          <span className="relative z-10">Platform Image Control</span>
+                                        </Button>
+                                      </DialogTrigger>
+                                      <DialogContent className="cosmic-card border-0 max-w-2xl max-h-[80vh] overflow-y-auto">
+                                        <DialogHeader>
+                                          <DialogTitle className="text-white text-xl font-bold flex items-center space-x-3">
+                                            <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20">
+                                              <IconComponent className={`w-5 h-5 ${platform.color}`} />
+                                            </div>
+                                            <span>{platform.label} Image Control</span>
+                                          </DialogTitle>
+                                          <DialogDescription className="text-gray-300">
+                                            Platform-specific image preferences for {platform.label}
+                                          </DialogDescription>
+                                        </DialogHeader>
+                                        
+                                        <div className="space-y-6 mt-6">
+                                          {/* Enable Platform Image Control Toggle */}
+                                          <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
+                                            <div className="space-y-1">
+                                              <Label className="text-white font-medium">Enable Platform Image Control *</Label>
+                                              <p className="text-sm text-gray-400">Override general settings with {platform.label}-specific preferences</p>
+                                            </div>
+                                            <Switch 
+                                              checked={false} // TODO: Implement platform-specific state
+                                              onCheckedChange={() => {}} // TODO: Implement platform-specific handler
+                                            />
+                                          </div>
+
+                                          {/* Platform-specific settings would go here - same structure as level 1 */}
+                                          <div className="space-y-6 animate-fade-in opacity-50">
+                                            {/* Style Guidance */}
+                                            <div className="space-y-3">
+                                              <Label className="text-white font-medium">Style Guidance</Label>
+                                              <Select disabled>
+                                                <SelectTrigger className="bg-white/5 border-white/20 text-white">
+                                                  <SelectValue placeholder="Choose image style..." />
+                                                </SelectTrigger>
+                                              </Select>
+                                            </div>
+
+                                            {/* Visual Guidance */}
+                                            <div className="space-y-3">
+                                              <Label className="text-white font-medium">Visual Guidance</Label>
+                                              <Textarea
+                                                placeholder="Platform-specific visual guidance..."
+                                                className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 min-h-[80px] resize-none"
+                                                disabled
+                                              />
+                                              <p className="text-xs text-gray-400 bg-orange-500/10 p-2 rounded-md border border-orange-500/20">
+                                                <strong>Level 2:</strong> Platform-specific guidance that overrides Level 1 settings when enabled.
+                                              </p>
+                                            </div>
+                                          </div>
+
+                                          {/* Save Settings */}
+                                          <div className="flex justify-end space-x-3 pt-4 border-t border-white/10">
+                                            <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">
+                                              Reset to Defaults
+                                            </Button>
+                                            <Button className="cosmic-button">
+                                              Save as Default
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      </DialogContent>
+                                    </Dialog>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         );
                       })}

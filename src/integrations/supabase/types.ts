@@ -7,6 +7,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instanciate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "12.2.12 (cd3cf9e)"
+  }
   public: {
     Tables: {
       available_credits: {
@@ -77,6 +82,145 @@ export type Database = {
           {
             foreignKeyName: "companies_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      image_control: {
+        Row: {
+          caption_guidance: string | null
+          company_id: string
+          created_at: string
+          enabled: boolean
+          id: string
+          image_ratio: string | null
+          image_style: string | null
+          level: number
+          platform_type: Database["public"]["Enums"]["platform_type"] | null
+          starting_image_url: string | null
+          updated_at: string
+          user_id: string
+          visual_guidance: string | null
+        }
+        Insert: {
+          caption_guidance?: string | null
+          company_id: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          image_ratio?: string | null
+          image_style?: string | null
+          level: number
+          platform_type?: Database["public"]["Enums"]["platform_type"] | null
+          starting_image_url?: string | null
+          updated_at?: string
+          user_id: string
+          visual_guidance?: string | null
+        }
+        Update: {
+          caption_guidance?: string | null
+          company_id?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          image_ratio?: string | null
+          image_style?: string | null
+          level?: number
+          platform_type?: Database["public"]["Enums"]["platform_type"] | null
+          starting_image_url?: string | null
+          updated_at?: string
+          user_id?: string
+          visual_guidance?: string | null
+        }
+        Relationships: []
+      }
+      influencer_profiles: {
+        Row: {
+          bio: string | null
+          commission_rate: number | null
+          created_at: string | null
+          id: string
+          secret_code: string | null
+          social_links: Json | null
+          total_earnings: number | null
+          total_referrals: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          bio?: string | null
+          commission_rate?: number | null
+          created_at?: string | null
+          id?: string
+          secret_code?: string | null
+          social_links?: Json | null
+          total_earnings?: number | null
+          total_referrals?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          bio?: string | null
+          commission_rate?: number | null
+          created_at?: string | null
+          id?: string
+          secret_code?: string | null
+          social_links?: Json | null
+          total_earnings?: number | null
+          total_referrals?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "influencer_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      influencer_secret_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          created_by: string | null
+          current_uses: number | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          created_by?: string | null
+          current_uses?: number | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          created_by?: string | null
+          current_uses?: number | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "influencer_secret_codes_created_by_fkey"
+            columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
@@ -168,6 +312,42 @@ export type Database = {
           },
         ]
       }
+      purchase_history: {
+        Row: {
+          amount_paid: number | null
+          created_at: string
+          credits_purchased: number
+          id: number
+          purchase_type: Database["public"]["Enums"]["purchase_type_enum"]
+          stripe_price_id: string | null
+          stripe_session_id: string
+          subscription_plan: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_paid?: number | null
+          created_at?: string
+          credits_purchased?: number
+          id?: number
+          purchase_type: Database["public"]["Enums"]["purchase_type_enum"]
+          stripe_price_id?: string | null
+          stripe_session_id: string
+          subscription_plan?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_paid?: number | null
+          created_at?: string
+          credits_purchased?: number
+          id?: number
+          purchase_type?: Database["public"]["Enums"]["purchase_type_enum"]
+          stripe_price_id?: string | null
+          stripe_session_id?: string
+          subscription_plan?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           admin_level: number | null
@@ -175,10 +355,12 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          referred_by: string | null
           subscription_expiry_date: string | null
           subscription_type:
             | Database["public"]["Enums"]["subscription_type"]
             | null
+          type: Database["public"]["Enums"]["user_type"] | null
           updated_at: string | null
         }
         Insert: {
@@ -187,10 +369,12 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          referred_by?: string | null
           subscription_expiry_date?: string | null
           subscription_type?:
             | Database["public"]["Enums"]["subscription_type"]
             | null
+          type?: Database["public"]["Enums"]["user_type"] | null
           updated_at?: string | null
         }
         Update: {
@@ -199,10 +383,12 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          referred_by?: string | null
           subscription_expiry_date?: string | null
           subscription_type?:
             | Database["public"]["Enums"]["subscription_type"]
             | null
+          type?: Database["public"]["Enums"]["user_type"] | null
           updated_at?: string | null
         }
         Relationships: []
@@ -229,7 +415,9 @@ export type Database = {
         | "twitter"
         | "tiktok"
       post_status: "draft" | "approved" | "posted"
-      subscription_type: "free" | "pro" | "enterprise"
+      purchase_type_enum: "subscription" | "credit_pack"
+      subscription_type: "free" | "standard" | "pro"
+      user_type: "client" | "influencer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -237,21 +425,25 @@ export type Database = {
   }
 }
 
-type DefaultSchema = Database[Extract<keyof Database, "public">]
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
@@ -269,14 +461,16 @@ export type Tables<
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
@@ -292,14 +486,16 @@ export type TablesInsert<
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
@@ -315,14 +511,16 @@ export type TablesUpdate<
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
@@ -330,14 +528,16 @@ export type Enums<
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
-> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
@@ -347,7 +547,9 @@ export const Constants = {
     Enums: {
       platform_type: ["facebook", "instagram", "linkedin", "twitter", "tiktok"],
       post_status: ["draft", "approved", "posted"],
-      subscription_type: ["free", "pro", "enterprise"],
+      purchase_type_enum: ["subscription", "credit_pack"],
+      subscription_type: ["free", "standard", "pro"],
+      user_type: ["client", "influencer"],
     },
   },
 } as const
