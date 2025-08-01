@@ -10,7 +10,8 @@ const Footer = () => {
   return (
     <footer className="bg-black/30 backdrop-blur-lg border-t border-primary/10 py-12 mt-auto">
       <div className="container mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+        {/* Updated grid to accommodate 4 columns on larger screens */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-12">
           {/* Company Info */}
           <div className="space-y-4">
             <h3 className="text-xl font-bold text-white">Creators Multiverse</h3>
@@ -45,7 +46,6 @@ const Footer = () => {
               >
                 <Linkedin className="w-5 h-5" />
               </a>
-              {/* === UPDATED SECTION === */}
               <a
                 href="https://x.com/Creators_M777"
                 target="_blank"
@@ -53,10 +53,8 @@ const Footer = () => {
                 className="text-gray-400 hover:text-accent transition-colors"
                 aria-label="X"
               >
-                {/* Use the new icon component */}
                 <FaXTwitter className="w-5 h-5" />
               </a>
-              {/* === END UPDATED SECTION === */}
             </div>
           </div>
           
@@ -79,11 +77,28 @@ const Footer = () => {
               <li>
                 <Link to="/settings" className="text-gray-300 hover:text-accent transition-colors">Settings</Link>
               </li>
-                {/* <li>
-                <Link to="/partnership-agreement" className="text-gray-300 hover:text-accent transition-colors">Partnership Agreement</Link>
-              </li> */}
             </ul>
           </div>
+          
+          {/* === NEW LEGAL SECTION === */}
+          <div className="space-y-4">
+            <h3 className="text-xl font-bold text-white">Legal</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/politica" className="text-gray-300 hover:text-accent transition-colors">Privacy Policy</Link>
+              </li>
+              <li>
+                <Link to="/cookies" className="text-gray-300 hover:text-accent transition-colors">Cookie Policy</Link>
+              </li>
+              <li>
+                <Link to="/termeni" className="text-gray-300 hover:text-accent transition-colors">Terms of Service</Link>
+              </li>
+              <li>
+                <Link to="/acord-prelucrare-date" className="text-gray-300 hover:text-accent transition-colors">Data Processing</Link>
+              </li>
+            </ul>
+          </div>
+          {/* === END NEW LEGAL SECTION === */}
           
           {/* Taglines */}
           <div className="space-y-6">
@@ -98,13 +113,6 @@ const Footer = () => {
               <h4 className="text-lg font-semibold text-accent">Unleash Your Creativity</h4>
               <p className="text-gray-300 text-sm">
                 Let AI handle the routine, you focus on creation
-              </p>
-            </div>
-            
-            <div className="space-y-2">
-              <h4 className="text-lg font-semibold text-accent">Free Your Time and Grow Your Business</h4>
-              <p className="text-gray-300 text-sm">
-                Scale your content creation without scaling your team
               </p>
             </div>
           </div>
