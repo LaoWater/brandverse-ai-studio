@@ -1,25 +1,16 @@
 import Navigation from "@/components/Navigation";
-import { Check, Star, Zap, Crown, Bell } from "lucide-react";
+import { Check, Star, Zap, Crown } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { useState } from "react";
 
 const Pricing = () => {
   const { user } = useAuth();
-  const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleSignupRedirect = () => {
-    // Redirect to signup page
-    window.location.href = '/auth'; // or use your router navigation
-  };
 
   const handleUpgrade = async (priceId: string, planName: string) => {
     if (!user) {
@@ -91,7 +82,6 @@ const Pricing = () => {
     }
   };
 
-  /* COMMENTED OUT - PRICING PLANS FOR LATER
   const plans = [
     {
       name: "Free",
@@ -134,7 +124,7 @@ const Pricing = () => {
       buttonText: "Upgrade to Standard",
       buttonVariant: "default" as const,
       popular: true,
-      priceId: "price_1RcU8fEybjfbmfmGXpAcMnPa"
+      priceId: "price_1RcU8fEybjfbmfmGXpAcMnPa" // Normal One: price_1RaddlEybjfbmfmGeEzFDalD, now testing with dev one.
     },
     {
       name: "Pro",
@@ -158,9 +148,11 @@ const Pricing = () => {
       buttonText: "Go Pro",
       buttonVariant: "default" as const,
       popular: false,
-      priceId: "price_1RakAAEybjfbmfmGPLiHbxj1"
+      priceId: "price_1RakAAEybjfbmfmGPLiHbxj1" // Actual Pro ID:  price_1Rak0xEybjfbmfmGF5fVAYoR
     }
   ];
+
+  // Accountant work - not urgent
 
   const creditPacks = [
     {
@@ -187,7 +179,6 @@ const Pricing = () => {
       productId: "prod_SXNRQ7G1zjUMC3"
     }
   ];
-  */
 
   return (
     <div className="min-h-screen bg-cosmic-gradient">
@@ -202,85 +193,13 @@ const Pricing = () => {
               <span className="text-cosmic block mt-2">Pricing</span>
             </h1>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
-              Pay for what you use with our flexible credit system. 
-              {/* <br></br>Text posts cost 1 credit, images cost 2 credits, and videos are charged individually. */}
+              Pay for what you use with our flexible credit system. Text posts cost 1 credit, images cost 2 credits, and videos are charged individually.
             </p>
+
+
           </div>
 
-          {/* Launch Soon Section */}
-          <div className="max-w-4xl mx-auto mb-16">
-            <Card className="cosmic-card relative overflow-hidden">
-              {/* Animated background gradient */}
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-teal-500/10 animate-pulse"></div>
-              
-              <CardContent className="relative z-10 text-center py-16 px-8">
-                <div className="mb-8">
-                  <div className="inline-flex items-center space-x-2 mb-6">
-                    <Badge className="bg-cosmic/20 text-cosmic border-cosmic/40 px-4 py-2 text-lg font-semibold animate-pulse">
-                      Coming Soon
-                    </Badge>
-                  </div>
-                  
-                  <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
-                    Launching Soon
-                  </h2>
-                  
-                  <p className="text-xl text-gray-300 mb-4 leading-relaxed">
-                    For now we invite you to test our system for free.
-                  </p>
-                  
-                  <p className="text-lg text-gray-400 mb-8">
-                    Your feedback is welcomed.
-                  </p>
-                </div>
-
-                {/* Notification Signup */}
-                <div className="max-w-md mx-auto">
-                  <div className="mb-6">
-                    <h3 className="text-2xl font-bold text-white mb-2 flex items-center justify-center space-x-2">
-                      <Bell className="w-6 h-6 text-cosmic" />
-                      <span className="text-white">
-                        Get Notified
-                      </span>
-                    </h3>
-                    <p className="text-gray-300">
-                      Create an account to start enjoying many of our features for free and get notified once we launch our plans
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <Button 
-                      onClick={handleSignupRedirect}
-                      className="w-full cosmic-button text-lg py-3 relative group overflow-hidden"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-cosmic to-accent opacity-0 group-hover:opacity-20 transition-opacity"></div>
-                      <div className="relative flex items-center justify-center space-x-2">
-                        <span>Create Free Account</span>
-                      </div>
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Feature Preview */}
-                <div className="mt-12 grid md:grid-cols-3 gap-6 text-sm">
-                  <div className="flex items-center justify-center space-x-2 text-gray-300">
-                    <Check className="w-4 h-4 text-cosmic" />
-                    <span>Flexible Credit System</span>
-                  </div>
-                  <div className="flex items-center justify-center space-x-2 text-gray-300">
-                    <Check className="w-4 h-4 text-cosmic" />
-                    <span>Multiple Pricing Tiers</span>
-                  </div>
-                  <div className="flex items-center justify-center space-x-2 text-gray-300">
-                    <Check className="w-4 h-4 text-cosmic" />
-                    <span>Pay-as-you-go Options</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* COMMENTED OUT - BILLING TOGGLE AND PRICING CARDS
+          {/* Billing Toggle */}
           <div className="flex justify-center mb-12">
             <Tabs defaultValue="monthly" className="w-auto">
               <TabsList className="cosmic-card">
@@ -289,6 +208,7 @@ const Pricing = () => {
               </TabsList>
               
               <TabsContent value="monthly" className="mt-8">
+                {/* Monthly Pricing Cards */}
                 <div className="grid md:grid-cols-3 gap-8">
                   <TooltipProvider>
                     {plans.map((plan, index) => (
@@ -368,6 +288,7 @@ const Pricing = () => {
               </TabsContent>
               
               <TabsContent value="credits" className="mt-8">
+                {/* Credit Packs */}
                 <div className="max-w-4xl mx-auto">
                   <div className="text-center mb-8">
                     <h2 className="text-3xl font-bold text-white mb-4">Pay-As-You-Go Credit Packs</h2>
@@ -446,7 +367,6 @@ const Pricing = () => {
               </TabsContent>
             </Tabs>
           </div>
-          */}
 
           {/* FAQ Section */}
           <div className="text-center">

@@ -6,9 +6,6 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { supabase } from "@/integrations/supabase/client";
 
-
-
-
 interface Message {
   content: string;
   sender: 'user' | 'assistant';
@@ -31,11 +28,11 @@ const markdownProseClasses = (sender: 'user' | 'assistant') => `
   prose-blockquote:my-1.5 prose-blockquote:pl-3 prose-blockquote:border-l-2 prose-blockquote:italic
   ${sender === 'user' 
     ? 'prose-invert prose-blockquote:border-white/50' 
-    : 'prose-blockquote:border-slate-300'} {/* Adjusted assistant blockquote border for bg-slate-50 */}
+    : 'prose-blockquote:border-slate-300'}
   prose-code:font-mono prose-code:text-xs prose-code:px-1 prose-code:py-0.5 prose-code:rounded-sm
   prose-code:before:content-[''] prose-code:after:content-['']
   prose-pre:font-mono prose-pre:text-xs prose-pre:my-2 prose-pre:p-0 prose-pre:bg-transparent prose-pre:rounded-md prose-pre:overflow-x-auto
-  ${sender === 'user' ? 'prose-invert' : ''} // Apply prose-invert only to user messages (dark background)
+  ${sender === 'user' ? 'prose-invert' : ''}
 `;
 
 const ChatButton = () => {
@@ -152,7 +149,6 @@ const ChatButton = () => {
   return (
     <div className="fixed bottom-12 right-8 z-[999]">
       {isOpen && (
-        // MODIFIED: Main chat window background and border
         <div className="mb-4 w-[90vw] max-w-[900px] h-[80vh] max-h-[800px] bg-slate-200 rounded-xl shadow-2xl border border-slate-400 animate-fade-in overflow-hidden flex flex-col">
           <div className="p-4 bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 text-white flex justify-between items-center shrink-0">
             <div className="flex items-center">
@@ -194,62 +190,74 @@ const ChatButton = () => {
             </div>
           </div>
 
-          {/* MODIFIED: Scrollbar thumb color for new background */}
           <div className="flex-grow p-4 sm:p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-500 scrollbar-track-transparent">
             <div className="flex flex-col space-y-4">
-              {messages.map((message, index) => (
-                <div key={index} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  {/* MODIFIED: Assistant message bubble background, border, and text color */}
-                  <div className={`p-3 rounded-xl max-w-[85%] shadow-md text-sm ${
-                      message.sender === 'user'
-                        ? 'bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 text-white'
-                        : 'bg-slate-50 border border-slate-200 text-slate-800' 
-                  }`}>
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                        pre: ({ node, children, ...props }) => {
-                          const codeNode = node?.children?.[0];
-                          const textToCopy = codeNode ? extractTextFromHastNode(codeNode) : '';
-                          const [copied, setCopied] = useState(false);
-                          const handleCopy = async () => {
-                            if (!textToCopy) return;
-                            try {
-                              await navigator.clipboard.writeText(textToCopy);
-                              setCopied(true);
-                              setTimeout(() => setCopied(false), 2000);
-                            } catch (err) { console.error('Failed to copy: ', err); }
-                          };
-                          // MODIFIED: Assistant's pre background to contrast with new bubble color
-                          const preBg = message.sender === 'user' ? 'bg-black/30' : 'bg-slate-200'; 
-                          return (
-                            <div className="relative group my-2">
-                              <pre {...props} className={`${props.className || ''} ${preBg} p-3 pt-9 rounded-md overflow-x-auto text-xs leading-relaxed`}>{children}</pre>
-                              {textToCopy && (
-                                <button onClick={handleCopy} className="absolute top-1.5 right-1.5 p-1 bg-slate-600/60 hover:bg-slate-500/80 rounded text-slate-100/80 hover:text-slate-50 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100" aria-label={copied ? "Copied!" : "Copy code"}>
-                                  {copied ? <Check size={14} /> : <ClipboardCopy size={14} />}
-                                </button>
-                              )}
-                            </div>
-                          );
-                        },
-                      }}
-                      className={markdownProseClasses(message.sender)}
-                    >{message.content}</ReactMarkdown>
-                    {/* MODIFIED: Assistant timestamp border and text color */}
-                    <p className={`text-xs mt-2 pt-1 border-t text-right ${
-                      message.sender === 'user' 
-                        ? 'border-white/20 text-blue-100 opacity-75' 
-                        : 'border-slate-200/60 text-slate-500'
+              {messages.map((message, index) => {
+                const MarkdownComponent = (
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      pre: ({ node, children, ...props }) => {
+                        const codeNode = node?.children?.[0];
+                        const textToCopy = codeNode ? extractTextFromHastNode(codeNode) : '';
+                        const [copied, setCopied] = useState(false);
+                        const handleCopy = async () => {
+                          if (!textToCopy) return;
+                          try {
+                            await navigator.clipboard.writeText(textToCopy);
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 2000);
+                          } catch (err) { console.error('Failed to copy: ', err); }
+                        };
+                        const preBg = message.sender === 'user' ? 'bg-black/30' : 'bg-slate-200';
+                        return (
+                          <div className="relative group my-2">
+                            <pre {...props} className={`${props.className || ''} ${preBg} p-3 pt-9 rounded-md overflow-x-auto text-xs leading-relaxed`}>{children}</pre>
+                            {textToCopy && (
+                              <button onClick={handleCopy} className="absolute top-1.5 right-1.5 p-1 bg-slate-600/60 hover:bg-slate-500/80 rounded text-slate-100/80 hover:text-slate-50 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100" aria-label={copied ? "Copied!" : "Copy code"}>
+                                {copied ? <Check size={14} /> : <ClipboardCopy size={14} />}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      },
+                    }}
+                  >{message.content}</ReactMarkdown>
+                );
+
+                return (
+                  <div key={index} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`p-3 rounded-xl max-w-[85%] shadow-md text-sm ${
+                        message.sender === 'user'
+                          ? 'bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 text-white'
+                          : 'bg-slate-50 border border-slate-200 text-slate-800'
                     }`}>
-                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </p>
+
+                      {/* --- START: THE FIX --- */}
+                      {message.sender === 'assistant' ? (
+                        // For the assistant, wrap in the prose div for rich styling
+                        <div className={markdownProseClasses(message.sender)}>
+                          {MarkdownComponent}
+                        </div>
+                      ) : (
+                        // For the user, render directly so it inherits the parent's `text-white`
+                        MarkdownComponent
+                      )}
+                      {/* --- END: THE FIX --- */}
+
+                      <p className={`text-xs mt-2 pt-1 border-t text-right ${
+                        message.sender === 'user'
+                          ? 'border-white/20 text-blue-100 opacity-75'
+                          : 'border-slate-200/60 text-slate-500'
+                      }`}>
+                        {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               {isLoading && (
                  <div className="flex justify-start">
-                   {/* MODIFIED: Loading indicator bubble background, border, and text color */}
                    <div className="p-3 rounded-lg max-w-[85%] bg-slate-50 border border-slate-200 shadow-md">
                      <div className="flex items-center space-x-2 text-sm text-slate-600">
                        <Loader2 size={16} className="animate-spin" />

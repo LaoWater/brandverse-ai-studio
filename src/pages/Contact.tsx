@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -67,96 +66,115 @@ const Contact = () => {
           </div>
 
           <div className="grid lg:grid-cols-2 gap-12 items-start">
-            {/* Contact Form */}
-            <Card className="cosmic-card">
-              <CardHeader>
-                <CardTitle className="text-2xl text-white flex items-center gap-2">
-                  <Send className="w-6 h-6 text-accent" />
-                  Send us a Message
-                </CardTitle>
-                <p className="text-gray-300">
-                  Fill out the form below and we'll respond within 24 hours.
-                </p>
-              </CardHeader>
-              <CardContent>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <div className="grid md:grid-cols-2 gap-4">
+            {/* Left Column - Contact Form */}
+            <div className="space-y-6">
+              <Card className="cosmic-card">
+                <CardHeader>
+                  <CardTitle className="text-2xl text-white flex items-center gap-2">
+                    <Send className="w-6 h-6 text-accent" />
+                    Send us a Message
+                  </CardTitle>
+                  <p className="text-gray-300">
+                    Fill out the form below and we'll respond within 24 hours.
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Full Name</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Your name" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email Address</FormLabel>
+                              <FormControl>
+                                <Input placeholder="your.email@example.com" type="email" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
                       <FormField
                         control={form.control}
-                        name="name"
+                        name="subject"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Full Name</FormLabel>
+                            <FormLabel>Subject</FormLabel>
                             <FormControl>
-                              <Input placeholder="Your name" {...field} />
+                              <Input placeholder="What can we help you with?" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
-                        name="email"
+                        name="message"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Email Address</FormLabel>
+                            <FormLabel>Message</FormLabel>
                             <FormControl>
-                              <Input placeholder="your.email@example.com" type="email" {...field} />
+                              <Textarea 
+                                placeholder="Tell us more about your project or questions..."
+                                className="min-h-[120px] resize-none"
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
+
+                      <Button
+                        type="submit"
+                        className="cosmic-button w-full"
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? "Sending..." : "Send Message"}
+                        <Send className="w-4 h-4 ml-2" />
+                      </Button>
+                    </form>
+                  </Form>
+                </CardContent>
+              </Card>
+
+              {/* Quick Response Promise - Now left-aligned under form */}
+              <Card className="cosmic-card">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-accent/20 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Send className="w-6 h-6 text-accent" />
                     </div>
+                    <div>
+                      <h4 className="text-white font-semibold mb-2">Quick Response Guaranteed</h4>
+                      <p className="text-gray-300 text-sm">
+                        We typically respond to all inquiries within 24 hours during business days.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-                    <FormField
-                      control={form.control}
-                      name="subject"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Subject</FormLabel>
-                          <FormControl>
-                            <Input placeholder="What can we help you with?" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="message"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Message</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Tell us more about your project or questions..."
-                              className="min-h-[120px] resize-none"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <Button
-                      type="submit"
-                      className="cosmic-button w-full"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? "Sending..." : "Send Message"}
-                      <Send className="w-4 h-4 ml-2" />
-                    </Button>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-
-            {/* Contact Info & Image */}
+            {/* Right Column - Contact Info & Image */}
             <div className="space-y-8">
               {/* CM Logo Image */}
               <div className="relative">
@@ -198,21 +216,6 @@ const Contact = () => {
                         Tech Valley, CA 94043
                       </p>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Quick Response Promise */}
-              <Card className="cosmic-card">
-                <CardContent className="pt-6">
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Send className="w-6 h-6 text-accent" />
-                    </div>
-                    <h4 className="text-white font-semibold mb-2">Quick Response Guaranteed</h4>
-                    <p className="text-gray-300 text-sm">
-                      We typically respond to all inquiries within 24 hours during business days.
-                    </p>
                   </div>
                 </CardContent>
               </Card>
