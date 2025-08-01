@@ -15,21 +15,21 @@ const PartnershipAgreementEditor = () => {
     technicalPartnerEmail: 'lao.water7@Gmail.com',
     technicalPartnerSSN: '1701',
     businessAddress: 'Online',
-    marketingPartnerInvestment: '',
-    technicalPartnerInvestment: '',
+    marketingPartnerInvestment: 0,
+    technicalPartnerInvestment: 0,
     governingState: '',
     totalInitialCapital: ''
   });
 
   const [isPreviewMode, setIsPreviewMode] = useState(false);
 
-  const handleInputChange = (field, value) => {
+  const handleInputChange = (field: string, value: string | number) => {
     const newFormData = { ...formData, [field]: value };
 
     // Auto-calculate total initial capital
     if (field === 'marketingPartnerInvestment' || field === 'technicalPartnerInvestment') {
-      const marketing = parseFloat(newFormData.marketingPartnerInvestment) || 0;
-      const technical = parseFloat(newFormData.technicalPartnerInvestment) || 0;
+      const marketing = parseFloat(String(newFormData.marketingPartnerInvestment)) || 0;
+      const technical = parseFloat(String(newFormData.technicalPartnerInvestment)) || 0;
       newFormData.totalInitialCapital = (marketing + technical).toLocaleString();
     }
 
@@ -166,8 +166,8 @@ const PartnershipAgreementEditor = () => {
 
     <h3>Initial Investment:</h3>
     <ul>
-        <li>Marketing Partner (${formData.marketingPartnerName || 'Partner 1'}): $<span class="filled-field">${formData.marketingPartnerInvestment ? parseFloat(formData.marketingPartnerInvestment).toLocaleString() : '________________'}</span></li>
-        <li>Technical Partner (${formData.technicalPartnerName || 'Partner 2'}): $<span class="filled-field">${formData.technicalPartnerInvestment ? parseFloat(formData.technicalPartnerInvestment).toLocaleString() : '________________'}</span></li>
+        <li>Marketing Partner (${formData.marketingPartnerName || 'Partner 1'}): $<span class="filled-field">${formData.marketingPartnerInvestment ? parseFloat(String(formData.marketingPartnerInvestment)).toLocaleString() : '________________'}</span></li>
+        <li>Technical Partner (${formData.technicalPartnerName || 'Partner 2'}): $<span class="filled-field">${formData.technicalPartnerInvestment ? parseFloat(String(formData.technicalPartnerInvestment)).toLocaleString() : '________________'}</span></li>
         <li><strong>Total Initial Capital:</strong> $<span class="filled-field">${formData.totalInitialCapital || '________________'}</span></li>
     </ul>
 
@@ -447,8 +447,8 @@ const PartnershipAgreementEditor = () => {
               <h2 className="text-lg font-bold mb-3 border-b border-border pb-1">3. FINANCIAL TERMS</h2>
               <h3 className="font-semibold mb-2">Initial Investment:</h3>
               <ul className="list-disc ml-6 mb-4">
-                <li>Marketing Partner: $<span className="bg-secondary px-2 py-1 rounded">{formData.marketingPartnerInvestment ? parseFloat(formData.marketingPartnerInvestment).toLocaleString() : '________________'}</span></li>
-                <li>Technical Partner: $<span className="bg-secondary px-2 py-1 rounded">{formData.technicalPartnerInvestment ? parseFloat(formData.technicalPartnerInvestment).toLocaleString() : '________________'}</span></li>
+                <li>Marketing Partner: $<span className="bg-secondary px-2 py-1 rounded">{formData.marketingPartnerInvestment ? parseFloat(String(formData.marketingPartnerInvestment)).toLocaleString() : '________________'}</span></li>
+                <li>Technical Partner: $<span className="bg-secondary px-2 py-1 rounded">{formData.technicalPartnerInvestment ? parseFloat(String(formData.technicalPartnerInvestment)).toLocaleString() : '________________'}</span></li>
                 <li><strong>Total Initial Capital:</strong> $<span className="bg-secondary px-2 py-1 rounded">{formData.totalInitialCapital || '________________'}</span></li>
               </ul>
             </div>
@@ -533,7 +533,7 @@ const PartnershipAgreementEditor = () => {
                 value={formData.marketingPartnerAddress}
                 onChange={(e) => handleInputChange('marketingPartnerAddress', e.target.value)}
                 placeholder="Street address, City, State, ZIP"
-                rows="3"
+                rows={3}
                 className="!h-auto" // Override fixed height for textareas
               />
             </div>
@@ -565,7 +565,7 @@ const PartnershipAgreementEditor = () => {
                 value={formData.marketingPartnerSSN}
                 onChange={(e) => handleInputChange('marketingPartnerSSN', e.target.value)}
                 placeholder="1234"
-                maxLength="4"
+                maxLength={4}
               />
             </div>
           </div>
@@ -592,7 +592,7 @@ const PartnershipAgreementEditor = () => {
                 value={formData.technicalPartnerAddress}
                 onChange={(e) => handleInputChange('technicalPartnerAddress', e.target.value)}
                 placeholder="Street address, City, State, ZIP"
-                rows="3"
+                rows={3}
                 className="!h-auto" // Override fixed height for textareas
               />
             </div>
@@ -624,7 +624,7 @@ const PartnershipAgreementEditor = () => {
                 value={formData.technicalPartnerSSN}
                 onChange={(e) => handleInputChange('technicalPartnerSSN', e.target.value)}
                 placeholder="1234"
-                maxLength="4"
+                maxLength={4}
               />
             </div>
           </div>
@@ -640,7 +640,7 @@ const PartnershipAgreementEditor = () => {
                 value={formData.businessAddress}
                 onChange={(e) => handleInputChange('businessAddress', e.target.value)}
                 placeholder="Principal place of business"
-                rows="3"
+                rows={3}
                 className="!h-auto" // Override fixed height for textareas
               />
             </div>
@@ -657,21 +657,21 @@ const PartnershipAgreementEditor = () => {
 
             <div>
               <label>Marketing Partner Initial Investment ($)</label>
-              <input
-                type="number"
-                value={formData.marketingPartnerInvestment}
-                onChange={(e) => handleInputChange('marketingPartnerInvestment', e.target.value)}
-                placeholder="e.g., 25000"
+               <input
+                 type="number"
+                 value={formData.marketingPartnerInvestment}
+                 onChange={(e) => handleInputChange('marketingPartnerInvestment', Number(e.target.value))}
+                 placeholder="e.g., 25000"
               />
             </div>
 
             <div>
               <label>Technical Partner Initial Investment ($)</label>
-              <input
-                type="number"
-                value={formData.technicalPartnerInvestment}
-                onChange={(e) => handleInputChange('technicalPartnerInvestment', e.target.value)}
-                placeholder="e.g., 25000"
+               <input
+                 type="number"
+                 value={formData.technicalPartnerInvestment}
+                 onChange={(e) => handleInputChange('technicalPartnerInvestment', Number(e.target.value))}
+                 placeholder="e.g., 25000"
               />
             </div>
 

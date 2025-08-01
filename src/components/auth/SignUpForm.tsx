@@ -9,10 +9,12 @@ import { toast } from '@/hooks/use-toast';
 
 interface SignUpFormProps {
   onToggleMode: () => void;
+  onInfluencerMode: () => void;
   onSignUpSuccess: (email: string) => void;
+  initialReferralCode?: string;
 }
 
-export const SignUpForm = ({ onToggleMode, onSignUpSuccess }: SignUpFormProps) => {
+export const SignUpForm = ({ onToggleMode, onInfluencerMode, onSignUpSuccess, initialReferralCode }: SignUpFormProps) => {
   const [email, setEmail] = useState('');
   const [confirmEmail, setConfirmEmail] = useState('');
   const [password, setPassword] = useState('');

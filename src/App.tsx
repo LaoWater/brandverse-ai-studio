@@ -45,7 +45,8 @@ const App = () => (
               <Routes>
                 {/* Public routes - accessible without authentication */}
                 <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/partner" element={<Partner />} />
                 <Route path="/features" element={<Features />} />
                 <Route path="/pricing" element={<Pricing />} />
                 <Route path="/contact" element={<Contact />} />

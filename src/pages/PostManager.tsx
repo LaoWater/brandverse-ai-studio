@@ -628,7 +628,7 @@ const PostManager = () => {
         onOpenChange={setIsEditDialogOpen}
         post={selectedPost}
         onSave={handleSavePost}
-        platforms={platforms}
+        platforms={platforms.map(p => ({ ...p, icon: p.icon as any }))}
         isSaving={updatePostMutation.isPending}
         isImageUrl={isImageUrl}
       />

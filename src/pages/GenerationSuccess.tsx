@@ -56,8 +56,8 @@ interface GeneratedPost {
     cloud_urls?: string[]; // To store public URLs of media
     // ... any other metadata
   };
-  platform_type: "instagram" | "linkedin" | "twitter" | "facebook" | "tiktok" | "unknown"; // Added "unknown" for safety
-  status: "draft" | "scheduled" | "posted";
+  platform_type: "instagram" | "linkedin" | "twitter" | "facebook" | "tiktok"; // Removed "unknown" for type safety
+  status: "draft" | "posted" | "approved";
   title: string;
   updated_at: string;
   // Store the original API data if needed for editing or other purposes
@@ -148,7 +148,7 @@ const GenerationSuccess = () => {
         }
 
         // --- Platform Type Logic ---
-        let platformType: GeneratedPost['platform_type'] = "unknown";
+        let platformType: GeneratedPost['platform_type'] = "facebook"; // Default fallback
         const apiPlatformLower = apiPost.platform?.toLowerCase();
         if (["instagram", "linkedin", "twitter", "facebook", "tiktok"].includes(apiPlatformLower)) {
           platformType = apiPlatformLower as GeneratedPost['platform_type'];
@@ -210,7 +210,7 @@ const GenerationSuccess = () => {
       setSelectedPosts(new Set(transformedPosts.map(post => post.id)));
 
       // Prepare pipelineResultForDisplay with transformed posts and summary
-      const uniquePlatforms = Array.from(new Set(transformedPosts.map(p => p.platform_type).filter(p => p !== "unknown")));
+      const uniquePlatforms = Array.from(new Set(transformedPosts.map(p => p.platform_type)));
       setPipelineResultForDisplay({
         ...apiPipelineResult, // Spread other properties from the API result
         posts: transformedPosts, // Override with transformed posts
@@ -402,13 +402,17 @@ const GenerationSuccess = () => {
     });
   };
 
-  const isImageUrl = (url: string) => {
+  const isImageUrl = (url: string): url is string => {
     return url ? /\.(jpg|jpeg|png|gif|webp)$/i.test(url) : false;
   };
 
   const getPlatformIcon = (platform: GeneratedPost['platform_type']) => {
     const platformDetails = platforms.find(p => p.id === platform);
-    return platformDetails ? platformDetails.icon : "📱";
+    if (platformDetails) {
+      const IconComponent = platformDetails.icon;
+      return <IconComponent className="w-6 h-6" />;
+    }
+    return "📱";
   };
 
   // getMediaTypeColor is not currently used, can be removed or implemented if needed for badges
@@ -665,7 +669,7 @@ const GenerationSuccess = () => {
         onOpenChange={setIsEditDialogOpen}
         post={selectedPost}
         onSave={handleSavePost}
-        platforms={platforms} // Using the mock platforms data defined in this component
+        platforms={platforms.map(p => ({ ...p, icon: p.icon as any }))} // Type cast for compatibility
         isSaving={false} // Manage actual saving state if EditPostDialog makes async calls
         isImageUrl={isImageUrl}
       />

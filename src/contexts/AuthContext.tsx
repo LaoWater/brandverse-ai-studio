@@ -7,7 +7,8 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName: string, referralCode?: string) => Promise<{ error: any }>;
+  signUpInfluencer: (email: string, password: string, fullName: string, secretCode: string, profileData?: any) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
 
@@ -96,14 +97,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log('SignIn successful:', data.user?.id);
       }
       
-      return { error };
+    return { error };
+  };
+
+  const signUpInfluencer = async (email: string, password: string, fullName: string, secretCode: string, profileData?: any) => {
+    // For now, just do regular signup - secret code validation will be handled by edge function
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/`,
+        data: {
+          full_name: fullName,
+          user_type: 'influencer',
+          secret_code: secretCode,
+          profile_data: profileData
+        }
+      }
+    });
+
+    return { error };
     } catch (err) {
       console.error('SignIn exception:', err);
       return { error: err };
     }
   };
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (email: string, password: string, fullName: string, referralCode?: string) => {
     console.log('SignUp called with email:', email, 'fullName:', fullName);
     
     try {
