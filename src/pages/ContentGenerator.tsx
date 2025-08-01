@@ -73,7 +73,7 @@ const ContentGenerator = () => {
     tone: "",
     language: "en",
     platforms: [] as string[],
-    platformMedia: {} as Record<string, 'Text' | 'Image' | 'Video' | 'Let Model Decide' | 'auto'> 
+    platformMedia: {} as Record<string, 'text' | 'image' | 'video'> 
   });
 
   // Image Control State
@@ -154,8 +154,7 @@ const ContentGenerator = () => {
   const mediaOptions = [
     { value: 'text', label: 'Text', icon: TypeIconLucide, credits: 1 },
     { value: 'image', label: 'Image + Text', icon: ImageIconLucide, credits: 3 },
-    { value: 'video', label: 'Video + Text', icon: VideoIconLucide, credits: 3, comingSoon: true }, // Added comingSoon flag
-    { value: 'auto', label: 'Auto-Decide', icon: Wand2, credits: 3 },
+    { value: 'video', label: 'Video + Text (Coming Soon)', icon: VideoIconLucide, credits: 3, comingSoon: true, wide: true },
   ];
 
   const creditsNeeded = calculateCreditsNeeded(formData.platforms, formData.platformMedia);
@@ -173,13 +172,13 @@ const ContentGenerator = () => {
         return {
           ...prev,
           platforms: [...prev.platforms, platformId],
-          platformMedia: { ...prev.platformMedia, [platformId]: 'Text' }
+          platformMedia: { ...prev.platformMedia, [platformId]: 'text' }
         };
       }
     });
   };
 
-  const handleMediaTypeSelect = (platformId: string, mediaType: 'text' | 'image' | 'video' | 'auto') => {
+  const handleMediaTypeSelect = (platformId: string, mediaType: 'text' | 'image' | 'video') => {
     setFormData(prev => ({
       ...prev,
       platformMedia: { ...prev.platformMedia, [platformId]: mediaType as any }
@@ -262,9 +261,8 @@ const ContentGenerator = () => {
     await updateStage('planning', 'in-progress', 100);
 
     const platforms_post_types_map = formData.platforms.map(platformId => {
-      let mediaTypeApiValue: string = formData.platformMedia[platformId] || 'auto';
-      if (mediaTypeApiValue === 'auto') mediaTypeApiValue = 'Let Model Decide';
-      else if (mediaTypeApiValue === 'text') mediaTypeApiValue = 'Text';
+      let mediaTypeApiValue: string = formData.platformMedia[platformId] || 'text';
+      if (mediaTypeApiValue === 'text') mediaTypeApiValue = 'Text';
       else if (mediaTypeApiValue === 'image') mediaTypeApiValue = 'Image';
       else if (mediaTypeApiValue === 'video') mediaTypeApiValue = 'Video';
       return { [platformId]: mediaTypeApiValue };
@@ -748,29 +746,68 @@ const ContentGenerator = () => {
                             {isSelected && (
                               <div className="mt-3 pl-8 space-y-2">
                                 <div className="grid grid-cols-2 gap-2">
-                                  {mediaOptions.map(({ value, label, icon: Icon, credits, comingSoon }) => {
+                                  {mediaOptions.map(({ value, label, icon: Icon, credits, comingSoon, wide }) => {
                                     if (comingSoon) {
                                       return (
-                                        <Tooltip key={value} delayDuration={100}>
-                                          <TooltipTrigger asChild>
-                                            <span className="w-full inline-block">
+                                        <Dialog key={value}>
+                                          <DialogTrigger asChild>
+                                            <div className={wide ? "col-span-2" : ""}>
                                               <Button
                                                 type="button"
                                                 variant="ghost"
                                                 size="sm"
-                                                className="w-full justify-start text-xs text-gray-500 opacity-60 cursor-not-allowed pointer-events-none"
-                                                disabled
-                                                aria-disabled="true"
+                                                className="w-full justify-start text-xs text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 relative group"
                                               >
-                                                <Icon className="w-3 h-3 mr-2" />
-                                                {label} ({credits}c)
+                                                <div className="absolute inset-0 rounded bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                                <Icon className="w-3 h-3 mr-2 relative z-10" />
+                                                <span className="relative z-10">{label}</span>
                                               </Button>
-                                            </span>
-                                          </TooltipTrigger>
-                                          <TooltipContent className="bg-gray-800 border-white/20 text-white">
-                                            <p>Coming soon!</p>
-                                          </TooltipContent>
-                                        </Tooltip>
+                                            </div>
+                                          </DialogTrigger>
+                                          <DialogContent className="cosmic-card border-0 max-w-2xl">
+                                            <DialogHeader>
+                                              <DialogTitle className="text-white text-xl font-bold flex items-center space-x-3">
+                                                <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20">
+                                                  <Icon className="w-5 h-5 text-purple-400" />
+                                                </div>
+                                                <span>Video Generation - Future Vision</span>
+                                              </DialogTitle>
+                                            </DialogHeader>
+                                            
+                                            <div className="space-y-6 mt-6">
+                                              <div className="p-6 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20">
+                                                <div className="space-y-4 text-gray-200">
+                                                  <p className="text-lg font-medium text-purple-300">
+                                                    The Current Reality
+                                                  </p>
+                                                  <p>
+                                                    Current video models have significant limitations, with quality content generation costs reaching up to <span className="text-yellow-400 font-semibold">$0.70 per second</span> and often falling short of creating favorable engaging content-cost equity.
+                                                  </p>
+                                                  
+                                                  <p className="text-lg font-medium text-purple-300 mt-6">
+                                                    Our Vision Forward
+                                                  </p>
+                                                  <p>
+                                                    We are working on a revolutionary new way to automatize Video Creation - which will include a comprehensive pipeline of Video Scripts generation, creating clear scripts blueprints & execution plans, so they can easily be filmed.
+                                                  </p>
+                                                  
+                                                  <p>
+                                                    As Leading AI Providers companies grow stronger and video models improve, we will transition to video generation as well - keeping the same Promise towards our clients and our very mission.
+                                                  </p>
+                                                  
+                                                  <div className="p-4 rounded-lg bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 mt-6">
+                                                    <p className="text-cyan-300 font-medium text-center">
+                                                      Our mission is to generate Human-Level-Performance quality content, not just Content.
+                                                    </p>
+                                                    <p className="text-center text-sm text-gray-300 mt-2">
+                                                      Because we want to create something as close to HLP as possible.
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </DialogContent>
+                                        </Dialog>
                                       );
                                     }
                                     return (
@@ -781,7 +818,7 @@ const ContentGenerator = () => {
                                         size="sm"
                                         className={`w-full justify-start text-xs
                                                     ${selectedMedia === value ? 'bg-accent text-accent-foreground hover:bg-accent/90' : 'text-gray-300 hover:bg-white/5 hover:text-white'}`}
-                                        onClick={() => handleMediaTypeSelect(platform.id, value as 'text' | 'image' | 'video' | 'auto')}
+                                        onClick={() => handleMediaTypeSelect(platform.id, value as 'text' | 'image' | 'video')}
                                       >
                                         <Icon className="w-3 h-3 mr-2" />
                                         {label} ({credits}c)
@@ -791,7 +828,7 @@ const ContentGenerator = () => {
                                 </div>
                                 
                                 {/* Platform-specific Image Control Button */}
-                                {(selectedMedia === 'Image' || selectedMedia === 'auto') && (
+                                {selectedMedia === 'image' && (
                                   <div className="mt-2 pt-2 border-t border-white/10">
                                     <Dialog>
                                       <DialogTrigger asChild>
