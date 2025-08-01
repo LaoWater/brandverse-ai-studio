@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { FcGoogle } from 'react-icons/fc';
 
 interface LoginFormProps {
   onToggleMode: () => void;
@@ -16,6 +18,8 @@ export const LoginForm = ({ onToggleMode }: LoginFormProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
@@ -41,11 +45,23 @@ export const LoginForm = ({ onToggleMode }: LoginFormProps) => {
 
       if (error) {
         console.error('Login error:', error);
-        toast({
-          title: 'Sign in failed',
-          description: error.message || 'Login failed. Please check your credentials.',
-          variant: 'destructive',
-        });
+        
+        // Check if it's an email not confirmed error
+        if (error.message?.includes('email not confirmed')) {
+          // Automatically resend confirmation email
+          await handleResendConfirmation();
+          toast({
+            title: 'Email not confirmed',
+            description: 'Please check your email for a confirmation link. We\'ve sent you a new one.',
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'Sign in failed',
+            description: error.message || 'Login failed. Please check your credentials.',
+            variant: 'destructive',
+          });
+        }
       } else {
         console.log('Login successful! Navigating to home...');
         toast({
@@ -67,6 +83,95 @@ export const LoginForm = ({ onToggleMode }: LoginFormProps) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleResetPassword = async () => {
+    if (!email) {
+      toast({
+        title: 'Email Required',
+        description: 'Please enter your email address to reset your password.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setResetLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) {
+        toast({
+          title: 'Reset Failed',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Reset Email Sent',
+          description: 'Check your email for password reset instructions.',
+        });
+      }
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!email) {
+      toast({
+        title: 'Email Required',
+        description: 'Please enter your email address.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setResendLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) {
+        toast({
+          title: 'Resend Failed',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Confirmation Email Sent',
+          description: 'Check your email for a new confirmation link.',
+        });
+      }
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = () => {
+    toast({
+      title: 'Coming Soon',
+      description: 'Google login will be available soon!',
+    });
   };
 
   return (
@@ -111,6 +216,42 @@ export const LoginForm = ({ onToggleMode }: LoginFormProps) => {
             {loading ? 'Signing in...' : 'Sign In'}
           </Button>
         </form>
+
+        {/* Additional buttons */}
+        <div className="space-y-4">
+          {/* Google Login Button */}
+          <Button
+            type="button"
+            onClick={handleGoogleLogin}
+            variant="outline"
+            className="w-full h-12 bg-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30 transition-all"
+          >
+            <FcGoogle className="w-5 h-5 mr-3" />
+            Continue with Google
+          </Button>
+
+          {/* Reset Password and Resend Confirmation */}
+          <div className="flex gap-2 text-sm">
+            <button
+              type="button"
+              onClick={handleResetPassword}
+              disabled={resetLoading}
+              className="flex-1 text-accent hover:text-accent/80 transition-colors font-medium py-2"
+            >
+              {resetLoading ? 'Sending...' : 'Reset Password'}
+            </button>
+            <span className="text-gray-400">•</span>
+            <button
+              type="button"
+              onClick={handleResendConfirmation}
+              disabled={resendLoading}
+              className="flex-1 text-accent hover:text-accent/80 transition-colors font-medium py-2"
+            >
+              {resendLoading ? 'Sending...' : 'Resend Confirmation'}
+            </button>
+          </div>
+        </div>
+
         <div className="text-center pt-4">
           <button
             onClick={onToggleMode}
