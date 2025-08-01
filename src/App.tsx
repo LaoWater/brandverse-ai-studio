@@ -31,6 +31,7 @@ import CookiesPage from "@/pages/termeni/Cookies";
 import TermeniPage from "@/pages/termeni/Termeni";
 import PoliticaPage from "@/pages/termeni/Politica";
 import DataProcessingAgreementPage from "@/pages/termeni/Acord"; 
+import ScrollManager from '@/components/layout/ScrollManager';
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const App = () => (
       <AuthProvider>
         <CompanyProvider>
           <BrowserRouter>
+            <ScrollManager />
             <div className="flex flex-col min-h-screen">
               <Routes>
                 {/* Public routes - accessible without authentication */}
