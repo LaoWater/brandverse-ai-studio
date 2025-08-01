@@ -97,28 +97,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log('SignIn successful:', data.user?.id);
       }
       
-    return { error };
+      return { error };
+    } catch (err) {
+      console.error('SignIn exception:', err);
+      return { error: err };
+    }
   };
 
   const signUpInfluencer = async (email: string, password: string, fullName: string, secretCode: string, profileData?: any) => {
-    // For now, just do regular signup - secret code validation will be handled by edge function
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`,
-        data: {
-          full_name: fullName,
-          user_type: 'influencer',
-          secret_code: secretCode,
-          profile_data: profileData
+    try {
+      // For now, just do regular signup - secret code validation will be handled by edge function
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            full_name: fullName,
+            user_type: 'influencer',
+            secret_code: secretCode,
+            profile_data: profileData
+          }
         }
-      }
-    });
+      });
 
-    return { error };
+      return { error };
     } catch (err) {
-      console.error('SignIn exception:', err);
+      console.error('SignUpInfluencer exception:', err);
       return { error: err };
     }
   };
@@ -127,14 +132,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     console.log('SignUp called with email:', email, 'fullName:', fullName);
     
     try {
+      const redirectUrl = `${window.location.origin}/`;
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo: redirectUrl,
           data: {
             full_name: fullName,
-          },
-        },
+            referred_by: referralCode || null
+          }
+        }
       });
       
       console.log('SignUp response:', { data, error });
@@ -167,6 +176,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     loading,
     signIn,
     signUp,
+    signUpInfluencer,
     signOut,
   };
 

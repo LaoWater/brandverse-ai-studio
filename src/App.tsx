@@ -20,6 +20,7 @@ import MyPlan from "./pages/MyPlan";
 import Features from "./pages/Features";
 import Pricing from "./pages/Pricing";
 import Contact from "./pages/Contact";
+import Partner from "./pages/Partner";
 import NotFound from "./pages/NotFound";
 import GenerationSuccess from './pages/GenerationSuccess';
 import ChatButton from "./components/ChatButton";
