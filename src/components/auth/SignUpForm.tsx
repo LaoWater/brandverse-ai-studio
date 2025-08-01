@@ -183,13 +183,28 @@ export const SignUpForm = ({ onToggleMode, onInfluencerMode, onSignUpSuccess, in
             {loading ? 'Creating account...' : 'Create Account'}
           </Button>
         </form>
-        <div className="text-center pt-4">
+        <div className="flex flex-col items-center gap-4 pt-4">
           <button
             onClick={onToggleMode}
             className="text-accent hover:text-accent/80 text-sm transition-colors font-medium"
           >
             Already have an account? Sign in
           </button>
+          <div className="text-center">
+            <button
+              onClick={onInfluencerMode}
+              className="group relative px-6 py-3 bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-lg border border-slate-600 hover:border-slate-500 transition-all duration-300 hover:shadow-lg hover:shadow-slate-500/20 hover:-translate-y-0.5"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium">Partner Access</span>
+                <div className="w-4 h-4 border border-slate-400 rounded-sm flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                </div>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-r from-slate-700 to-slate-800 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"></div>
+            </button>
+          </div>
         </div>
       </CardContent>
     </Card>
