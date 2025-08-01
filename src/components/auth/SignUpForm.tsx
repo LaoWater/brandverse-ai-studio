@@ -9,11 +9,14 @@ import { toast } from '@/hooks/use-toast';
 
 interface SignUpFormProps {
   onToggleMode: () => void;
+  onSignUpSuccess: (email: string) => void;
 }
 
-export const SignUpForm = ({ onToggleMode }: SignUpFormProps) => {
+export const SignUpForm = ({ onToggleMode, onSignUpSuccess }: SignUpFormProps) => {
   const [email, setEmail] = useState('');
+  const [confirmEmail, setConfirmEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
@@ -21,10 +24,37 @@ export const SignUpForm = ({ onToggleMode }: SignUpFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password || !fullName) {
+    if (!email || !confirmEmail || !password || !confirmPassword || !fullName) {
       toast({
         title: 'Missing Information',
         description: 'Please fill in all fields.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (email !== confirmEmail) {
+      toast({
+        title: 'Email Mismatch',
+        description: 'Email addresses do not match.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast({
+        title: 'Password Mismatch',
+        description: 'Passwords do not match.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (password.length < 6) {
+      toast({
+        title: 'Password Too Short',
+        description: 'Password must be at least 6 characters long.',
         variant: 'destructive',
       });
       return;
@@ -45,10 +75,7 @@ export const SignUpForm = ({ onToggleMode }: SignUpFormProps) => {
         });
       } else {
         console.log('Signup successful!');
-        toast({
-          title: 'Welcome to Creators Multiverse! 🚀',
-          description: 'Please check your email to verify your account.',
-        });
+        onSignUpSuccess(email);
       }
     } catch (err) {
       console.error('Unexpected signup error:', err);
@@ -96,6 +123,18 @@ export const SignUpForm = ({ onToggleMode }: SignUpFormProps) => {
             />
           </div>
           <div className="space-y-3">
+            <Label htmlFor="confirmEmail" className="text-white font-medium text-sm">Confirm Email</Label>
+            <Input
+              id="confirmEmail"
+              type="email"
+              value={confirmEmail}
+              onChange={(e) => setConfirmEmail(e.target.value)}
+              className="bg-white/5 border-white/20 text-white focus:border-primary focus:ring-primary placeholder:text-gray-400 h-12 px-4"
+              placeholder="Confirm your email"
+              required
+            />
+          </div>
+          <div className="space-y-3">
             <Label htmlFor="password" className="text-white font-medium text-sm">Password</Label>
             <Input
               id="password"
@@ -103,7 +142,19 @@ export const SignUpForm = ({ onToggleMode }: SignUpFormProps) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="bg-white/5 border-white/20 text-white focus:border-primary focus:ring-primary placeholder:text-gray-400 h-12 px-4"
-              placeholder="Create a password"
+              placeholder="Create a password (min. 6 characters)"
+              required
+            />
+          </div>
+          <div className="space-y-3">
+            <Label htmlFor="confirmPassword" className="text-white font-medium text-sm">Confirm Password</Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="bg-white/5 border-white/20 text-white focus:border-primary focus:ring-primary placeholder:text-gray-400 h-12 px-4"
+              placeholder="Confirm your password"
               required
             />
           </div>
