@@ -94,16 +94,7 @@ export const SignUpForm = ({ onToggleMode, onInfluencerMode, onSignUpSuccess, in
 
   return (
     <Card className="cosmic-card border-0 cosmic-glow">
-      <CardHeader className="text-center cosmic-card-header p-8 relative">
-        {/* For Partners Button - Top Right */}
-        <Button
-          onClick={onInfluencerMode}
-          variant="outline"
-          className="absolute top-4 right-4 border-cosmic/50 text-cosmic hover:bg-cosmic/10 hover:text-cosmic px-4 py-2 text-sm font-medium"
-        >
-          For Partners ✨
-        </Button>
-        
+      <CardHeader className="text-center cosmic-card-header p-8">
         <CardTitle className="text-white text-2xl font-bold mb-2">Create Account</CardTitle>
         <CardDescription className="text-gray-300 text-base">
           Join the Creators Multiverse today

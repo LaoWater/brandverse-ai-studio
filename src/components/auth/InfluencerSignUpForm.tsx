@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Key, Sparkles, Users, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Users, TrendingUp, Zap } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -23,6 +23,7 @@ export const InfluencerSignUpForm = ({ onToggleMode, onInfluencerSignUpSuccess }
     password: '',
     confirmPassword: '',
     bio: '',
+    referralCode: 'CREATORSM77', // Pre-filled but will clear when clicked
     socialLinks: {
       instagram: '',
       youtube: '',
@@ -31,6 +32,7 @@ export const InfluencerSignUpForm = ({ onToggleMode, onInfluencerSignUpSuccess }
     }
   });
   const [loading, setLoading] = useState(false);
+  const [referralTouched, setReferralTouched] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,6 +158,10 @@ export const InfluencerSignUpForm = ({ onToggleMode, onInfluencerSignUpSuccess }
   };
 
   const handleInputChange = (field: string, value: string) => {
+    if (field === 'referralCode' && !referralTouched) {
+      setReferralTouched(true);
+    }
+    
     if (field.startsWith('socialLinks.')) {
       const socialField = field.split('.')[1];
       setFormData(prev => ({
@@ -174,10 +180,10 @@ export const InfluencerSignUpForm = ({ onToggleMode, onInfluencerSignUpSuccess }
   };
 
   return (
-    <Card className="cosmic-card max-w-2xl mx-auto">
+    <Card className="cosmic-card max-w-2xl mx-auto animate-fade-in">
       <CardHeader className="text-center pb-6">
         <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-cosmic to-accent rounded-full">
-          <Sparkles className="w-8 h-8 text-white" />
+          <Zap className="w-8 h-8 text-white" />
         </div>
         <CardTitle className="text-2xl text-white">
           Join as an <span className="text-cosmic font-serif">Influencer</span>
@@ -199,7 +205,7 @@ export const InfluencerSignUpForm = ({ onToggleMode, onInfluencerSignUpSuccess }
             <div className="text-xs text-gray-400">Get paid for referrals</div>
           </div>
           <div className="text-center p-3 bg-white/5 rounded-lg border border-white/10">
-            <Key className="w-6 h-6 mx-auto mb-2 text-yellow-400" />
+            <Zap className="w-6 h-6 mx-auto mb-2 text-yellow-400" />
             <div className="text-sm text-white font-medium">Exclusive Access</div>
             <div className="text-xs text-gray-400">Early features & tools</div>
           </div>
@@ -294,7 +300,24 @@ export const InfluencerSignUpForm = ({ onToggleMode, onInfluencerSignUpSuccess }
             </div>
           </div>
 
-          {/* Bio */}
+          {/* Referral Code */}
+          <div>
+            <Label htmlFor="referralCode" className="text-white">Your Referral Code</Label>
+            <Input
+              id="referralCode"
+              type="text"
+              placeholder="Your unique referral code..."
+              value={referralTouched ? formData.referralCode : 'CREATORSM77'}
+              onChange={(e) => handleInputChange('referralCode', e.target.value.toUpperCase())}
+              onFocus={() => {
+                if (!referralTouched) {
+                  setReferralTouched(true);
+                  setFormData(prev => ({ ...prev, referralCode: '' }));
+                }
+              }}
+              className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+            />
+          </div>
           <div>
             <Label htmlFor="bio" className="text-white">Bio (Optional)</Label>
             <Textarea
