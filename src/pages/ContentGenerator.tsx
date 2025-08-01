@@ -4,6 +4,9 @@ import Navigation from "@/components/Navigation";
 import { CompanySelector } from "@/components/CompanySelector";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -65,6 +68,17 @@ const ContentGenerator = () => {
     language: "en",
     platforms: [] as string[],
     platformMedia: {} as Record<string, 'Text' | 'Image' | 'Video' | 'Let Model Decide' | 'auto'> 
+  });
+
+  // Image Control State
+  const [imageControlSettings, setImageControlSettings] = useState({
+    enabled: false,
+    style: "",
+    guidance: "",
+    caption: "",
+    ratio: "auto",
+    startingImage: null as File | null,
+    useAiDecision: true
   });
 
   useEffect(() => {
@@ -381,21 +395,167 @@ const ContentGenerator = () => {
               <CardHeader className="cosmic-card-header">
                 <CardTitle className="text-white text-2xl font-bold flex items-center justify-between">
                   <span>Content Details</span>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
+                  <Dialog>
+                    <DialogTrigger asChild>
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="w-10 h-10 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg"
+                        className="w-12 h-12 text-gray-300 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-300 relative group"
                         type="button"
                       >
-                        <Image className="w-5 h-5" />
+                        <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <Image className="w-6 h-6 relative z-10 drop-shadow-lg" />
                       </Button>
-                    </TooltipTrigger>
-                    <TooltipContent className="bg-gray-800 border-white/20 text-white max-w-xs">
-                      <p>Configure image generation settings, style guidance, and visual preferences for your content</p>
-                    </TooltipContent>
-                  </Tooltip>
+                    </DialogTrigger>
+                    <DialogContent className="cosmic-card border-0 max-w-2xl max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle className="text-white text-2xl font-bold flex items-center space-x-3">
+                          <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20">
+                            <Image className="w-6 h-6 text-white" />
+                          </div>
+                          <span>Image Control Settings</span>
+                        </DialogTitle>
+                        <DialogDescription className="text-gray-300">
+                          Configure image generation preferences, style guidance, and visual controls for your content
+                        </DialogDescription>
+                      </DialogHeader>
+                      
+                      <div className="space-y-6 mt-6">
+                        {/* Enable Image Control Toggle */}
+                        <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
+                          <div className="space-y-1">
+                            <Label className="text-white font-medium">Enable Image Control</Label>
+                            <p className="text-sm text-gray-400">Override AI's automatic image decisions with custom preferences</p>
+                          </div>
+                          <Switch 
+                            checked={imageControlSettings.enabled}
+                            onCheckedChange={(checked) => setImageControlSettings(prev => ({ ...prev, enabled: checked }))}
+                          />
+                        </div>
+
+                        {imageControlSettings.enabled && (
+                          <div className="space-y-6 animate-fade-in">
+                            {/* AI Decision Toggle */}
+                            <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
+                              <div className="space-y-1">
+                                <Label className="text-white font-medium">Let AI Decide</Label>
+                                <p className="text-sm text-gray-400">Allow AI to make intelligent decisions about image style and content</p>
+                              </div>
+                              <Switch 
+                                checked={imageControlSettings.useAiDecision}
+                                onCheckedChange={(checked) => setImageControlSettings(prev => ({ ...prev, useAiDecision: checked }))}
+                              />
+                            </div>
+
+                            {!imageControlSettings.useAiDecision && (
+                              <div className="space-y-6 animate-fade-in">
+                                {/* Style Guidance */}
+                                <div className="space-y-3">
+                                  <Label className="text-white font-medium">Style Guidance</Label>
+                                  <Select value={imageControlSettings.style} onValueChange={(value) => setImageControlSettings(prev => ({ ...prev, style: value }))}>
+                                    <SelectTrigger className="bg-white/5 border-white/20 text-white">
+                                      <SelectValue placeholder="Choose image style..." />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-gray-900 border-white/20">
+                                      <SelectItem value="photorealistic" className="text-white hover:bg-white/10">Photorealistic</SelectItem>
+                                      <SelectItem value="minimalist" className="text-white hover:bg-white/10">Minimalist</SelectItem>
+                                      <SelectItem value="artistic" className="text-white hover:bg-white/10">Artistic</SelectItem>
+                                      <SelectItem value="corporate" className="text-white hover:bg-white/10">Corporate</SelectItem>
+                                      <SelectItem value="vibrant" className="text-white hover:bg-white/10">Vibrant & Colorful</SelectItem>
+                                      <SelectItem value="monochrome" className="text-white hover:bg-white/10">Monochrome</SelectItem>
+                                      <SelectItem value="modern" className="text-white hover:bg-white/10">Modern & Clean</SelectItem>
+                                      <SelectItem value="vintage" className="text-white hover:bg-white/10">Vintage</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+
+                                {/* Image Ratio */}
+                                <div className="space-y-3">
+                                  <Label className="text-white font-medium">Image Ratio</Label>
+                                  <Select value={imageControlSettings.ratio} onValueChange={(value) => setImageControlSettings(prev => ({ ...prev, ratio: value }))}>
+                                    <SelectTrigger className="bg-white/5 border-white/20 text-white">
+                                      <SelectValue placeholder="Choose aspect ratio..." />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-gray-900 border-white/20">
+                                      <SelectItem value="auto" className="text-white hover:bg-white/10">Auto (Platform Optimized)</SelectItem>
+                                      <SelectItem value="square" className="text-white hover:bg-white/10">Square (1:1)</SelectItem>
+                                      <SelectItem value="landscape" className="text-white hover:bg-white/10">Landscape (16:9)</SelectItem>
+                                      <SelectItem value="portrait" className="text-white hover:bg-white/10">Portrait (9:16)</SelectItem>
+                                      <SelectItem value="story" className="text-white hover:bg-white/10">Story (9:16)</SelectItem>
+                                      <SelectItem value="cover" className="text-white hover:bg-white/10">Cover (16:9)</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+
+                                {/* Visual Guidance */}
+                                <div className="space-y-3">
+                                  <Label className="text-white font-medium">Visual Guidance</Label>
+                                  <Textarea
+                                    placeholder="Describe the visual elements, mood, colors, or specific objects you want in the image..."
+                                    className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 min-h-[100px] resize-none"
+                                    value={imageControlSettings.guidance}
+                                    onChange={(e) => setImageControlSettings(prev => ({ ...prev, guidance: e.target.value }))}
+                                  />
+                                  <p className="text-xs text-gray-400">Example: "Bright blue background, professional office setting, modern technology elements"</p>
+                                </div>
+
+                                {/* Caption Guidance */}
+                                <div className="space-y-3">
+                                  <Label className="text-white font-medium">Caption/Text Overlay</Label>
+                                  <Input
+                                    placeholder="Text to overlay on the image (optional)..."
+                                    className="bg-white/5 border-white/20 text-white placeholder:text-gray-400"
+                                    value={imageControlSettings.caption}
+                                    onChange={(e) => setImageControlSettings(prev => ({ ...prev, caption: e.target.value }))}
+                                  />
+                                  <p className="text-xs text-gray-400">Leave empty for images without text overlay</p>
+                                </div>
+
+                                {/* Starting Image Upload */}
+                                <div className="space-y-3">
+                                  <Label className="text-white font-medium">Starting Image (Optional)</Label>
+                                  <div className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-white/40 transition-colors">
+                                    <Input
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      id="starting-image"
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0] || null;
+                                        setImageControlSettings(prev => ({ ...prev, startingImage: file }));
+                                      }}
+                                    />
+                                    <Label htmlFor="starting-image" className="cursor-pointer">
+                                      <div className="space-y-2">
+                                        <Image className="w-8 h-8 mx-auto text-gray-400" />
+                                        {imageControlSettings.startingImage ? (
+                                          <p className="text-white font-medium">{imageControlSettings.startingImage.name}</p>
+                                        ) : (
+                                          <p className="text-gray-400">Upload a base image to modify or enhance</p>
+                                        )}
+                                        <p className="text-xs text-gray-500">Click to browse or drag & drop</p>
+                                      </div>
+                                    </Label>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Save Settings */}
+                        <div className="flex justify-end space-x-3 pt-4 border-t border-white/10">
+                          <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">
+                            Reset to Defaults
+                          </Button>
+                          <Button className="cosmic-button">
+                            Save Image Preferences
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </CardTitle>
                 <CardDescription className="text-gray-300 text-base">
                   Provide details about the content you want to generate
