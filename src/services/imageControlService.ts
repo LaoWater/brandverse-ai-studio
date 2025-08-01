@@ -1,5 +1,31 @@
 import { supabase } from "@/integrations/supabase/client";
 
+// Upload starting image to storage
+export const uploadStartingImage = async (file: File, userId: string): Promise<string | null> => {
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${userId}/${Date.now()}.${fileExt}`;
+    
+    const { data, error } = await supabase.storage
+      .from('starting-images')
+      .upload(fileName, file);
+
+    if (error) {
+      console.error('Error uploading image:', error);
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('starting-images')
+      .getPublicUrl(data.path);
+
+    return publicUrl;
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    return null;
+  }
+};
+
 export interface ImageControlSettings {
   enabled: boolean;
   style: string;
@@ -32,6 +58,12 @@ export const saveImageControlSettings = async (
   platformType?: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
+    // Upload starting image if provided
+    let startingImageUrl = null;
+    if (settings.startingImage) {
+      startingImageUrl = await uploadStartingImage(settings.startingImage, userId);
+    }
+
     const data = {
       user_id: userId,
       company_id: companyId,
@@ -42,7 +74,7 @@ export const saveImageControlSettings = async (
       image_ratio: settings.ratio || null,
       visual_guidance: settings.guidance || null,
       caption_guidance: settings.caption || null,
-      starting_image_url: null // TODO: Implement file upload
+      starting_image_url: startingImageUrl
     };
 
     const { error } = await supabase

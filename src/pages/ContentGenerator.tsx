@@ -14,7 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { 
     ArrowRight, Sparkles, Instagram, Facebook, Twitter, Linkedin, Info, 
     Image as ImageIconLucide, Video as VideoIconLucide, Type as TypeIconLucide, 
-    Wand2, Check, FileText, Bot, Palette, Globe, SaveIcon, Loader2, Coins, Image
+    Wand2, Check, FileText, Bot, Palette, Globe, SaveIcon, Loader2, Coins, Image, Video
 } from "lucide-react";
 import { FaXTwitter } from "react-icons/fa6";
 
@@ -28,6 +28,7 @@ import {
   getAllImageControlSettings,
   type ImageControlSettings 
 } from "@/services/imageControlService";
+import { prepareAPIPayload } from "@/services/contentGeneratorService";
 
 import { saveGeneratedPostsToSupabase } from '@/services/supabaseService';
 import GenerationProgressModal, { ProgressStage } from '@/components/GenerationProgressModal';
@@ -268,6 +269,36 @@ const ContentGenerator = () => {
       return { [platformId]: mediaTypeApiValue };
     });
 
+    // Prepare complete content generator data structure
+    const contentData = {
+      topic: formData.subject,
+      description: "",
+      hashtags: [],
+      callToAction: ""
+    };
+
+    // Prepare platform settings
+    const platformSettings = formData.platforms.reduce((acc: Record<string, { selected: boolean; postType: string }>, platformId) => {
+      acc[platformId] = {
+        selected: true,
+        postType: formData.platformMedia[platformId] || 'text'
+      };
+      return acc;
+    }, {});
+
+    // Prepare complete API payload structure
+    const completeAPIPayload = prepareAPIPayload(
+      selectedCompany,
+      contentData,
+      imageControlSettings,
+      platformImageControls,
+      platformSettings
+    );
+
+    console.log("=== COMPLETE CONTENT GENERATOR DATA ===");
+    console.log(JSON.stringify(completeAPIPayload, null, 2));
+    console.log("=======================================");
+
     const payload: PipelineRequestBody = {
       company_name: selectedCompany.name,
       company_mission: selectedCompany.mission || "Mission not set",
@@ -422,19 +453,20 @@ const ContentGenerator = () => {
               <CardHeader className="cosmic-card-header">
                 <CardTitle className="text-white text-2xl font-bold flex items-center justify-between">
                   <span>Content Details</span>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="w-12 h-12 text-gray-300 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-300 relative group"
-                        type="button"
-                      >
-                        <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        <Image className="w-6 h-6 relative z-10 drop-shadow-lg" />
-                      </Button>
-                    </DialogTrigger>
+                  <div className="flex items-center gap-3">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          className="flex items-center gap-2 px-4 py-2 h-12 text-gray-300 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-300 relative group"
+                          type="button"
+                        >
+                          <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          <Image className="w-5 h-5 relative z-10 drop-shadow-lg" />
+                          <span className="text-sm font-medium relative z-10">Image Control</span>
+                        </Button>
+                      </DialogTrigger>
                     <DialogContent className="cosmic-card border-0 max-w-2xl max-h-[85vh] flex flex-col">
                       <DialogHeader className="flex-shrink-0">
                         <DialogTitle className="text-white text-2xl font-bold flex items-center space-x-3">
@@ -615,6 +647,22 @@ const ContentGenerator = () => {
                       </div>
                     </DialogContent>
                   </Dialog>
+                  
+                  {/* Video Control - Coming Soon */}
+                  <div className="relative group">
+                    <Button 
+                      variant="ghost" 
+                      className="flex items-center gap-2 px-4 py-2 h-12 text-muted-foreground bg-muted cursor-not-allowed rounded-xl"
+                      disabled
+                    >
+                      <Video className="w-5 h-5" />
+                      <span className="text-sm font-medium">Video Control</span>
+                    </Button>
+                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-popover text-popover-foreground px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                      Coming Soon
+                    </div>
+                  </div>
+                </div>
                 </CardTitle>
                 <CardDescription className="text-gray-300 text-base">
                   Provide details about the content you want to generate
@@ -827,8 +875,8 @@ const ContentGenerator = () => {
                                   })}
                                 </div>
                                 
-                                {/* Platform-specific Image Control Button */}
-                                {selectedMedia === 'image' && (
+                                 {/* Platform-specific Image Control Button */}
+                                {(selectedMedia === 'image' || selectedMedia === 'text') && (
                                   <div className="mt-2 pt-2 border-t border-white/10">
                                     <Dialog>
                                       <DialogTrigger asChild>
