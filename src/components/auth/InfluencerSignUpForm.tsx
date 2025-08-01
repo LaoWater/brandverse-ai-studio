@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -182,9 +182,6 @@ export const InfluencerSignUpForm = ({ onToggleMode, onInfluencerSignUpSuccess }
   return (
     <Card className="cosmic-card max-w-2xl mx-auto animate-fade-in">
       <CardHeader className="text-center pb-6">
-        <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-cosmic to-accent rounded-full">
-          <Zap className="w-8 h-8 text-white" />
-        </div>
         <CardTitle className="text-2xl text-white">
           Join as an <span className="text-cosmic font-serif">Influencer</span>
         </CardTitle>
@@ -195,7 +192,7 @@ export const InfluencerSignUpForm = ({ onToggleMode, onInfluencerSignUpSuccess }
         {/* Benefits */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
           <div className="text-center p-3 bg-white/5 rounded-lg border border-white/10">
-            <Users className="w-6 h-6 mx-auto mb-2 text-cosmic" />
+            <TrendingUp className="w-6 h-6 mx-auto mb-2 text-cosmic" />
             <div className="text-sm text-white font-medium">Build Community</div>
             <div className="text-xs text-gray-400">Connect with creators</div>
           </div>

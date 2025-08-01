@@ -352,9 +352,9 @@ export default function DataProcessingAgreementPage() {
                         </tr>
                         <tr className="hover:bg-white/5">
                           <td className="px-6 py-4 text-sm font-medium text-white">AI Processing</td>
-                          <td className="px-6 py-4 text-sm text-gray-300">OpenAI</td>
-                          <td className="px-6 py-4 text-sm text-gray-300">Content generation</td>
-                          <td className="px-6 py-4 text-sm text-gray-300">US</td>
+                          <td className="px-6 py-4 text-sm text-gray-300">OpenAI, Gemini, Anthropic, MCP Servers, LangGraph, HuggingFace</td>
+                          <td className="px-6 py-4 text-sm text-gray-300">Content generation, Image generation, Video generation, Text generation, MCP Severs</td>
+                          <td className="px-6 py-4 text-sm text-gray-300">International</td>
                         </tr>
                       </tbody>
                     </table>

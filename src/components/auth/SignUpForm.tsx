@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import ScrollManager from '@/components/layout/ScrollManager';
 
 interface SignUpFormProps {
   onToggleMode: () => void;
@@ -94,6 +95,7 @@ export const SignUpForm = ({ onToggleMode, onInfluencerMode, onSignUpSuccess, in
 
   return (
     <Card className="cosmic-card border-0 cosmic-glow">
+      <ScrollManager />
       <CardHeader className="text-center cosmic-card-header p-8">
         <CardTitle className="text-white text-2xl font-bold mb-2">Create Account</CardTitle>
         <CardDescription className="text-gray-300 text-base">

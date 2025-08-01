@@ -13,6 +13,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
+
 interface SecretCode {
   id: string;
   code: string;
@@ -48,6 +49,11 @@ const Partner = () => {
   const [newSecretCode, setNewSecretCode] = useState('');
   const [maxUses, setMaxUses] = useState<number | ''>('');
   const [expiryDate, setExpiryDate] = useState('');
+
+    // Scroll to top on component load
+    useEffect(() => {
+      window.scrollTo(0, 0);
+    }, []);
 
   // Check if user is admin
   const { data: userData, isLoading: userLoading } = useQuery({

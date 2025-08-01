@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,11 @@ interface SecretCodeValidationProps {
 export const SecretCodeValidation = ({ onValidated, onCancel }: SecretCodeValidationProps) => {
   const [secretCode, setSecretCode] = useState('');
   const [loading, setLoading] = useState(false);
+
+      // Scroll to top on component load
+      useEffect(() => {
+        window.scrollTo(0, 0);
+      }, []);
 
   const handleValidation = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +38,7 @@ export const SecretCodeValidation = ({ onValidated, onCancel }: SecretCodeValida
     try {
       // For now, accept any code - in production this would validate against database
       // TODO: Replace with actual validation once database functions are created
-      if (secretCode.length >= 4) {
+      if (secretCode == 'DODO') {
         toast({
           title: "Access Granted ✓",
           description: "Welcome to the partner program!",
