@@ -22,6 +22,12 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
 import { calculateCreditsNeeded, deductCredits, getUserCredits } from "@/services/creditsService";
+import { 
+  saveImageControlSettings, 
+  loadImageControlSettings, 
+  getAllImageControlSettings,
+  type ImageControlSettings 
+} from "@/services/imageControlService";
 
 import { saveGeneratedPostsToSupabase } from '@/services/supabaseService';
 import GenerationProgressModal, { ProgressStage } from '@/components/GenerationProgressModal';
@@ -71,14 +77,38 @@ const ContentGenerator = () => {
   });
 
   // Image Control State
-  const [imageControlSettings, setImageControlSettings] = useState({
+  const [imageControlSettings, setImageControlSettings] = useState<ImageControlSettings>({
     enabled: false,
     style: "",
     guidance: "",
     caption: "",
     ratio: "auto",
-    startingImage: null as File | null
+    startingImage: null
   });
+
+  // Platform-specific Image Control State
+  const [platformImageControls, setPlatformImageControls] = useState<Record<string, ImageControlSettings>>({});
+
+  // Loading saved settings
+  useEffect(() => {
+    const loadSavedImageControls = async () => {
+      if (!user || !selectedCompany) return;
+      
+      try {
+        const allSettings = await getAllImageControlSettings(user.id, selectedCompany.id);
+        
+        if (allSettings.level1) {
+          setImageControlSettings(allSettings.level1);
+        }
+        
+        setPlatformImageControls(allSettings.level2);
+      } catch (error) {
+        console.error('Error loading image control settings:', error);
+      }
+    };
+
+    loadSavedImageControls();
+  }, [user, selectedCompany]);
 
   useEffect(() => {
     const defaultLang = languages.find(l => l.isDefault)?.code || 'en';
@@ -407,8 +437,8 @@ const ContentGenerator = () => {
                         <Image className="w-6 h-6 relative z-10 drop-shadow-lg" />
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="cosmic-card border-0 max-w-2xl max-h-[80vh] overflow-y-auto">
-                      <DialogHeader>
+                    <DialogContent className="cosmic-card border-0 max-w-2xl max-h-[85vh] flex flex-col">
+                      <DialogHeader className="flex-shrink-0">
                         <DialogTitle className="text-white text-2xl font-bold flex items-center space-x-3">
                           <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20">
                             <Image className="w-6 h-6 text-white" />
@@ -420,7 +450,7 @@ const ContentGenerator = () => {
                         </DialogDescription>
                       </DialogHeader>
                       
-                      <div className="space-y-6 mt-6">
+                      <div className="flex-1 overflow-y-auto space-y-6 mt-6 pr-2">{/* Added padding-right for scrollbar space */}
                         {/* Enable Image Control Toggle */}
                         <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
                           <div className="space-y-1">
@@ -530,12 +560,58 @@ const ContentGenerator = () => {
                         )}
 
                         {/* Save Settings */}
-                        <div className="flex justify-end space-x-3 pt-4 border-t border-white/10">
-                          <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">
+                        <div className="flex justify-end space-x-3 pt-6 border-t border-white/10 mt-8 flex-shrink-0">
+                          <Button 
+                            variant="outline" 
+                            className="border-white/20 text-white hover:bg-white/10"
+                            onClick={() => {
+                              setImageControlSettings({
+                                enabled: false,
+                                style: "",
+                                guidance: "",
+                                caption: "",
+                                ratio: "auto",
+                                startingImage: null
+                              });
+                            }}
+                          >
                             Reset to Defaults
                           </Button>
-                          <Button className="cosmic-button">
-                            Save Image Preferences
+                          <Button 
+                            className="cosmic-button"
+                            onClick={async () => {
+                              if (!user || !selectedCompany) {
+                                toast({
+                                  title: "Error",
+                                  description: "Please ensure you're logged in and have a company selected.",
+                                  variant: "destructive"
+                                });
+                                return;
+                              }
+
+                              const result = await saveImageControlSettings(
+                                user.id,
+                                selectedCompany.id,
+                                1,
+                                imageControlSettings
+                              );
+
+                              if (result.success) {
+                                toast({
+                                  title: "Settings Saved!",
+                                  description: "Your image control preferences have been saved as defaults.",
+                                });
+                              } else {
+                                toast({
+                                  title: "Save Failed",
+                                  description: result.error || "Failed to save settings.",
+                                  variant: "destructive"
+                                });
+                              }
+                            }}
+                          >
+                            <SaveIcon className="w-4 h-4 mr-2" />
+                            Save as Default
                           </Button>
                         </div>
                       </div>
@@ -730,8 +806,8 @@ const ContentGenerator = () => {
                                           <span className="relative z-10">Platform Image Control</span>
                                         </Button>
                                       </DialogTrigger>
-                                      <DialogContent className="cosmic-card border-0 max-w-2xl max-h-[80vh] overflow-y-auto">
-                                        <DialogHeader>
+                                      <DialogContent className="cosmic-card border-0 max-w-2xl max-h-[85vh] flex flex-col">
+                                        <DialogHeader className="flex-shrink-0">
                                           <DialogTitle className="text-white text-xl font-bold flex items-center space-x-3">
                                             <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20">
                                               <IconComponent className={`w-5 h-5 ${platform.color}`} />
@@ -743,7 +819,7 @@ const ContentGenerator = () => {
                                           </DialogDescription>
                                         </DialogHeader>
                                         
-                                        <div className="space-y-6 mt-6">
+                                        <div className="flex-1 overflow-y-auto space-y-6 mt-6 pr-2">{/* Added padding-right for scrollbar space */}
                                           {/* Enable Platform Image Control Toggle */}
                                           <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
                                             <div className="space-y-1">
@@ -751,43 +827,134 @@ const ContentGenerator = () => {
                                               <p className="text-sm text-gray-400">Override general settings with {platform.label}-specific preferences</p>
                                             </div>
                                             <Switch 
-                                              checked={false} // TODO: Implement platform-specific state
-                                              onCheckedChange={() => {}} // TODO: Implement platform-specific handler
+                                              checked={platformImageControls[platform.id]?.enabled || false}
+                                              onCheckedChange={(checked) => {
+                                                setPlatformImageControls(prev => ({
+                                                  ...prev,
+                                                  [platform.id]: {
+                                                    enabled: checked,
+                                                    style: prev[platform.id]?.style || "",
+                                                    guidance: prev[platform.id]?.guidance || "",
+                                                    caption: prev[platform.id]?.caption || "",
+                                                    ratio: prev[platform.id]?.ratio || "auto",
+                                                    startingImage: prev[platform.id]?.startingImage || null
+                                                  }
+                                                }));
+                                              }}
                                             />
                                           </div>
 
-                                          {/* Platform-specific settings would go here - same structure as level 1 */}
-                                          <div className="space-y-6 animate-fade-in opacity-50">
-                                            {/* Style Guidance */}
-                                            <div className="space-y-3">
-                                              <Label className="text-white font-medium">Style Guidance</Label>
-                                              <Select disabled>
-                                                <SelectTrigger className="bg-white/5 border-white/20 text-white">
-                                                  <SelectValue placeholder="Choose image style..." />
-                                                </SelectTrigger>
-                                              </Select>
-                                            </div>
+                                          {/* Platform-specific settings */}
+                                          {platformImageControls[platform.id]?.enabled && (
+                                            <div className="space-y-6 animate-fade-in">
+                                              {/* Style Guidance */}
+                                              <div className="space-y-3">
+                                                <Label className="text-white font-medium">Style Guidance</Label>
+                                                <Select 
+                                                  value={platformImageControls[platform.id]?.style || ""} 
+                                                  onValueChange={(value) => {
+                                                    setPlatformImageControls(prev => ({
+                                                      ...prev,
+                                                      [platform.id]: { ...prev[platform.id], style: value }
+                                                    }));
+                                                  }}
+                                                >
+                                                  <SelectTrigger className="bg-white/5 border-white/20 text-white">
+                                                    <SelectValue placeholder="Choose image style..." />
+                                                  </SelectTrigger>
+                                                  <SelectContent className="bg-gray-900 border-white/20">
+                                                    <SelectItem value="photorealistic" className="text-white hover:bg-white/10">Photorealistic</SelectItem>
+                                                    <SelectItem value="minimalist" className="text-white hover:bg-white/10">Minimalist</SelectItem>
+                                                    <SelectItem value="artistic" className="text-white hover:bg-white/10">Artistic</SelectItem>
+                                                    <SelectItem value="corporate" className="text-white hover:bg-white/10">Corporate</SelectItem>
+                                                    <SelectItem value="vibrant" className="text-white hover:bg-white/10">Vibrant & Colorful</SelectItem>
+                                                    <SelectItem value="monochrome" className="text-white hover:bg-white/10">Monochrome</SelectItem>
+                                                    <SelectItem value="modern" className="text-white hover:bg-white/10">Modern & Clean</SelectItem>
+                                                    <SelectItem value="vintage" className="text-white hover:bg-white/10">Vintage</SelectItem>
+                                                  </SelectContent>
+                                                </Select>
+                                              </div>
 
-                                            {/* Visual Guidance */}
-                                            <div className="space-y-3">
-                                              <Label className="text-white font-medium">Visual Guidance</Label>
-                                              <Textarea
-                                                placeholder="Platform-specific visual guidance..."
-                                                className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 min-h-[80px] resize-none"
-                                                disabled
-                                              />
-                                              <p className="text-xs text-gray-400 bg-orange-500/10 p-2 rounded-md border border-orange-500/20">
-                                                <strong>Level 2:</strong> Platform-specific guidance that overrides Level 1 settings when enabled.
-                                              </p>
+                                              {/* Visual Guidance */}
+                                              <div className="space-y-3">
+                                                <Label className="text-white font-medium">Visual Guidance</Label>
+                                                <Textarea
+                                                  placeholder="Platform-specific visual guidance..."
+                                                  className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 min-h-[80px] resize-none"
+                                                  value={platformImageControls[platform.id]?.guidance || ""}
+                                                  onChange={(e) => {
+                                                    setPlatformImageControls(prev => ({
+                                                      ...prev,
+                                                      [platform.id]: { ...prev[platform.id], guidance: e.target.value }
+                                                    }));
+                                                  }}
+                                                />
+                                                <p className="text-xs text-gray-400 bg-orange-500/10 p-2 rounded-md border border-orange-500/20">
+                                                  <strong>Level 2:</strong> Platform-specific guidance that overrides Level 1 settings when enabled.
+                                                </p>
+                                              </div>
                                             </div>
-                                          </div>
+                                          )}
 
                                           {/* Save Settings */}
                                           <div className="flex justify-end space-x-3 pt-4 border-t border-white/10">
-                                            <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">
+                                            <Button 
+                                              variant="outline" 
+                                              className="border-white/20 text-white hover:bg-white/10"
+                                              onClick={() => {
+                                                setPlatformImageControls(prev => ({
+                                                  ...prev,
+                                                  [platform.id]: {
+                                                    enabled: false,
+                                                    style: "",
+                                                    guidance: "",
+                                                    caption: "",
+                                                    ratio: "auto",
+                                                    startingImage: null
+                                                  }
+                                                }));
+                                              }}
+                                            >
                                               Reset to Defaults
                                             </Button>
-                                            <Button className="cosmic-button">
+                                            <Button 
+                                              className="cosmic-button"
+                                              onClick={async () => {
+                                                if (!user || !selectedCompany) {
+                                                  toast({
+                                                    title: "Error",
+                                                    description: "Please ensure you're logged in and have a company selected.",
+                                                    variant: "destructive"
+                                                  });
+                                                  return;
+                                                }
+
+                                                const platformSettings = platformImageControls[platform.id];
+                                                if (!platformSettings) return;
+
+                                                const result = await saveImageControlSettings(
+                                                  user.id,
+                                                  selectedCompany.id,
+                                                  2,
+                                                  platformSettings,
+                                                  platform.id
+                                                );
+
+                                                if (result.success) {
+                                                  toast({
+                                                    title: "Platform Settings Saved!",
+                                                    description: `${platform.label} image control preferences saved as defaults.`,
+                                                  });
+                                                } else {
+                                                  toast({
+                                                    title: "Save Failed",
+                                                    description: result.error || "Failed to save platform settings.",
+                                                    variant: "destructive"
+                                                  });
+                                                }
+                                              }}
+                                            >
+                                              <SaveIcon className="w-4 h-4 mr-2" />
                                               Save as Default
                                             </Button>
                                           </div>
