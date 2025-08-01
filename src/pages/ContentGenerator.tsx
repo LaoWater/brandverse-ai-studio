@@ -11,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { 
     ArrowRight, Sparkles, Instagram, Facebook, Twitter, Linkedin, Info, 
     Image as ImageIconLucide, Video as VideoIconLucide, Type as TypeIconLucide, 
-    Wand2, Check, FileText, Bot, Palette, Globe, SaveIcon, Loader2, Coins
+    Wand2, Check, FileText, Bot, Palette, Globe, SaveIcon, Loader2, Coins, Image
 } from "lucide-react";
 import { FaXTwitter } from "react-icons/fa6";
 
@@ -379,8 +379,23 @@ const ContentGenerator = () => {
 
             <Card className="cosmic-card border-0 cosmic-glow">
               <CardHeader className="cosmic-card-header">
-                <CardTitle className="text-white text-2xl font-bold flex items-center">
-                  Content Details
+                <CardTitle className="text-white text-2xl font-bold flex items-center justify-between">
+                  <span>Content Details</span>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="w-10 h-10 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg"
+                        type="button"
+                      >
+                        <Image className="w-5 h-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-gray-800 border-white/20 text-white max-w-xs">
+                      <p>Configure image generation settings, style guidance, and visual preferences for your content</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </CardTitle>
                 <CardDescription className="text-gray-300 text-base">
                   Provide details about the content you want to generate
