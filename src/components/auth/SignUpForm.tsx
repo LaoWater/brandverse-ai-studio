@@ -20,6 +20,7 @@ export const SignUpForm = ({ onToggleMode, onInfluencerMode, onSignUpSuccess, in
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [referralCode, setReferralCode] = useState(initialReferralCode || '');
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
 
@@ -66,7 +67,7 @@ export const SignUpForm = ({ onToggleMode, onInfluencerMode, onSignUpSuccess, in
     console.log('Attempting signup with:', email, fullName);
 
     try {
-      const { error } = await signUp(email, password, fullName);
+      const { error } = await signUp(email, password, fullName, referralCode || undefined);
 
       if (error) {
         console.error('Signup error:', error);
@@ -93,7 +94,16 @@ export const SignUpForm = ({ onToggleMode, onInfluencerMode, onSignUpSuccess, in
 
   return (
     <Card className="cosmic-card border-0 cosmic-glow">
-      <CardHeader className="text-center cosmic-card-header p-8">
+      <CardHeader className="text-center cosmic-card-header p-8 relative">
+        {/* For Partners Button - Top Right */}
+        <Button
+          onClick={onInfluencerMode}
+          variant="outline"
+          className="absolute top-4 right-4 border-cosmic/50 text-cosmic hover:bg-cosmic/10 hover:text-cosmic px-4 py-2 text-sm font-medium"
+        >
+          For Partners ✨
+        </Button>
+        
         <CardTitle className="text-white text-2xl font-bold mb-2">Create Account</CardTitle>
         <CardDescription className="text-gray-300 text-base">
           Join the Creators Multiverse today
@@ -158,6 +168,20 @@ export const SignUpForm = ({ onToggleMode, onInfluencerMode, onSignUpSuccess, in
               className="bg-white/5 border-white/20 text-white focus:border-primary focus:ring-primary placeholder:text-gray-400 h-12 px-4"
               placeholder="Confirm your password"
               required
+            />
+          </div>
+          
+          {/* Referral Code Field */}
+          <div className="space-y-3">
+            <Label htmlFor="referralCode" className="text-white font-medium text-sm">
+              Referral Code <span className="text-gray-400">(Optional)</span>
+            </Label>
+            <Input
+              id="referralCode"
+              value={referralCode}
+              onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+              className="bg-white/5 border-white/20 text-white focus:border-primary focus:ring-primary placeholder:text-gray-400 h-12 px-4"
+              placeholder="Enter referral code if you have one"
             />
           </div>
           <Button

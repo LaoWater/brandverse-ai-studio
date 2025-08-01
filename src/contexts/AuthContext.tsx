@@ -53,7 +53,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                   .insert({
                     id: session.user.id,
                     email: session.user.email || '',
-                    full_name: session.user.user_metadata?.full_name || session.user.email || ''
+                    full_name: session.user.user_metadata?.full_name || session.user.email || '',
+                    type: session.user.user_metadata?.user_type || 'client',
+                    referred_by: session.user.user_metadata?.referred_by || null
                   });
                 
                 if (error) {
