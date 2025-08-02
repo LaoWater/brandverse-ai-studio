@@ -1,10 +1,10 @@
 
-// Updated App.tsx
+// Updated App.tsx  
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CompanyProvider } from "@/contexts/CompanyContext";
 import Footer from "@/components/Footer";
@@ -33,7 +33,57 @@ import PoliticaPage from "@/pages/termeni/Politica";
 import DataProcessingAgreementPage from "@/pages/termeni/Acord"; 
 import ScrollManager from '@/components/layout/ScrollManager';
 
+import { useEffect, useRef, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+
+
 const queryClient = new QueryClient();
+
+// Utility functions for redirect handling
+const storeRedirectPath = (path: string, search?: string) => {
+  const fullPath = path + (search || '');
+  sessionStorage.setItem('postLoginRedirectPath', fullPath);
+  console.log(`Stored redirect path: ${fullPath}`);
+};
+
+const getStoredRedirectPath = (): string | null => {
+  return sessionStorage.getItem('postLoginRedirectPath');
+};
+
+const clearStoredRedirectPath = () => {
+  sessionStorage.removeItem('postLoginRedirectPath');
+};
+
+
+// Enhanced AuthCallback component
+const AuthCallback = () => {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && user) {
+      const redirectPath = getStoredRedirectPath();
+      
+      if (redirectPath) {
+        clearStoredRedirectPath();
+        console.log(`AuthCallback: Login successful. Redirecting to stored path: ${redirectPath}`);
+        navigate(redirectPath, { replace: true });
+      } else {
+        console.log(`AuthCallback: Login successful. No stored path, redirecting to home.`);
+        navigate('/', { replace: true });
+      }
+    }
+  }, [user, loading, navigate]);
+
+  return (
+    <div className="flex justify-center items-center min-h-screen">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-therapy-blue mx-auto mb-4"></div>
+        <p>Se finalizează autentificarea...</p>
+      </div>
+    </div>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -48,8 +98,10 @@ const App = () => (
               <Routes>
                 {/* Public routes - accessible without authentication */}
                 <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/partner" element={<Partner />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/auth/callback" element={<AuthCallback />} />
+
+                <Route path="/partner" element={<Partner />} />
                 <Route path="/features" element={<Features />} />
                 <Route path="/pricing" element={<Pricing />} />
                 <Route path="/contact" element={<Contact />} />

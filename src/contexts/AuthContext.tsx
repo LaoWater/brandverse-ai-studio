@@ -10,6 +10,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, fullName: string, referralCode?: string) => Promise<{ error: any }>;
   signUpInfluencer: (email: string, password: string, fullName: string, secretCode: string, profileData?: any) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

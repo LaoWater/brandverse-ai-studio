@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { FcGoogle } from 'react-icons/fc';
 
+
 interface LoginFormProps {
   onToggleMode: () => void;
 }
@@ -167,11 +168,38 @@ export const LoginForm = ({ onToggleMode }: LoginFormProps) => {
     }
   };
 
-  const handleGoogleLogin = () => {
-    toast({
-      title: 'Coming Soon',
-      description: 'Google login will be available soon!',
-    });
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      // This error handling is for immediate issues before the redirect.
+      // Most OAuth errors are handled on the callback page.
+      if (error) {
+        console.error('Google login error:', error);
+        // Corrected toast call to match the other function's style
+        toast({
+          title: 'Google Login Failed',
+          description: error.message,
+          variant: 'destructive',
+        });
+        setLoading(false); // Stop loading on immediate error
+        return;
+      }
+
+    } catch (err) {
+      toast({
+        title: 'An Unexpected Error Occurred',
+        description: 'Please try again.',
+        variant: 'destructive',
+      });
+      setLoading(false);
+    }
   };
 
   return (
@@ -224,8 +252,8 @@ export const LoginForm = ({ onToggleMode }: LoginFormProps) => {
             type="button"
             onClick={handleGoogleLogin}
             variant="outline"
-            className="w-full h-12 bg-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30 transition-all"
-          >
+            className="w-full h-12 bg-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30 hover:text-white transition-all"
+            >
             <FcGoogle className="w-5 h-5 mr-3" />
             Continue with Google
           </Button>

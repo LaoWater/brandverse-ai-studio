@@ -45,7 +45,7 @@ const Auth = () => {
           <div className="relative">
             {/* For Partners Button - Outside form, top-right of container */}
             {!isLoginMode && !isInfluencerMode && !showSecretCodeCheck && (
-              <div className="absolute -top-16 right-0 z-10">
+              <div className="hidden md:block absolute -top--22 right-0 z-10">
                 <button
                   onClick={() => setShowSecretCodeCheck(true)}
                   className="group relative px-6 py-3 bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-lg border border-slate-600 hover:border-slate-500 transition-all duration-300 hover:shadow-lg hover:shadow-slate-500/20 hover:-translate-y-0.5 animate-fade-in"

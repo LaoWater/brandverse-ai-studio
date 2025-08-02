@@ -97,7 +97,7 @@ export const SecretCodeValidation = ({ onValidated, onCancel }: SecretCodeValida
           <div className="flex items-center gap-2 p-3 bg-slate-800/30 rounded-lg border border-slate-700">
             <AlertCircle className="w-4 h-4 text-slate-400" />
             <p className="text-sm text-slate-400">
-              Partner codes are provided exclusively to approved influencers and content creators.
+              Partner codes are provided exclusively to approved Collaborators.
             </p>
           </div>
 
