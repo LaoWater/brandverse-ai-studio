@@ -42,7 +42,7 @@ const PartnershipAgreementEditor = () => {
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Partnership Agreement - Creators Multiverse</title>
+    <title>Partnership Agreement - Bare App</title>
     <style>
         body {
             font-family: 'Times New Roman', serif;
@@ -109,7 +109,7 @@ const PartnershipAgreementEditor = () => {
     </style>
 </head>
 <body>
-    <h1>Partnership Agreement - Creators Multiverse</h1>
+    <h1>Partnership Agreement - Bare App</h1>
 
     <p><strong>Date:</strong> <span class="filled-field">${formData.date ? new Date(formData.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : '_______________'}</span>, 2025</p>
 
@@ -134,7 +134,7 @@ const PartnershipAgreementEditor = () => {
     </div>
 
     <h2>1. BUSINESS OVERVIEW</h2>
-    <p><strong>Company Name:</strong> Creators Multiverse</p>
+    <p><strong>Company Name:</strong> Bare App</p>
     <p><strong>Business Description:</strong> AI-powered content generation platform for social media creators</p>
     <p><strong>Business Structure:</strong> Partnership (to be formalized as LLC upon business registration)</p>
     <p><strong>Ownership:</strong> 50% each partner</p>
@@ -161,44 +161,47 @@ const PartnershipAgreementEditor = () => {
     </ul>
 
     <p><strong>Note:</strong> Partners may delegate responsibilities but remain ultimately accountable for their designated areas.</p>
+<h2>3. FINANCIAL TERMS</h2>
 
-    <h2>3. FINANCIAL TERMS</h2>
+<h3>Initial Investment:</h3>
+<ul>
+    <li>Marketing Partner (${formData.marketingPartnerName || 'Partner 1'}): $<span class="filled-field">${formData.marketingPartnerInvestment ? parseFloat(String(formData.marketingPartnerInvestment)).toLocaleString() : '________________'}</span></li>
+    <li>Technical Partner (${formData.technicalPartnerName || 'Partner 2'}): $<span class="filled-field">${formData.technicalPartnerInvestment ? parseFloat(String(formData.technicalPartnerInvestment)).toLocaleString() : '________________'}</span></li>
+    <li><strong>Total Initial Capital:</strong> $<span class="filled-field">${formData.totalInitialCapital || '________________'}</span></li>
+</ul>
 
-    <h3>Initial Investment:</h3>
-    <ul>
-        <li>Marketing Partner (${formData.marketingPartnerName || 'Partner 1'}): $<span class="filled-field">${formData.marketingPartnerInvestment ? parseFloat(String(formData.marketingPartnerInvestment)).toLocaleString() : '________________'}</span></li>
-        <li>Technical Partner (${formData.technicalPartnerName || 'Partner 2'}): $<span class="filled-field">${formData.technicalPartnerInvestment ? parseFloat(String(formData.technicalPartnerInvestment)).toLocaleString() : '________________'}</span></li>
-        <li><strong>Total Initial Capital:</strong> $<span class="filled-field">${formData.totalInitialCapital || '________________'}</span></li>
-    </ul>
+<h3>Ongoing Financial Contributions:</h3>
+<ul>
+    <li>Additional capital contributions require mutual written agreement</li>
+    <li>If one partner cannot contribute to required capital calls, their ownership percentage may be diluted proportionally</li>
+    <li>If one partner funds additional marketing or other company-related expenses on behalf of the business (when the other partner cannot or chooses not to invest), such contributions shall be recorded as <em>Reimbursable Partner Loans</em>.</li>
+    <li>Reimbursable Partner Loans shall accrue no interest unless otherwise agreed in writing, and shall be repaid to the funding partner from the company's net profits <strong>before</strong> any profit distribution to the other partner occurs.</li>
+    <li>Once the funding partner has been fully reimbursed for such additional investments, net profits shall be distributed in accordance with the standard profit-sharing arrangement described below.</li>
+</ul>
 
-    <h3>Ongoing Financial Contributions:</h3>
-    <ul>
-        <li>Additional capital contributions require mutual written agreement</li>
-        <li>If one partner cannot contribute to required capital calls, their ownership percentage may be diluted proportionally</li>
-    </ul>
+<h3>Profit & Loss Distribution:</h3>
+<ul>
+    <li><strong>Profit Sharing:</strong> 50/50 split of net profits after expenses and after repayment of any outstanding Reimbursable Partner Loans</li>
+    <li><strong>Loss Sharing:</strong> 50/50 split of any business losses</li>
+    <li><strong>Distribution Schedule:</strong> Quarterly, within 30 days of quarter-end</li>
+</ul>
 
-    <h3>Profit & Loss Distribution:</h3>
-    <ul>
-        <li><strong>Profit Sharing:</strong> 50/50 split of net profits after expenses</li>
-        <li><strong>Loss Sharing:</strong> 50/50 split of any business losses</li>
-        <li><strong>Distribution Schedule:</strong> Quarterly, within 30 days of quarter-end</li>
-    </ul>
+<h3>Expense Authorization:</h3>
+<ul>
+    <li><strong>Individual Authority:</strong> Up to $2,500 per month per partner</li>
+    <li><strong>Joint Approval Required:</strong> Expenses over $2,500</li>
+    <li><strong>Emergency Expenses:</strong> Up to $5,000 with immediate notification to other partner</li>
+</ul>
 
-    <h3>Expense Authorization:</h3>
-    <ul>
-        <li><strong>Individual Authority:</strong> Up to $2,500 per month per partner</li>
-        <li><strong>Joint Approval Required:</strong> Expenses over $2,500</li>
-        <li><strong>Emergency Expenses:</strong> Up to $5,000 with immediate notification to other partner</li>
-    </ul>
+<h3>Compensation:</h3>
+<ul>
+    <li>No initial salaries - income through profit distributions</li>
+    <li>Future salary arrangements require mutual written agreement</li>
+    <li>Partners may take reasonable draws against anticipated profits with mutual consent</li>
+</ul>
 
-    <h3>Compensation:</h3>
-    <ul>
-        <li>No initial salaries - income through profit distributions</li>
-        <li>Future salary arrangements require mutual written agreement</li>
-        <li>Partners may take reasonable draws against anticipated profits with mutual consent</li>
-    </ul>
+<div class="page-break"></div>
 
-    <div class="page-break"></div>
 
     <h2>4. DECISION MAKING & AUTHORITY</h2>
 
@@ -253,7 +256,7 @@ const PartnershipAgreementEditor = () => {
 
     <h3>Non-Compete (24 months post-departure):</h3>
     <ul>
-        <li>Cannot directly compete with Creators Multiverse or similar AI content platforms</li>
+        <li>Cannot directly compete with Bare App or similar Dating platforms</li>
         <li>Cannot solicit partnership customers or employees</li>
         <li>Geographic restriction: United States and any international markets served</li>
     </ul>
@@ -419,7 +422,7 @@ const PartnershipAgreementEditor = () => {
           4. Used the theme's `border-border` for dividers.
         */}
         <div className="cosmic-card text-white">
-          <h1 className="text-xl font-bold text-center mb-6">PARTNERSHIP AGREEMENT - CREATORS MULTIVERSE</h1>
+          <h1 className="text-xl font-bold text-center mb-6">PARTNERSHIP AGREEMENT - Bare App</h1>
 
           <p className="mb-4">
             <strong>Date:</strong> <span className="bg-secondary px-2 py-1 rounded">{formData.date ? new Date(formData.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : '_______________'}</span>, 2025
@@ -436,8 +439,8 @@ const PartnershipAgreementEditor = () => {
           <div className="space-y-6">
             <div>
               <h2 className="text-lg font-bold mb-3 border-b border-border pb-1">1. BUSINESS OVERVIEW</h2>
-              <p><strong>Company Name:</strong> Creators Multiverse</p>
-              <p><strong>Business Description:</strong> AI-powered content generation platform for social media creators</p>
+              <p><strong>Company Name:</strong> Bare App</p>
+              <p><strong>Business Description:</strong> Dating Application</p>
               <p><strong>Business Structure:</strong> Partnership (to be formalized as LLC upon business registration)</p>
               <p><strong>Ownership:</strong> 50% each partner</p>
               <p><strong>Principal Place of Business:</strong> <span className="bg-secondary px-2 py-1 rounded">{formData.businessAddress || '_________________'}</span></p>
