@@ -1,4 +1,4 @@
-# BrandVerse AI Studio
+# BrandVerse AI Studio (Web App for Creators Multiverse Project)
 
 A creator-first frontend for brand‑consistent, multi‑platform content generation. Design your brand voice, orchestrate posts across channels, and move from idea to publish with radical clarity and speed.
 
@@ -6,14 +6,15 @@ A creator-first frontend for brand‑consistent, multi‑platform content genera
 
 ---
 
-## ✨ Highlights
+## Highlights
 
 - Supabase Authentication and account context
 - Brand Setup (mission, tone of voice, colors, logo) powering generation
 - Content Generator with multi-platform, tone, language, and media controls (Level 1 & Level 2)
-- Visual Generation Progress with clearly defined stages
-- Campaign Preview, Post Manager, Pricing, Settings, and Partner flows
-- Stripe checkout via Supabase Edge Functions (create-credit-checkout, verify-payment)
+- Visual Generation Progress with custom defined Image/Video settings per platform
+- Orchestrated Pipeline leveraging latest Models with Reasoning layers for the best custom combination per user (Company).
+- Campaign Preview, Post Manager, Pricing, Settings, and Collaborator work-flows
+- Stripe checkout via Secure Supabase Edge Functions
 - Responsive UI built with Tailwind CSS, shadcn/ui, and Radix primitives
 
 ---
@@ -22,14 +23,6 @@ A creator-first frontend for brand‑consistent, multi‑platform content genera
 
 <p align="center">
   <img src="public/unleash_your_productivity.jpg" alt="BrandVerse – Unleash Your Productivity" width="85%" />
-</p>
-
-<p align="center">
-  <img src="public/chat-assistant.png" alt="BrandVerse Chat Assistant" width="70%" />
-</p>
-
-<p align="center">
-  <img src="public/CommandCenter.jpg" alt="BrandVerse Command Center" width="70%" />
 </p>
 
 ---
