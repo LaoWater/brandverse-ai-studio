@@ -35,20 +35,6 @@ import GenerationProgressModal, { ProgressStage } from '@/components/GenerationP
 
 const API_BASE_URL = "https://gcs-gemini-openai-app-1006785094868.europe-central2.run.app";
 
-interface RequirementItem { type: string; detail: string; }
-interface PostHistoryItem { platform: string; text: string; }
-interface PipelineRequestBody {
-  company_name: string;
-  company_mission: string;
-  company_sentiment: string;
-  language: string;
-  platforms_post_types_map: Array<Record<string, string>>;
-  subject: string;
-  tone: string;
-  requirements?: RequirementItem[] | null;
-  posts_history?: PostHistoryItem[] | null;
-  upload_to_cloud: boolean;
-}
 
 const getDefaultStages = (): ProgressStage[] => [
   { id: 'init', label: 'Initializing', description: 'Preparing your request...', status: 'pending', icon: FileText },
@@ -261,27 +247,26 @@ const ContentGenerator = () => {
 
     await updateStage('planning', 'in-progress', 100);
 
-    const platforms_post_types_map = formData.platforms.map(platformId => {
-      let mediaTypeApiValue: string = formData.platformMedia[platformId] || 'text';
-      if (mediaTypeApiValue === 'text') mediaTypeApiValue = 'Text';
-      else if (mediaTypeApiValue === 'image') mediaTypeApiValue = 'Image';
-      else if (mediaTypeApiValue === 'video') mediaTypeApiValue = 'Video';
-      return { [platformId]: mediaTypeApiValue };
-    });
 
     // Prepare complete content generator data structure
     const contentData = {
       topic: formData.subject,
-      description: "",
-      hashtags: [],
-      callToAction: ""
+      description: formData.tone, // Use tone as description since we don't have a separate description field
+      hashtags: [], // Empty for now - can be enhanced later
+      callToAction: "" // Empty for now - can be enhanced later
     };
 
     // Prepare platform settings
     const platformSettings = formData.platforms.reduce((acc: Record<string, { selected: boolean; postType: string }>, platformId) => {
+      let mediaType = formData.platformMedia[platformId] || 'text';
+      // Convert to API expected format
+      if (mediaType === 'text') mediaType = 'Text';
+      else if (mediaType === 'image') mediaType = 'Image';
+      else if (mediaType === 'video') mediaType = 'Video';
+
       acc[platformId] = {
         selected: true,
-        postType: formData.platformMedia[platformId] || 'text'
+        postType: mediaType
       };
       return acc;
     }, {});
@@ -299,22 +284,15 @@ const ContentGenerator = () => {
     console.log(JSON.stringify(completeAPIPayload, null, 2));
     console.log("=======================================");
 
-    const payload: PipelineRequestBody = {
-      company_name: selectedCompany.name,
-      company_mission: selectedCompany.mission || "Mission not set",
-      company_sentiment: selectedCompany.tone_of_voice || "Neutral",
-      language: formData.language,
-      platforms_post_types_map: platforms_post_types_map as Array<Record<string, string>>,
-      subject: formData.subject,
-      tone: formData.tone,
-      requirements: null,
-      posts_history: null,
-      upload_to_cloud: true,
-    };
-    console.log("Sending payload to API:", payload);
+    if (!completeAPIPayload) {
+      throw new Error("Failed to prepare API payload");
+    }
+
+    const payload = completeAPIPayload;
+    console.log("Sending enhanced payload to API:", payload);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/generate-posts`, {
+      const response = await fetch(`${API_BASE_URL}/generate-posts-enhanced`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -548,15 +526,23 @@ const ContentGenerator = () => {
                             </div>
 
                             {/* Caption Guidance */}
-                            <div className="space-y-3">
-                              <Label className="text-white font-medium">Caption/Text Overlay</Label>
+                            <div className="space-y-3 opacity-50 cursor-not-allowed">
+                              <Label className="text-gray-400 font-medium">Caption/Text Overlay</Label>
                               <Input
                                 placeholder="Text to overlay on the image (optional)..."
-                                className="bg-white/5 border-white/20 text-white placeholder:text-gray-400"
+                                className="bg-gray-700/30 border-gray-600/40 text-gray-500 placeholder:text-gray-500 cursor-not-allowed"
                                 value={imageControlSettings.caption}
                                 onChange={(e) => setImageControlSettings(prev => ({ ...prev, caption: e.target.value }))}
+                                disabled
                               />
-                              <p className="text-xs text-gray-400">Leave empty for images without text overlay</p>
+                              <div className="p-3 bg-gray-700/20 border border-gray-600/30 rounded-lg">
+                                <p className="text-xs text-gray-400 leading-relaxed">
+                                  <strong className="text-gray-300">Note:</strong> For optimal performance, we recommend adding captions manually after generation using simple video editing software. Current visual models cannot create proper captions yet.
+                                </p>
+                                <p className="text-xs text-gray-400 mt-2 leading-relaxed">
+                                  We're working on a combination of automated photo editing, visual models, and video models to enable this functionality.
+                                </p>
+                              </div>
                             </div>
 
                             {/* Starting Image Upload */}
@@ -935,8 +921,8 @@ const ContentGenerator = () => {
                                               {/* Style Guidance */}
                                               <div className="space-y-3">
                                                 <Label className="text-white font-medium">Style Guidance</Label>
-                                                <Select 
-                                                  value={platformImageControls[platform.id]?.style || ""} 
+                                                <Select
+                                                  value={platformImageControls[platform.id]?.style || ""}
                                                   onValueChange={(value) => {
                                                     setPlatformImageControls(prev => ({
                                                       ...prev,
@@ -960,6 +946,32 @@ const ContentGenerator = () => {
                                                 </Select>
                                               </div>
 
+                                              {/* Image Ratio */}
+                                              <div className="space-y-3">
+                                                <Label className="text-white font-medium">Image Ratio</Label>
+                                                <Select
+                                                  value={platformImageControls[platform.id]?.ratio || "auto"}
+                                                  onValueChange={(value) => {
+                                                    setPlatformImageControls(prev => ({
+                                                      ...prev,
+                                                      [platform.id]: { ...prev[platform.id], ratio: value }
+                                                    }));
+                                                  }}
+                                                >
+                                                  <SelectTrigger className="bg-white/5 border-white/20 text-white">
+                                                    <SelectValue placeholder="Choose aspect ratio..." />
+                                                  </SelectTrigger>
+                                                  <SelectContent className="bg-gray-900 border-white/20">
+                                                    <SelectItem value="auto" className="text-white hover:bg-white/10">Auto (Platform Optimized)</SelectItem>
+                                                    <SelectItem value="square" className="text-white hover:bg-white/10">Square (1:1)</SelectItem>
+                                                    <SelectItem value="landscape" className="text-white hover:bg-white/10">Landscape (16:9)</SelectItem>
+                                                    <SelectItem value="portrait" className="text-white hover:bg-white/10">Portrait (9:16)</SelectItem>
+                                                    <SelectItem value="story" className="text-white hover:bg-white/10">Story (9:16)</SelectItem>
+                                                    <SelectItem value="cover" className="text-white hover:bg-white/10">Cover (16:9)</SelectItem>
+                                                  </SelectContent>
+                                                </Select>
+                                              </div>
+
                                               {/* Visual Guidance */}
                                               <div className="space-y-3">
                                                 <Label className="text-white font-medium">Visual Guidance</Label>
@@ -977,6 +989,62 @@ const ContentGenerator = () => {
                                                 <p className="text-xs text-gray-400 bg-orange-500/10 p-2 rounded-md border border-orange-500/20">
                                                   <strong>Level 2:</strong> Platform-specific guidance that overrides Level 1 settings when enabled.
                                                 </p>
+                                              </div>
+
+                                              {/* Caption Guidance - Platform Specific */}
+                                              <div className="space-y-3 opacity-50 cursor-not-allowed">
+                                                <Label className="text-gray-400 font-medium">Caption/Text Overlay</Label>
+                                                <Input
+                                                  placeholder="Text to overlay on the image (optional)..."
+                                                  className="bg-gray-700/30 border-gray-600/40 text-gray-500 placeholder:text-gray-500 cursor-not-allowed"
+                                                  value={platformImageControls[platform.id]?.caption || ""}
+                                                  onChange={(e) => {
+                                                    setPlatformImageControls(prev => ({
+                                                      ...prev,
+                                                      [platform.id]: { ...prev[platform.id], caption: e.target.value }
+                                                    }));
+                                                  }}
+                                                  disabled
+                                                />
+                                                <div className="p-3 bg-gray-700/20 border border-gray-600/30 rounded-lg">
+                                                  <p className="text-xs text-gray-400 leading-relaxed">
+                                                    <strong className="text-gray-300">Note:</strong> For optimal performance, we recommend adding captions manually after generation using simple video editing software. Current visual models cannot create proper captions yet.
+                                                  </p>
+                                                  <p className="text-xs text-gray-400 mt-2 leading-relaxed">
+                                                    We're working on a combination of automated photo editing, visual models, and video models to enable this functionality.
+                                                  </p>
+                                                </div>
+                                              </div>
+
+                                              {/* Starting Image Upload - Platform Specific */}
+                                              <div className="space-y-3">
+                                                <Label className="text-white font-medium">Starting Image (Optional)</Label>
+                                                <div className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-white/40 transition-colors">
+                                                  <Input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    className="hidden"
+                                                    id={`starting-image-${platform.id}`}
+                                                    onChange={(e) => {
+                                                      const file = e.target.files?.[0] || null;
+                                                      setPlatformImageControls(prev => ({
+                                                        ...prev,
+                                                        [platform.id]: { ...prev[platform.id], startingImage: file }
+                                                      }));
+                                                    }}
+                                                  />
+                                                  <Label htmlFor={`starting-image-${platform.id}`} className="cursor-pointer">
+                                                    <div className="space-y-2">
+                                                      <Image className="w-8 h-8 mx-auto text-gray-400" />
+                                                      {platformImageControls[platform.id]?.startingImage ? (
+                                                        <p className="text-white font-medium">{platformImageControls[platform.id].startingImage?.name}</p>
+                                                      ) : (
+                                                        <p className="text-gray-400">Upload a base image for {platform.label}</p>
+                                                      )}
+                                                      <p className="text-xs text-gray-500">Click to browse or drag & drop</p>
+                                                    </div>
+                                                  </Label>
+                                                </div>
                                               </div>
                                             </div>
                                           )}

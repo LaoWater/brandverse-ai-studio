@@ -33,6 +33,7 @@ export interface ImageControlSettings {
   caption: string;
   ratio: string;
   startingImage: File | null;
+  starting_image_url?: string; // Add URL field for API payload
 }
 
 export interface ImageControlData {
@@ -133,7 +134,8 @@ export const loadImageControlSettings = async (
       guidance: data.visual_guidance || "",
       caption: data.caption_guidance || "",
       ratio: data.image_ratio || "auto",
-      startingImage: null // TODO: Load from URL
+      startingImage: null, // TODO: Load from URL
+      starting_image_url: data.starting_image_url || undefined
     };
   } catch (error) {
     console.error('Error loading image control settings:', error);
@@ -169,7 +171,8 @@ export const getAllImageControlSettings = async (
         guidance: item.visual_guidance || "",
         caption: item.caption_guidance || "",
         ratio: item.image_ratio || "auto",
-        startingImage: null
+        startingImage: null,
+        starting_image_url: item.starting_image_url || undefined
       };
 
       if (item.level === 1) {
