@@ -15,6 +15,7 @@ import BrandSetup from "./pages/BrandSetup";
 import ContentGenerator from "./pages/ContentGenerator";
 import CampaignPreview from "./pages/CampaignPreview";
 import PostManager from "./pages/PostManager";
+import MediaStudio from "./pages/MediaStudio";
 import Settings from "./pages/Settings";
 import MyPlan from "./pages/MyPlan";
 import Features from "./pages/Features";
@@ -136,21 +137,29 @@ const App = () => (
                     </ProtectedRoute>
                   } 
                 />
-                <Route 
-                  path="/post-manager" 
+                <Route
+                  path="/post-manager"
                   element={
                     <ProtectedRoute>
                       <PostManager />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
-                <Route 
-                  path="/settings" 
+                <Route
+                  path="/media-studio"
+                  element={
+                    <ProtectedRoute>
+                      <MediaStudio />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/settings"
                   element={
                     <ProtectedRoute>
                       <Settings />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
                 <Route 
                   path="/my-plan" 

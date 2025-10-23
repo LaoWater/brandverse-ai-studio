@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ChevronDown, User, Settings, LogOut, CreditCard } from "lucide-react"; 
+import { Menu, X, ChevronDown, User, Settings, LogOut, CreditCard, Sparkles } from "lucide-react"; 
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,6 +44,7 @@ const Navigation = () => {
 
   const authNavItems = [
     { name: "Content Generator", href: "/content-generator" },
+    { name: "Media Studio", href: "/media-studio" },
     { name: "Library", href: "/post-manager" },
     { name: "Settings", href: "/settings" },
   ];
@@ -95,8 +96,9 @@ const Navigation = () => {
                   <Link
                     key={item.name}
                     to={item.href}
-                    className="text-gray-300 hover:text-white transition-colors"
+                    className="text-gray-300 hover:text-white transition-colors flex items-center gap-1.5"
                   >
+                    {item.icon && <item.icon className="w-4 h-4" />}
                     {item.name}
                   </Link>
                 ))}
