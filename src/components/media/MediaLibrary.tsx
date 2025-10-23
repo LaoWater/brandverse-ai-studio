@@ -177,34 +177,34 @@ const MediaLibrary = ({ onCreateNew }: MediaLibraryProps) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 media-library-scroll">
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
         <TabsList className="bg-background/50 border border-primary/20 p-1">
           <TabsTrigger
             value="all"
-            className="data-[state=active]:bg-primary data-[state=active]:text-white"
+            className="data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300"
           >
             <Grid3x3 className="w-4 h-4 mr-2" />
             All ({counts.all})
           </TabsTrigger>
           <TabsTrigger
             value="images"
-            className="data-[state=active]:bg-primary data-[state=active]:text-white"
+            className="data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300"
           >
             <Image className="w-4 h-4 mr-2" />
             Images ({counts.images})
           </TabsTrigger>
           <TabsTrigger
             value="videos"
-            className="data-[state=active]:bg-primary data-[state=active]:text-white"
+            className="data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300"
           >
             <Video className="w-4 h-4 mr-2" />
             Videos ({counts.videos})
           </TabsTrigger>
           <TabsTrigger
             value="favorites"
-            className="data-[state=active]:bg-primary data-[state=active]:text-white"
+            className="data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300"
           >
             <Heart className="w-4 h-4 mr-2" />
             Favorites ({counts.favorites})
@@ -219,7 +219,7 @@ const MediaLibrary = ({ onCreateNew }: MediaLibraryProps) => {
         />
 
         {/* Content */}
-        <TabsContent value={activeTab} className="mt-6">
+        <TabsContent value={activeTab} className="mt-6 card-enter">
           <MediaGrid
             media={filteredMedia}
             isLoading={isLoading}

@@ -320,24 +320,31 @@ const MediaStudioContent = () => {
             {generationProgress < 100 ? (
               <>
                 <div className="relative inline-block mb-6">
-                  <Loader className="w-16 h-16 text-primary animate-spin" />
-                  <Sparkles className="w-8 h-8 text-accent absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+                  <Loader className="w-16 h-16 text-primary icon-spin-glow" />
+                  <Sparkles className="w-8 h-8 text-accent absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+                  {/* Orbiting particles */}
+                  <div className="absolute top-0 left-1/2 w-2 h-2 bg-accent rounded-full blur-sm animate-cosmic-drift" />
+                  <div className="absolute bottom-0 right-1/2 w-2 h-2 bg-primary rounded-full blur-sm animate-cosmic-drift" style={{ animationDelay: '-5s' }} />
                 </div>
-                <h3 className="text-2xl font-bold text-cosmic mb-3">
+                <h3 className="text-2xl font-bold text-gradient-animate mb-3">
                   Creating Magic...
                 </h3>
                 <p className="text-gray-300 mb-6">{currentStage}</p>
                 <div className="space-y-2">
-                  <Progress value={generationProgress} className="h-2" />
-                  <p className="text-sm text-gray-400">{Math.round(generationProgress)}%</p>
+                  <div className="relative">
+                    <Progress value={generationProgress} className="h-2 cosmic-progress-bar" />
+                  </div>
+                  <p className="text-sm text-accent font-semibold">{Math.round(generationProgress)}%</p>
                 </div>
               </>
             ) : (
               <>
                 <div className="relative inline-block mb-6">
-                  <div className="w-16 h-16 rounded-full bg-green-600/20 flex items-center justify-center">
-                    <CheckCircle className="w-10 h-10 text-green-500" />
+                  <div className="w-16 h-16 rounded-full bg-green-600/20 flex items-center justify-center shadow-lg shadow-green-600/30">
+                    <CheckCircle className="w-10 h-10 text-green-500 success-checkmark" />
                   </div>
+                  {/* Success particles */}
+                  <div className="absolute top-1/2 left-1/2 w-20 h-20 border-2 border-green-500/30 rounded-full animate-ping" />
                 </div>
                 <h3 className="text-2xl font-bold text-white mb-3">
                   Generation Complete!

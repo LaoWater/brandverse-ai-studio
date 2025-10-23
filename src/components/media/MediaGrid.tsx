@@ -26,7 +26,7 @@ const MediaGrid = ({
   // Loading skeleton
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 stagger-children">
         {[...Array(8)].map((_, i) => (
           <motion.div
             key={i}
@@ -35,13 +35,13 @@ const MediaGrid = ({
             transition={{ delay: i * 0.05 }}
             className="media-card-gradient rounded-lg overflow-hidden"
           >
-            <div className="aspect-video bg-background/50 animate-pulse" />
+            <div className="aspect-video skeleton-loading" />
             <div className="p-4 space-y-3">
-              <div className="h-4 bg-background/50 rounded animate-pulse" />
-              <div className="h-3 bg-background/50 rounded w-3/4 animate-pulse" />
+              <div className="h-4 skeleton-loading rounded" />
+              <div className="h-3 skeleton-loading rounded w-3/4" />
               <div className="flex justify-between pt-2">
-                <div className="h-3 bg-background/50 rounded w-20 animate-pulse" />
-                <div className="h-3 bg-background/50 rounded w-16 animate-pulse" />
+                <div className="h-3 skeleton-loading rounded w-20" />
+                <div className="h-3 skeleton-loading rounded w-16" />
               </div>
             </div>
           </motion.div>
@@ -59,24 +59,27 @@ const MediaGrid = ({
         transition={{ duration: 0.5 }}
         className="flex flex-col items-center justify-center py-20 px-4"
       >
-        <div className="relative mb-8">
+        <div className="relative mb-8 float-animation">
           <div className="absolute inset-0 animate-ping opacity-20">
             <div className="w-32 h-32 rounded-full bg-primary" />
           </div>
-          <div className="relative w-32 h-32 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center backdrop-blur-sm border border-primary/30">
+          <div className="relative w-32 h-32 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center backdrop-blur-sm border border-primary/30 shadow-2xl shadow-primary/20">
             <ImageIcon className="w-16 h-16 text-primary" />
           </div>
+          {/* Orbiting particles */}
+          <div className="absolute top-0 left-1/2 w-3 h-3 bg-accent rounded-full blur-sm animate-cosmic-drift" />
+          <div className="absolute bottom-0 right-1/2 w-2 h-2 bg-primary rounded-full blur-sm animate-cosmic-drift" style={{ animationDelay: '-5s' }} />
         </div>
 
-        <h3 className="text-2xl font-bold text-white mb-2">
+        <h3 className="text-2xl font-bold text-gradient-animate mb-2">
           Your creative journey starts here
         </h3>
-        <p className="text-gray-400 text-center max-w-md mb-8">
+        <p className="text-gray-400 text-center max-w-md mb-8 leading-relaxed">
           You haven't created any media yet. Start by generating your first masterpiece with AI.
         </p>
 
         {onCreateNew && (
-          <Button onClick={onCreateNew} className="cosmic-button gap-2">
+          <Button onClick={onCreateNew} className="cosmic-button gap-2 button-press-effect">
             <Sparkles className="w-5 h-5" />
             Create Your First Media
           </Button>
