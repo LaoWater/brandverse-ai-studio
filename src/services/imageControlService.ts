@@ -133,7 +133,7 @@ export const loadImageControlSettings = async (
       style: data.image_style || "",
       guidance: data.visual_guidance || "",
       caption: data.caption_guidance || "",
-      ratio: data.image_ratio || "auto",
+      ratio: data.image_ratio || "16:9",
       startingImage: null, // TODO: Load from URL
       starting_image_url: data.starting_image_url || undefined
     };
@@ -170,7 +170,7 @@ export const getAllImageControlSettings = async (
         style: item.image_style || "",
         guidance: item.visual_guidance || "",
         caption: item.caption_guidance || "",
-        ratio: item.image_ratio || "auto",
+        ratio: item.image_ratio || "16:9",
         startingImage: null,
         starting_image_url: item.starting_image_url || undefined
       };

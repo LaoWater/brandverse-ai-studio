@@ -69,7 +69,7 @@ const ContentGenerator = () => {
     style: "",
     guidance: "",
     caption: "",
-    ratio: "auto",
+    ratio: "16:9",
     startingImage: null
   });
 
@@ -501,12 +501,11 @@ const ContentGenerator = () => {
                                   <SelectValue placeholder="Choose aspect ratio..." />
                                 </SelectTrigger>
                                 <SelectContent className="bg-gray-900 border-white/20">
-                                  <SelectItem value="auto" className="text-white hover:bg-white/10">Auto (Platform Optimized)</SelectItem>
-                                  <SelectItem value="square" className="text-white hover:bg-white/10">Square (1:1)</SelectItem>
-                                  <SelectItem value="landscape" className="text-white hover:bg-white/10">Landscape (16:9)</SelectItem>
-                                  <SelectItem value="portrait" className="text-white hover:bg-white/10">Portrait (9:16)</SelectItem>
-                                  <SelectItem value="story" className="text-white hover:bg-white/10">Story (9:16)</SelectItem>
-                                  <SelectItem value="cover" className="text-white hover:bg-white/10">Cover (16:9)</SelectItem>
+                                  <SelectItem value="16:9" className="text-white hover:bg-white/10">Landscape (16:9) - Default</SelectItem>
+                                  <SelectItem value="1:1" className="text-white hover:bg-white/10">Square (1:1)</SelectItem>
+                                  <SelectItem value="9:16" className="text-white hover:bg-white/10">Portrait (9:16)</SelectItem>
+                                  <SelectItem value="3:4" className="text-white hover:bg-white/10">Portrait (3:4)</SelectItem>
+                                  <SelectItem value="4:3" className="text-white hover:bg-white/10">Standard (4:3)</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
@@ -586,7 +585,7 @@ const ContentGenerator = () => {
                                 style: "",
                                 guidance: "",
                                 caption: "",
-                                ratio: "auto",
+                                ratio: "16:9",
                                 startingImage: null
                               });
                             }}
@@ -897,7 +896,7 @@ const ContentGenerator = () => {
                                               <Label className="text-white font-medium">Enable Platform Image Control *</Label>
                                               <p className="text-sm text-gray-400">Override general settings with {platform.label}-specific preferences</p>
                                             </div>
-                                            <Switch 
+                                            <Switch
                                               checked={platformImageControls[platform.id]?.enabled || false}
                                               onCheckedChange={(checked) => {
                                                 setPlatformImageControls(prev => ({
@@ -907,7 +906,7 @@ const ContentGenerator = () => {
                                                     style: prev[platform.id]?.style || "",
                                                     guidance: prev[platform.id]?.guidance || "",
                                                     caption: prev[platform.id]?.caption || "",
-                                                    ratio: prev[platform.id]?.ratio || "auto",
+                                                    ratio: prev[platform.id]?.ratio || "16:9",
                                                     startingImage: prev[platform.id]?.startingImage || null
                                                   }
                                                 }));
@@ -950,7 +949,7 @@ const ContentGenerator = () => {
                                               <div className="space-y-3">
                                                 <Label className="text-white font-medium">Image Ratio</Label>
                                                 <Select
-                                                  value={platformImageControls[platform.id]?.ratio || "auto"}
+                                                  value={platformImageControls[platform.id]?.ratio || "16:9"}
                                                   onValueChange={(value) => {
                                                     setPlatformImageControls(prev => ({
                                                       ...prev,
@@ -962,12 +961,11 @@ const ContentGenerator = () => {
                                                     <SelectValue placeholder="Choose aspect ratio..." />
                                                   </SelectTrigger>
                                                   <SelectContent className="bg-gray-900 border-white/20">
-                                                    <SelectItem value="auto" className="text-white hover:bg-white/10">Auto (Platform Optimized)</SelectItem>
-                                                    <SelectItem value="square" className="text-white hover:bg-white/10">Square (1:1)</SelectItem>
-                                                    <SelectItem value="landscape" className="text-white hover:bg-white/10">Landscape (16:9)</SelectItem>
-                                                    <SelectItem value="portrait" className="text-white hover:bg-white/10">Portrait (9:16)</SelectItem>
-                                                    <SelectItem value="story" className="text-white hover:bg-white/10">Story (9:16)</SelectItem>
-                                                    <SelectItem value="cover" className="text-white hover:bg-white/10">Cover (16:9)</SelectItem>
+                                                    <SelectItem value="16:9" className="text-white hover:bg-white/10">Landscape (16:9) - Default</SelectItem>
+                                                    <SelectItem value="1:1" className="text-white hover:bg-white/10">Square (1:1)</SelectItem>
+                                                    <SelectItem value="9:16" className="text-white hover:bg-white/10">Portrait (9:16)</SelectItem>
+                                                    <SelectItem value="3:4" className="text-white hover:bg-white/10">Portrait (3:4)</SelectItem>
+                                                    <SelectItem value="4:3" className="text-white hover:bg-white/10">Standard (4:3)</SelectItem>
                                                   </SelectContent>
                                                 </Select>
                                               </div>
@@ -1062,7 +1060,7 @@ const ContentGenerator = () => {
                                                     style: "",
                                                     guidance: "",
                                                     caption: "",
-                                                    ratio: "auto",
+                                                    ratio: "16:9",
                                                     startingImage: null
                                                   }
                                                 }));

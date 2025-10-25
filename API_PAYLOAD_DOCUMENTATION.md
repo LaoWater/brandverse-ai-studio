@@ -25,25 +25,23 @@ This document describes the complete structure of the payload sent to the conten
   };
 
   image_control: {
-    level_1?: {              // General settings (applies to ALL platforms)
+    level_1: {               // General settings (applies to ALL platforms) - ALWAYS PRESENT
       enabled: boolean;      // Whether Level 1 is active
       style: string;         // Image style (e.g., "photorealistic", "minimalist")
       guidance: string;      // Visual guidance text
       caption: string;       // Text overlay (currently disabled)
-      ratio: string;         // Aspect ratio (e.g., "auto", "square", "landscape")
-      startingImage: File | null;     // Base image file
-      starting_image_url?: string;    // Uploaded image URL
+      ratio: string;         // Aspect ratio (e.g., "16:9", "1:1", "9:16", "3:4", "4:3")
+      starting_image_url: string | null;    // Uploaded image URL (or null)
     };
 
-    level_2?: {              // Platform-specific overrides
-      [platform: string]: {  // Platform ID (e.g., "instagram", "linkedin")
+    level_2: {               // Platform-specific overrides - ALWAYS PRESENT
+      [platform: string]: {  // Platform ID (e.g., "instagram", "linkedin") - includes ALL selected platforms
         enabled: boolean;    // Whether this platform override is active
         style: string;       // Platform-specific image style
         guidance: string;    // Platform-specific visual guidance
         caption: string;     // Platform-specific text overlay (currently disabled)
-        ratio: string;       // Platform-specific aspect ratio
-        startingImage: File | null;     // Platform-specific base image
-        starting_image_url?: string;    // Platform-specific uploaded image URL
+        ratio: string;       // Platform-specific aspect ratio (16:9, 1:1, 9:16, 3:4, 4:3)
+        starting_image_url: string | null;    // Platform-specific uploaded image URL (or null)
       };
     };
   };
@@ -109,9 +107,26 @@ For each selected platform:
       "style": "modern",
       "guidance": "Clean, professional technology imagery with blue accents",
       "caption": "",
-      "ratio": "auto",
-      "startingImage": null,
+      "ratio": "16:9",
       "starting_image_url": null
+    },
+    "level_2": {
+      "instagram": {
+        "enabled": false,
+        "style": "",
+        "guidance": "",
+        "caption": "",
+        "ratio": "16:9",
+        "starting_image_url": null
+      },
+      "linkedin": {
+        "enabled": false,
+        "style": "",
+        "guidance": "",
+        "caption": "",
+        "ratio": "16:9",
+        "starting_image_url": null
+      }
     }
   },
   "platforms": [
@@ -155,8 +170,8 @@ For each selected platform:
       "style": "corporate",
       "guidance": "Professional office environment",
       "caption": "",
-      "ratio": "auto",
-      "startingImage": null
+      "ratio": "16:9",
+      "starting_image_url": null
     },
     "level_2": {
       "instagram": {
@@ -164,8 +179,16 @@ For each selected platform:
         "style": "vibrant",
         "guidance": "Colorful, energetic team photos with casual atmosphere",
         "caption": "",
-        "ratio": "square",
-        "startingImage": null
+        "ratio": "1:1",
+        "starting_image_url": null
+      },
+      "linkedin": {
+        "enabled": false,
+        "style": "",
+        "guidance": "",
+        "caption": "",
+        "ratio": "16:9",
+        "starting_image_url": null
       }
     }
   },
@@ -185,7 +208,7 @@ For each selected platform:
 ```
 **Result**:
 - Instagram: Vibrant, colorful, energetic (1:1 square) - using Level 2
-- LinkedIn: Corporate, professional office environment (auto ratio) - using Level 1
+- LinkedIn: Corporate, professional office environment (16:9 ratio) - using Level 1
 
 ---
 
@@ -212,8 +235,34 @@ For each selected platform:
       "style": "artistic",
       "guidance": "Bold colors, creative composition, abstract elements",
       "caption": "",
-      "ratio": "auto",
-      "startingImage": null
+      "ratio": "16:9",
+      "starting_image_url": null
+    },
+    "level_2": {
+      "instagram": {
+        "enabled": false,
+        "style": "",
+        "guidance": "",
+        "caption": "",
+        "ratio": "16:9",
+        "starting_image_url": null
+      },
+      "twitter": {
+        "enabled": false,
+        "style": "",
+        "guidance": "",
+        "caption": "",
+        "ratio": "16:9",
+        "starting_image_url": null
+      },
+      "linkedin": {
+        "enabled": false,
+        "style": "",
+        "guidance": "",
+        "caption": "",
+        "ratio": "16:9",
+        "starting_image_url": null
+      }
     }
   },
   "platforms": [
@@ -267,12 +316,11 @@ For each selected platform:
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `enabled` | boolean | Yes | Whether this level of control is active |
-| `style` | string | No | Image style preset (photorealistic, minimalist, artistic, etc.) |
-| `guidance` | string | No | Free-form visual guidance text |
-| `caption` | string | No | **DISABLED** - Text overlay functionality |
-| `ratio` | string | No | Aspect ratio (auto, square, landscape, portrait, story, cover) |
-| `startingImage` | File \| null | No | Base image to modify/enhance |
-| `starting_image_url` | string | No | URL after uploading startingImage |
+| `style` | string | Yes | Image style preset (photorealistic, minimalist, artistic, etc.) - empty string if not set |
+| `guidance` | string | Yes | Free-form visual guidance text - empty string if not set |
+| `caption` | string | Yes | **DISABLED** - Text overlay functionality - empty string if not set |
+| `ratio` | string | Yes | Aspect ratio (16:9, 1:1, 9:16, 3:4, 4:3) - **Must be numeric format, default: 16:9** |
+| `starting_image_url` | string \| null | Yes | URL to uploaded base image, or null if not provided |
 
 ### Platform Fields
 | Field | Type | Required | Description |
@@ -294,12 +342,14 @@ For each selected platform:
 - `vintage` - Retro, nostalgic aesthetic
 
 ## Aspect Ratio Options
-- `auto` - Platform-optimized (AI decides based on platform best practices)
-- `square` - 1:1 (Instagram posts, LinkedIn posts)
-- `landscape` - 16:9 (Twitter, Facebook, LinkedIn)
-- `portrait` - 9:16 (Instagram stories, vertical video)
-- `story` - 9:16 (Optimized for story formats)
-- `cover` - 16:9 (Cover images, banners)
+**IMPORTANT**: GCP API expects numeric aspect ratios only.
+
+Valid values (ONLY these 5 are supported):
+- `16:9` - Landscape/Widescreen (YouTube, Twitter, Facebook, LinkedIn) - **DEFAULT**
+- `1:1` - Square (Instagram posts, LinkedIn posts)
+- `9:16` - Portrait/Vertical (Instagram Stories, TikTok, Reels)
+- `3:4` - Portrait (Traditional)
+- `4:3` - Standard (Traditional landscape)
 
 ---
 
@@ -313,10 +363,14 @@ def resolve_image_control(platform_id, payload):
     """
     Resolve image control settings for a specific platform.
     Level 2 (platform-specific) overrides Level 1 (general).
+
+    NOTE: image_control.level_1 and image_control.level_2 are ALWAYS present in the payload.
+    The 'enabled' flag determines whether settings should be applied.
     """
     image_control = payload.get('image_control', {})
 
     # Check for platform-specific override (Level 2)
+    # Level 2 will include an entry for each selected platform
     level_2 = image_control.get('level_2', {})
     if platform_id in level_2 and level_2[platform_id].get('enabled'):
         return level_2[platform_id]
@@ -326,29 +380,35 @@ def resolve_image_control(platform_id, payload):
     if level_1.get('enabled'):
         return level_1
 
-    # No image control - use AI defaults
+    # No image control enabled - use AI defaults
     return None
 ```
 
 ### Important Considerations
 
-1. **Caption/Text Overlay Status**:
+1. **Image Control Structure (CRITICAL)**:
+   - `image_control.level_1` and `image_control.level_2` are **ALWAYS PRESENT** in the payload
+   - Even when disabled, the structure is included with `enabled: false` and default values
+   - `level_2` includes an entry for **EVERY selected platform**, even if platform-specific settings are disabled
+   - The backend should check the `enabled` flag to determine whether to apply the settings
+
+2. **Caption/Text Overlay Status**:
    - Currently **DISABLED** in the UI
    - Field is greyed out with advisory message
    - Backend should ignore `caption` field until further notice
    - Feature pending visual model improvements
 
-2. **Starting Image Handling**:
+3. **Starting Image Handling**:
    - Files are uploaded to Supabase storage before API call
-   - Frontend sends `starting_image_url` in payload (not the File object)
-   - Backend should fetch image from URL if provided
+   - Frontend sends `starting_image_url` in payload (string | null, not the File object)
+   - Backend should fetch image from URL if provided (when not null)
 
-3. **Platform Post Types**:
+4. **Platform Post Types**:
    - Text: Generate only text content
    - Image: Generate text + image
    - Video: **COMING SOON** - currently disabled in UI
 
-4. **Credit System**:
+5. **Credit System**:
    - Text posts: 1 credit
    - Image posts: 3 credits
    - Video posts: 3 credits (when available)

@@ -10,6 +10,16 @@ interface Company {
 }
 import { ImageControlSettings } from "./imageControlService";
 
+// API payload version of ImageControlSettings (without File object)
+export interface ImageControlAPIPayload {
+  enabled: boolean;
+  style: string;
+  guidance: string;
+  caption: string;
+  ratio: string;
+  starting_image_url: string | null;
+}
+
 export interface ContentGeneratorData {
   company: {
     id: string;
@@ -27,8 +37,8 @@ export interface ContentGeneratorData {
     call_to_action: string;
   };
   image_control: {
-    level_1?: ImageControlSettings & { enabled: boolean };
-    level_2?: Record<string, ImageControlSettings & { enabled: boolean }>;
+    level_1: ImageControlAPIPayload;
+    level_2: Record<string, ImageControlAPIPayload>;
   };
   platforms: Array<{
     platform: string;
@@ -90,25 +100,56 @@ export const prepareAPIPayload = (
   };
 
   // Prepare image control data with proper hierarchy
+  // ALWAYS include level_1 and level_2 structure, even when disabled
   const image_control: ContentGeneratorData['image_control'] = {};
 
   // Level 1: General settings (baseline for all platforms)
-  if (imageControlLevel1.enabled) {
-    image_control.level_1 = { ...imageControlLevel1, enabled: true };
-  }
+  // Always include level_1, with enabled flag indicating if settings should be used
+  image_control.level_1 = {
+    enabled: imageControlLevel1.enabled || false,
+    style: imageControlLevel1.style || "",
+    guidance: imageControlLevel1.guidance || "",
+    caption: imageControlLevel1.caption || "",
+    ratio: imageControlLevel1.ratio || "16:9",
+    starting_image_url: imageControlLevel1.starting_image_url || null
+  };
 
   // Level 2: Platform-specific overrides
-  // When enabled for a platform, these settings completely override Level 1 for that platform
-  const level2Controls: Record<string, ImageControlSettings & { enabled: boolean }> = {};
-  Object.entries(imageControlLevel2).forEach(([platform, settings]) => {
-    if (settings.enabled) {
-      level2Controls[platform] = { ...settings, enabled: true };
+  // Always include level_2 with entries for all selected platforms
+  const level2Controls: Record<string, ImageControlAPIPayload> = {};
+
+  // Get all selected platforms from platformSettings
+  const selectedPlatforms = Object.keys(platformSettings).filter(
+    platform => platformSettings[platform].selected
+  );
+
+  // For each selected platform, include its level_2 settings (enabled or disabled)
+  selectedPlatforms.forEach(platform => {
+    const platformSettings = imageControlLevel2[platform];
+    if (platformSettings) {
+      // Platform has custom settings defined
+      level2Controls[platform] = {
+        enabled: platformSettings.enabled || false,
+        style: platformSettings.style || "",
+        guidance: platformSettings.guidance || "",
+        caption: platformSettings.caption || "",
+        ratio: platformSettings.ratio || "16:9",
+        starting_image_url: platformSettings.starting_image_url || null
+      };
+    } else {
+      // Platform doesn't have custom settings, include default disabled entry
+      level2Controls[platform] = {
+        enabled: false,
+        style: "",
+        guidance: "",
+        caption: "",
+        ratio: "16:9",
+        starting_image_url: null
+      };
     }
   });
 
-  if (Object.keys(level2Controls).length > 0) {
-    image_control.level_2 = level2Controls;
-  }
+  image_control.level_2 = level2Controls;
 
   // Prepare platform data
   const platforms = Object.entries(platformSettings)
