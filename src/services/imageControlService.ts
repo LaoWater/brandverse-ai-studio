@@ -1,5 +1,24 @@
 import { supabase } from "@/integrations/supabase/client";
 
+// Validate and normalize aspect ratio (convert old "auto" values to "16:9")
+const normalizeAspectRatio = (ratio: string | null | undefined): string => {
+  const validRatios = ["1:1", "9:16", "16:9", "4:3", "3:4"];
+
+  // Convert null/undefined or old "auto" value to default
+  if (!ratio || ratio === "auto") {
+    return "16:9";
+  }
+
+  // Validate it's a supported ratio
+  if (validRatios.includes(ratio)) {
+    return ratio;
+  }
+
+  // If it's an unsupported ratio (like "4:5"), default to "16:9"
+  console.warn(`Unsupported aspect ratio "${ratio}" found in database, defaulting to "16:9"`);
+  return "16:9";
+};
+
 // Upload starting image to storage
 export const uploadStartingImage = async (file: File, userId: string): Promise<string | null> => {
   try {
@@ -133,7 +152,7 @@ export const loadImageControlSettings = async (
       style: data.image_style || "",
       guidance: data.visual_guidance || "",
       caption: data.caption_guidance || "",
-      ratio: data.image_ratio || "16:9",
+      ratio: normalizeAspectRatio(data.image_ratio),
       startingImage: null, // TODO: Load from URL
       starting_image_url: data.starting_image_url || undefined
     };
@@ -170,7 +189,7 @@ export const getAllImageControlSettings = async (
         style: item.image_style || "",
         guidance: item.visual_guidance || "",
         caption: item.caption_guidance || "",
-        ratio: item.image_ratio || "16:9",
+        ratio: normalizeAspectRatio(item.image_ratio),
         startingImage: null,
         starting_image_url: item.starting_image_url || undefined
       };

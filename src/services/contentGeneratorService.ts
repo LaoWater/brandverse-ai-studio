@@ -10,6 +10,24 @@ interface Company {
 }
 import { ImageControlSettings } from "./imageControlService";
 
+// Validate and normalize aspect ratio (convert old "auto" values to "16:9")
+const normalizeAspectRatio = (ratio: string | null | undefined): string => {
+  const validRatios = ["1:1", "9:16", "16:9", "4:3", "3:4"];
+
+  // Convert null/undefined or old "auto" value to default
+  if (!ratio || ratio === "auto") {
+    return "16:9";
+  }
+
+  // Validate it's a supported ratio
+  if (validRatios.includes(ratio)) {
+    return ratio;
+  }
+
+  // If it's an unsupported ratio (like "4:5"), default to "16:9"
+  return "16:9";
+};
+
 // API payload version of ImageControlSettings (without File object)
 export interface ImageControlAPIPayload {
   enabled: boolean;
@@ -110,7 +128,7 @@ export const prepareAPIPayload = (
     style: imageControlLevel1.style || "",
     guidance: imageControlLevel1.guidance || "",
     caption: imageControlLevel1.caption || "",
-    ratio: imageControlLevel1.ratio || "16:9",
+    ratio: normalizeAspectRatio(imageControlLevel1.ratio),
     starting_image_url: imageControlLevel1.starting_image_url || null
   };
 
@@ -133,7 +151,7 @@ export const prepareAPIPayload = (
         style: platformSettings.style || "",
         guidance: platformSettings.guidance || "",
         caption: platformSettings.caption || "",
-        ratio: platformSettings.ratio || "16:9",
+        ratio: normalizeAspectRatio(platformSettings.ratio),
         starting_image_url: platformSettings.starting_image_url || null
       };
     } else {
