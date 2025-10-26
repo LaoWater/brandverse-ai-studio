@@ -124,9 +124,7 @@ const App = () => (
                 <Route 
                   path="/content-generator" 
                   element={
-                    <ProtectedRoute>
                       <ContentGenerator />
-                    </ProtectedRoute>
                   } 
                 />
                 <Route 
@@ -148,9 +146,7 @@ const App = () => (
                 <Route
                   path="/media-studio"
                   element={
-                    <ProtectedRoute>
                       <MediaStudio />
-                    </ProtectedRoute>
                   }
                 />
                 <Route
