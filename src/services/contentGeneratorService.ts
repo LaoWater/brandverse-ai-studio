@@ -63,6 +63,8 @@ export interface ContentGeneratorData {
     post_type: string;
     selected: boolean;
   }>;
+  language?: string;
+  upload_to_cloud?: boolean;
   image_generation_model?: string;
 }
 
@@ -96,7 +98,8 @@ export const prepareAPIPayload = (
   imageControlLevel1: ImageControlSettings,
   imageControlLevel2: Record<string, ImageControlSettings>,
   platformSettings: Record<string, { selected: boolean; postType: string }>,
-  imageGenerationModel?: string
+  imageGenerationModel?: string,
+  language?: string
 ): ContentGeneratorData | null => {
   if (!selectedCompany) return null;
 
@@ -187,7 +190,14 @@ export const prepareAPIPayload = (
     platforms
   };
 
-  // Only include image_generation_model if specified
+  // Add optional fields if specified
+  if (language) {
+    payload.language = language;
+  }
+
+  // Always upload to cloud by default
+  payload.upload_to_cloud = true;
+
   if (imageGenerationModel) {
     payload.image_generation_model = imageGenerationModel;
   }

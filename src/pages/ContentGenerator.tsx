@@ -143,6 +143,12 @@ const ContentGenerator = () => {
     { code: "sk", name: "Slovak" }
   ];
 
+  // Convert language code to full language name for API
+  const getLanguageName = (code: string): string => {
+    const lang = languages.find(l => l.code === code);
+    return lang?.name || "English";
+  };
+
   const platforms = [
     { id: "instagram", label: "Instagram", icon: Instagram, color: "text-pink-500" },
     { id: "linkedin", label: "LinkedIn", icon: Linkedin, color: "text-blue-600" },
@@ -295,7 +301,8 @@ const ContentGenerator = () => {
       imageControlSettings,
       platformImageControls,
       platformSettings,
-      getModelFromQuality(imageQuality)
+      getModelFromQuality(imageQuality),
+      getLanguageName(formData.language)
     );
 
     console.log("=== COMPLETE CONTENT GENERATOR DATA ===");
