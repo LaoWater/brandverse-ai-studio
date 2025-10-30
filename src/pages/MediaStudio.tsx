@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import { MediaStudioProvider, useMediaStudio } from '@/contexts/MediaStudioContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -45,6 +46,7 @@ const MediaStudioContent = () => {
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [showLibrary, setShowLibrary] = useState(false);
 
   // Generation mutation
@@ -150,6 +152,7 @@ const MediaStudioContent = () => {
         description: 'Please sign in to generate media.',
         variant: 'destructive',
       });
+      navigate('/auth');
       return;
     }
 
@@ -167,7 +170,6 @@ const MediaStudioContent = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold text-white mb-2 flex items-center gap-3">
-                <Sparkles className="w-10 h-10 text-primary" />
                 Media Studio
               </h1>
               <p className="text-gray-400">

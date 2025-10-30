@@ -42,6 +42,15 @@ const Navigation = () => {
     { name: "Pricing", href: "/pricing" },
   ];
 
+  const nonAuthNavItems = [
+    { name: "Home", href: "/" },
+    { name: "Features", href: "/features" },
+    { name: "Content Generator", href: "/content-generator" },
+    { name: "Media Studio", href: "/media-studio" },
+    { name: "Pricing", href: "/pricing" },
+
+  ];
+
   const authNavItems = [
     { name: "Content Generator", href: "/content-generator" },
     { name: "Media Studio", href: "/media-studio" },
@@ -105,7 +114,7 @@ const Navigation = () => {
               </>
             ) : (
               // Show public navigation for non-authenticated users
-              publicNavItems.map((item) => (
+              nonAuthNavItems.map((item) => (
                 <Link
                   key={item.name}
                   to={item.href}
@@ -258,7 +267,7 @@ const Navigation = () => {
                 </>
               ) : (
                 // ... keep existing code (mobile public navigation)
-                publicNavItems.map((item) => (
+                nonAuthNavItems.map((item) => (
                   <Link
                     key={item.name}
                     to={item.href}
