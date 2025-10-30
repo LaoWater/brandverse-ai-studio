@@ -43,6 +43,7 @@ export const CompanyProvider = ({ children }: { children: React.ReactNode }) => 
       console.log('No user, clearing companies');
       setCompanies([]);
       setSelectedCompany(null);
+      localStorage.removeItem('selectedCompanyId');
       return;
     }
     
@@ -62,10 +63,27 @@ export const CompanyProvider = ({ children }: { children: React.ReactNode }) => 
       console.log('Fetched companies:', data);
       setCompanies(data || []);
       
-      // Auto-select first company if none selected and we have companies
-      if (!selectedCompany && data && data.length > 0) {
-        console.log('Auto-selecting first company:', data[0]);
-        setSelectedCompany(data[0]);
+      // Try to restore previously selected company from localStorage
+      const storedCompanyId = localStorage.getItem('selectedCompanyId');
+      let companyToSelect = null;
+      
+      if (storedCompanyId && data && data.length > 0) {
+        // Validate stored company still exists and belongs to user
+        companyToSelect = data.find(c => c.id === storedCompanyId);
+        if (companyToSelect) {
+          console.log('Restored previously selected company:', companyToSelect);
+        }
+      }
+      
+      // Fallback to first company if no valid stored selection
+      if (!companyToSelect && data && data.length > 0) {
+        companyToSelect = data[0];
+        console.log('Auto-selecting first company:', companyToSelect);
+      }
+      
+      if (companyToSelect) {
+        setSelectedCompany(companyToSelect);
+        localStorage.setItem('selectedCompanyId', companyToSelect.id);
       }
     } catch (error) {
       console.error('Error fetching companies:', error);
@@ -88,6 +106,7 @@ export const CompanyProvider = ({ children }: { children: React.ReactNode }) => 
   const selectCompany = (company: Company) => {
     console.log('Selecting company:', company);
     setSelectedCompany(company);
+    localStorage.setItem('selectedCompanyId', company.id);
   };
 
   const refreshCompanies = async () => {
