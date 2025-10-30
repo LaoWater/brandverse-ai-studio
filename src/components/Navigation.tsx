@@ -105,9 +105,8 @@ const Navigation = () => {
                   <Link
                     key={item.name}
                     to={item.href}
-                    className="text-gray-300 hover:text-white transition-colors flex items-center gap-1.5"
+                    className="text-gray-300 hover:text-white transition-colors"
                   >
-                    {item.icon && <item.icon className="w-4 h-4" />}
                     {item.name}
                   </Link>
                 ))}

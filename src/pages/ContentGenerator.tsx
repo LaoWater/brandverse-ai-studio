@@ -275,15 +275,15 @@ const ContentGenerator = () => {
 
     // Prepare platform settings
     const platformSettings = formData.platforms.reduce((acc: Record<string, { selected: boolean; postType: string }>, platformId) => {
-      let mediaType = formData.platformMedia[platformId] || 'text';
+      const mediaType = formData.platformMedia[platformId] || 'text';
       // Convert to API expected format
-      if (mediaType === 'text') mediaType = 'Text';
-      else if (mediaType === 'image') mediaType = 'Image';
-      else if (mediaType === 'video') mediaType = 'Video';
+      const postType = mediaType === 'text' ? 'Text' : 
+                       mediaType === 'image' ? 'Image' : 
+                       mediaType === 'video' ? 'Video' : 'Text';
 
       acc[platformId] = {
         selected: true,
-        postType: mediaType
+        postType
       };
       return acc;
     }, {});

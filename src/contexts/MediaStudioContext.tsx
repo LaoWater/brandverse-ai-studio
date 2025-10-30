@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 // Types for Media Studio
 export type MediaType = 'image';
-export type ImageModel = 'nano-banana' | 'chatgpt-image';
+export type ImageModel = 'nano-banana' | 'chatgpt-image' | 'google-imagen-4';
 export type AspectRatio = '1:1' | '16:9' | '9:16' | '4:5' | '3:2';
 export type Quality = 'standard' | 'high' | 'ultra';
 

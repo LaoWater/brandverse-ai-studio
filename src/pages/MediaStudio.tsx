@@ -68,7 +68,7 @@ const MediaStudioContent = () => {
           quality,
           referenceImageUrl,
         },
-        (stage, progress) => {
+        (progress, stage) => {
           updateGenerationProgress(progress, stage);
         }
       );
