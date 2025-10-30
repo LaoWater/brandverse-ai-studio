@@ -26,12 +26,9 @@ import {
 const MediaStudioContent = () => {
   const {
     prompt,
-    mediaType,
-    selectedVideoModel,
     selectedImageModel,
     aspectRatio,
     quality,
-    videoDuration,
     referenceImage,
     isGenerating,
     generationProgress,
@@ -62,15 +59,13 @@ const MediaStudioContent = () => {
       }
 
       // Generate media with progress
-      const model = mediaType === 'video' ? selectedVideoModel : selectedImageModel;
       const result = await generateMediaWithProgress(
         {
           prompt,
-          mediaType,
-          model,
+          mediaType: 'image',
+          model: selectedImageModel,
           aspectRatio,
           quality,
-          duration: mediaType === 'video' ? videoDuration : undefined,
           referenceImageUrl,
         },
         (stage, progress) => {
@@ -83,22 +78,21 @@ const MediaStudioContent = () => {
     onSuccess: async ({ result, referenceImageUrl }) => {
       if (result.success && user) {
         // Save to database
-        const model = mediaType === 'video' ? selectedVideoModel : selectedImageModel;
         await saveMediaRecord({
           user_id: user.id,
           company_id: selectedCompany?.id || null,
-          file_name: `generated_${Date.now()}.${mediaType === 'video' ? 'mp4' : 'png'}`,
-          file_type: mediaType,
-          file_format: mediaType === 'video' ? 'mp4' : 'png',
+          file_name: `generated_${Date.now()}.png`,
+          file_type: 'image',
+          file_format: 'png',
           file_size: null, // Will be updated when actual file is uploaded
           storage_path: result.mediaUrl, // Dummy for now
           public_url: result.mediaUrl,
           thumbnail_url: result.thumbnailUrl || null,
           prompt,
-          model_used: model,
+          model_used: selectedImageModel,
           aspect_ratio: aspectRatio,
           quality,
-          duration: mediaType === 'video' ? videoDuration : null,
+          duration: null,
           reference_image_url: referenceImageUrl || null,
           tags: [],
           is_favorite: false,
@@ -114,7 +108,7 @@ const MediaStudioContent = () => {
         // Show success toast
         toast({
           title: 'Success!',
-          description: `Your ${mediaType} has been generated successfully.`,
+          description: 'Your image has been generated successfully.',
           className: 'bg-green-600/90 border-green-600 text-white',
         });
 
@@ -173,7 +167,7 @@ const MediaStudioContent = () => {
                 Media Studio
               </h1>
               <p className="text-gray-400">
-                Create stunning visuals with AI-powered video and image generation
+                Create stunning visuals with AI-powered image generation
               </p>
             </div>
 
@@ -258,7 +252,7 @@ const MediaStudioContent = () => {
                         ) : (
                           <>
                             <Sparkles className="w-5 h-5 mr-2" />
-                            Generate {mediaType === 'video' ? 'Video' : 'Image'}
+                            Generate Image
                             <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                           </>
                         )}
