@@ -63,6 +63,7 @@ export interface ContentGeneratorData {
     post_type: string;
     selected: boolean;
   }>;
+  image_generation_model?: string;
 }
 
 /**
@@ -94,7 +95,8 @@ export const prepareAPIPayload = (
   },
   imageControlLevel1: ImageControlSettings,
   imageControlLevel2: Record<string, ImageControlSettings>,
-  platformSettings: Record<string, { selected: boolean; postType: string }>
+  platformSettings: Record<string, { selected: boolean; postType: string }>,
+  imageGenerationModel?: string
 ): ContentGeneratorData | null => {
   if (!selectedCompany) return null;
 
@@ -178,10 +180,17 @@ export const prepareAPIPayload = (
       selected: true
     }));
 
-  return {
+  const payload: ContentGeneratorData = {
     company,
     content,
     image_control,
     platforms
   };
+
+  // Only include image_generation_model if specified
+  if (imageGenerationModel) {
+    payload.image_generation_model = imageGenerationModel;
+  }
+
+  return payload;
 };
