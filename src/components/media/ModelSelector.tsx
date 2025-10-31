@@ -15,19 +15,19 @@ const ModelSelector = () => {
     {
       value: 'nano-banana',
       label: 'Nano Banana',
-      description: 'Google Gemini 2.5 Flash - Fast & creative',
+      description: 'Fast & creative generation',
       badge: 'FAST',
     },
     {
       value: 'chatgpt-image',
       label: 'ChatGPT Image',
-      description: 'OpenAI gpt-image-1 - High quality & precise',
+      description: 'High quality & precise',
       badge: 'PRECISE',
     },
     {
       value: 'google-imagen-4',
       label: 'Google Imagen 4',
-      description: 'Google Imagen 4 - Advanced image generation',
+      description: 'Advanced generation',
       badge: 'ADVANCED',
     },
   ];
@@ -46,23 +46,23 @@ const ModelSelector = () => {
             <SelectValue />
           </div>
         </SelectTrigger>
-        <SelectContent className="bg-card border-primary/20">
+        <SelectContent className="bg-card border-primary/20 w-full max-w-[280px]">
           {imageModels.map((model) => (
             <SelectItem
               key={model.value}
               value={model.value}
-              className="text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer py-3 min-h-[60px]"
+              className="text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer py-3"
             >
-              <div className="flex flex-col gap-1.5 py-1">
+              <div className="flex flex-col gap-1 py-1 w-full">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-sm">{model.label}</span>
+                  <span className="font-medium text-sm truncate">{model.label}</span>
                   {model.badge && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/20 text-accent font-semibold">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/20 text-accent font-semibold shrink-0">
                       {model.badge}
                     </span>
                   )}
                 </div>
-                <span className="text-xs text-gray-400 leading-relaxed">{model.description}</span>
+                <span className="text-xs text-gray-400 leading-tight">{model.description}</span>
               </div>
             </SelectItem>
           ))}
