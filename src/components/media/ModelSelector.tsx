@@ -1,4 +1,4 @@
-import { Brain, Sparkles } from 'lucide-react';
+import { Brain, Cpu } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -42,7 +42,7 @@ const ModelSelector = () => {
       <Select value={selectedImageModel} onValueChange={setSelectedImageModel}>
         <SelectTrigger className="w-full bg-background/50 border-primary/20 text-white hover:border-primary/40 transition-colors">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-accent" />
+            <Cpu className="w-4 h-4 text-accent" />
             <SelectValue />
           </div>
         </SelectTrigger>
