@@ -124,7 +124,10 @@ export const prepareAPIPayload = (
 
   // Prepare image control data with proper hierarchy
   // ALWAYS include level_1 and level_2 structure, even when disabled
-  const image_control: ContentGeneratorData['image_control'] = {};
+  const image_control: ContentGeneratorData['image_control'] = {
+    level_1: {} as ImageControlAPIPayload,
+    level_2: {}
+  };
 
   // Level 1: General settings (baseline for all platforms)
   // Always include level_1, with enabled flag indicating if settings should be used

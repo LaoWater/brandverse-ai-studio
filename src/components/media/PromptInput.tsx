@@ -3,15 +3,13 @@ import { useMediaStudio } from '@/contexts/MediaStudioContext';
 import { Wand2 } from 'lucide-react';
 
 const PromptInput = () => {
-  const { prompt, setPrompt, mediaType } = useMediaStudio();
+  const { prompt, setPrompt } = useMediaStudio();
 
   const maxLength = 2000;
   const characterCount = prompt.length;
   const percentage = (characterCount / maxLength) * 100;
 
-  const placeholderText = mediaType === 'video'
-    ? 'Describe the video you want to create... Be specific about scenes, movements, camera angles, lighting, and atmosphere.'
-    : 'Describe the image you want to create... Include details about subject, style, composition, lighting, colors, and mood.';
+  const placeholderText = 'Describe the image you want to create... Include details about subject, style, composition, lighting, colors, and mood.';
 
   return (
     <div className="space-y-3">

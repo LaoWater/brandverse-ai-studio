@@ -1,19 +1,16 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 // Types for Media Studio
-export type MediaType = 'video' | 'image';
-export type VideoModel = 'veo-3.1' | 'sora-2';
-export type ImageModel = 'imagen-4';
-export type AspectRatio = '1:1' | '16:9' | '9:16' | '4:5' | '3:2' | '4:3';
+export type MediaType = 'image';
+export type ImageModel = 'nano-banana' | 'chatgpt-image' | 'google-imagen-4';
+export type AspectRatio = '1:1' | '16:9' | '9:16' | '4:5' | '3:2';
 export type Quality = 'standard' | 'high' | 'ultra';
-export type VideoDuration = 5 | 10 | 15 | 30;
 
 export interface MediaStudioState {
   // Media type selection
   mediaType: MediaType;
 
   // Model selection
-  selectedVideoModel: VideoModel;
   selectedImageModel: ImageModel;
 
   // Prompt and reference
@@ -24,7 +21,6 @@ export interface MediaStudioState {
   // Format settings
   aspectRatio: AspectRatio;
   quality: Quality;
-  videoDuration: VideoDuration;
 
   // Generation state
   isGenerating: boolean;
@@ -39,13 +35,11 @@ export interface MediaStudioState {
 interface MediaStudioContextType extends MediaStudioState {
   // Setters
   setMediaType: (type: MediaType) => void;
-  setSelectedVideoModel: (model: VideoModel) => void;
   setSelectedImageModel: (model: ImageModel) => void;
   setPrompt: (prompt: string) => void;
   setReferenceImage: (file: File | null) => void;
   setAspectRatio: (ratio: AspectRatio) => void;
   setQuality: (quality: Quality) => void;
-  setVideoDuration: (duration: VideoDuration) => void;
 
   // Actions
   startGeneration: () => void;
@@ -59,14 +53,12 @@ const MediaStudioContext = createContext<MediaStudioContextType | undefined>(und
 
 const initialState: MediaStudioState = {
   mediaType: 'image',
-  selectedVideoModel: 'veo-3.1',
-  selectedImageModel: 'imagen-4',
+  selectedImageModel: 'nano-banana',
   prompt: '',
   referenceImage: null,
   referenceImagePreview: null,
   aspectRatio: '1:1',
   quality: 'high',
-  videoDuration: 5,
   isGenerating: false,
   generationProgress: 0,
   currentStage: '',
@@ -79,10 +71,6 @@ export const MediaStudioProvider: React.FC<{ children: ReactNode }> = ({ childre
 
   const setMediaType = (type: MediaType) => {
     setState(prev => ({ ...prev, mediaType: type }));
-  };
-
-  const setSelectedVideoModel = (model: VideoModel) => {
-    setState(prev => ({ ...prev, selectedVideoModel: model }));
   };
 
   const setSelectedImageModel = (model: ImageModel) => {
@@ -119,10 +107,6 @@ export const MediaStudioProvider: React.FC<{ children: ReactNode }> = ({ childre
 
   const setQuality = (quality: Quality) => {
     setState(prev => ({ ...prev, quality }));
-  };
-
-  const setVideoDuration = (duration: VideoDuration) => {
-    setState(prev => ({ ...prev, videoDuration: duration }));
   };
 
   const startGeneration = () => {
@@ -173,13 +157,11 @@ export const MediaStudioProvider: React.FC<{ children: ReactNode }> = ({ childre
   const value: MediaStudioContextType = {
     ...state,
     setMediaType,
-    setSelectedVideoModel,
     setSelectedImageModel,
     setPrompt,
     setReferenceImage,
     setAspectRatio,
     setQuality,
-    setVideoDuration,
     startGeneration,
     updateGenerationProgress,
     completeGeneration,
