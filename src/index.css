@@ -45,7 +45,7 @@
   }
 
   .light {
-    --background: 255 255 255;
+    --background: 250 251 252;
     --foreground: 15 15 23;
 
     --card: 255 255 255;
@@ -93,6 +93,12 @@
     @apply bg-background text-foreground font-sans;
     background: linear-gradient(135deg, #0A0A0F 0%, #1A1A2E 50%, #16213E 100%);
     min-height: 100vh;
+    transition: background 0.3s ease, color 0.3s ease;
+  }
+
+  /* Light Mode Body Background */
+  .light body {
+    background: linear-gradient(135deg, #FAFBFC 0%, #F0F4FF 50%, #E8F0FE 100%);
   }
 
   /* COSMIC CARD SYSTEM - High specificity overrides */
@@ -235,7 +241,204 @@
     margin-bottom: 0.75rem !important;
     display: block !important;
   }
-  
+
+  /* ============================================ */
+  /* LIGHT MODE COSMIC SYSTEM */
+  /* ============================================ */
+
+  /* Light Mode Cosmic Cards */
+  .light .cosmic-card,
+  .light .cosmic-card.cosmic-card {
+    background: rgba(255, 255, 255, 0.85) !important;
+    border: 1px solid rgba(91, 95, 238, 0.15) !important;
+    backdrop-filter: blur(20px) !important;
+    box-shadow:
+      0 4px 20px rgba(91, 95, 238, 0.08),
+      0 0 30px rgba(0, 212, 255, 0.05),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.8) !important;
+  }
+
+  .light .cosmic-card .cosmic-card-header h3,
+  .light .cosmic-card > div:first-child h3,
+  .light .cosmic-card > header h3 {
+    color: rgb(15 15 23) !important;
+  }
+
+  .light .cosmic-card .cosmic-card-header p,
+  .light .cosmic-card > div:first-child p,
+  .light .cosmic-card > header p {
+    color: rgb(75 85 99) !important;
+  }
+
+  /* Light Mode Cosmic Buttons */
+  .light .cosmic-button,
+  .light .cosmic-button.cosmic-button,
+  .light button.cosmic-button,
+  .light .cosmic-button:not([disabled]) {
+    background: linear-gradient(135deg, #5B5FEE 0%, #00D4FF 100%) !important;
+    box-shadow: 0 4px 15px rgba(91, 95, 238, 0.25), 0 0 20px rgba(0, 212, 255, 0.15) !important;
+    text-shadow: none !important;
+  }
+
+  .light .cosmic-button:hover,
+  .light .cosmic-button.cosmic-button:hover,
+  .light button.cosmic-button:hover {
+    box-shadow: 0 8px 25px rgba(91, 95, 238, 0.35), 0 0 30px rgba(0, 212, 255, 0.25) !important;
+    text-shadow: none !important;
+  }
+
+  /* Light Mode Glow Effects */
+  .light .glow-effect {
+    box-shadow: 0 0 20px rgba(91, 95, 238, 0.15);
+  }
+
+  .light .cosmic-glow {
+    box-shadow: 0 4px 20px rgba(91, 95, 238, 0.12), 0 0 30px rgba(0, 212, 255, 0.08);
+    border: 1px solid rgba(91, 95, 238, 0.2);
+  }
+
+  .light .cosmic-glow:hover {
+    box-shadow: 0 8px 30px rgba(91, 95, 238, 0.2), 0 0 40px rgba(0, 212, 255, 0.15);
+    border: 1px solid rgba(91, 95, 238, 0.35);
+  }
+
+  /* Light Mode Form Inputs in Cosmic Cards */
+  .light .cosmic-card input,
+  .light .cosmic-card textarea {
+    background: rgba(15, 15, 23, 0.04) !important;
+    border: 1px solid rgba(91, 95, 238, 0.2) !important;
+    color: rgb(15 15 23) !important;
+  }
+
+  .light .cosmic-card input:focus,
+  .light .cosmic-card textarea:focus {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border-color: rgb(91 95 238) !important;
+    box-shadow: 0 0 0 3px rgba(91, 95, 238, 0.1) !important;
+  }
+
+  .light .cosmic-card input::placeholder,
+  .light .cosmic-card textarea::placeholder {
+    color: rgba(107, 114, 128, 1) !important;
+  }
+
+  .light .cosmic-card label {
+    color: rgb(15 15 23) !important;
+  }
+
+  /* ============================================ */
+  /* LIGHT MODE ENHANCED BORDERS & VISIBILITY */
+  /* ============================================ */
+
+  /* Platform checkboxes - Enhanced blue borders */
+  .light .cosmic-card [class*="border-white/10"],
+  .light .cosmic-card [class*="border-white/20"] {
+    border-color: rgba(91, 95, 238, 0.25) !important;
+  }
+
+  /* Platform checkbox containers - Stronger borders */
+  .light .cosmic-card > div > form > div:has([class*="platform"]) > div > div {
+    border: 1.5px solid rgba(91, 95, 238, 0.25) !important;
+    background: rgba(240, 244, 255, 0.4) !important;
+  }
+
+  /* Platform checkbox containers on hover */
+  .light .cosmic-card > div > form > div:has([class*="platform"]) > div > div:hover {
+    border-color: rgba(91, 95, 238, 0.35) !important;
+    background: rgba(235, 240, 255, 0.6) !important;
+  }
+
+  /* Selected platform boxes */
+  .light .cosmic-card [class*="ring-accent"],
+  .light .cosmic-card [class*="border-accent"] {
+    border-color: rgba(91, 95, 238, 0.5) !important;
+    background: rgba(235, 240, 255, 0.7) !important;
+    box-shadow: 0 0 0 1px rgba(91, 95, 238, 0.3), 0 2px 8px rgba(91, 95, 238, 0.15) !important;
+  }
+
+  /* Checkbox borders themselves */
+  .light .cosmic-card [class*="w-5 h-5 rounded border-2"] {
+    border-color: rgba(91, 95, 238, 0.4) !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+  }
+
+  /* Selected checkboxes */
+  .light .cosmic-card [class*="bg-accent border-accent"] {
+    background-color: rgb(91, 95, 238) !important;
+    border-color: rgb(91, 95, 238) !important;
+  }
+
+  /* Input fields and textareas - Enhanced borders */
+  .light .cosmic-card input[type="text"],
+  .light .cosmic-card input[type="email"],
+  .light .cosmic-card input[type="password"],
+  .light .cosmic-card input[type="search"],
+  .light .cosmic-card input[type="file"],
+  .light .cosmic-card textarea {
+    border: 1.5px solid rgba(91, 95, 238, 0.25) !important;
+    background: rgba(255, 255, 255, 0.8) !important;
+  }
+
+  .light .cosmic-card input:hover,
+  .light .cosmic-card textarea:hover {
+    border-color: rgba(91, 95, 238, 0.35) !important;
+  }
+
+  /* Select/Combobox triggers - Enhanced borders */
+  .light .cosmic-card [role="combobox"],
+  .light .cosmic-card button[role="combobox"] {
+    border: 1.5px solid rgba(91, 95, 238, 0.25) !important;
+    background: rgba(255, 255, 255, 0.8) !important;
+  }
+
+  .light .cosmic-card [role="combobox"]:hover,
+  .light .cosmic-card button[role="combobox"]:hover {
+    border-color: rgba(91, 95, 238, 0.35) !important;
+    background: rgba(250, 251, 255, 0.9) !important;
+  }
+
+  /* Info boxes and notices - Subtle blue background */
+  .light .cosmic-card [class*="bg-blue-500/10"] {
+    background-color: rgba(91, 95, 238, 0.08) !important;
+    border: 1px solid rgba(91, 95, 238, 0.2) !important;
+  }
+
+  .light .cosmic-card [class*="border-blue-500/20"] {
+    border-color: rgba(91, 95, 238, 0.25) !important;
+  }
+
+  /* Credits display box */
+  .light .cosmic-card [class*="bg-white/5"] {
+    background: rgba(240, 244, 255, 0.5) !important;
+    border: 1.5px solid rgba(91, 95, 238, 0.2) !important;
+  }
+
+  /* File upload areas - Enhanced visibility */
+  .light .cosmic-card [class*="border-dashed"] {
+    border: 2px dashed rgba(91, 95, 238, 0.3) !important;
+    background: rgba(240, 244, 255, 0.3) !important;
+  }
+
+  .light .cosmic-card [class*="border-dashed"]:hover {
+    border-color: rgba(91, 95, 238, 0.45) !important;
+    background: rgba(235, 240, 255, 0.5) !important;
+  }
+
+  /* Media type selection buttons */
+  .light .cosmic-card button[class*="hover:bg-white/5"] {
+    border: 1px solid rgba(91, 95, 238, 0.15) !important;
+  }
+
+  .light .cosmic-card button[class*="hover:bg-white/5"]:hover {
+    background: rgba(235, 240, 255, 0.6) !important;
+    border-color: rgba(91, 95, 238, 0.25) !important;
+  }
+
+  /* Enhanced card inner sections */
+  .light .cosmic-card > div > div {
+    border-color: rgba(91, 95, 238, 0.15) !important;
+  }
+
   /* DROPDOWN MENU FIXES - Enhanced specificity to override yellow/brown colors */
   [data-radix-popper-content-wrapper],
   [data-radix-dropdown-menu-content],
@@ -312,6 +515,735 @@
   /* Override for toggle switch backgrounds */
   [data-state="unchecked"].bg-input {
     background-color: rgb(20 20 35) !important;
+  }
+
+  /* ============================================ */
+  /* COMPREHENSIVE LIGHT MODE DROPDOWN FIXES */
+  /* ============================================ */
+
+  /* Target ALL dropdown containers in light mode */
+  html.light [data-radix-popper-content-wrapper],
+  html.light [data-radix-dropdown-menu-content],
+  html.light [data-radix-select-content],
+  html.light [data-radix-select-viewport],
+  html.light [role="listbox"],
+  html.light [role="menu"],
+  html.light [role="combobox"],
+  html.light .dropdown-content,
+  html.light [data-state="open"][role="menu"],
+  html.light [data-state="open"][role="listbox"] {
+    background-color: rgb(255 255 255) !important;
+    border: 1px solid rgba(91, 95, 238, 0.2) !important;
+    color: rgb(15 15 23) !important;
+    box-shadow: 0 10px 40px rgba(91, 95, 238, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+  }
+
+  /* All dropdown items */
+  html.light [data-radix-select-item],
+  html.light [data-radix-dropdown-menu-item],
+  html.light [role="option"],
+  html.light [role="menuitem"] {
+    color: rgb(15 15 23) !important;
+    background-color: transparent !important;
+  }
+
+  /* Highlighted/hovered dropdown items */
+  html.light [data-radix-select-item][data-highlighted],
+  html.light [data-radix-dropdown-menu-item][data-highlighted],
+  html.light [role="option"]:hover,
+  html.light [role="menuitem"]:hover,
+  html.light [data-radix-select-item]:hover,
+  html.light [data-radix-dropdown-menu-item]:hover {
+    background-color: rgba(91, 95, 238, 0.1) !important;
+    color: rgb(15 15 23) !important;
+  }
+
+  /* Selected/checked dropdown items */
+  html.light [data-radix-select-item][data-state="checked"],
+  html.light [aria-selected="true"] {
+    background-color: rgba(91, 95, 238, 0.15) !important;
+    color: rgb(91, 95, 238) !important;
+    font-weight: 500 !important;
+  }
+
+  /* Dropdown triggers */
+  html.light [data-radix-select-trigger],
+  html.light [data-radix-dropdown-menu-trigger],
+  html.light button[role="combobox"] {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid rgba(91, 95, 238, 0.2) !important;
+    color: rgb(15 15 23) !important;
+  }
+
+  /* Dropdown trigger text and values */
+  html.light [data-radix-select-value],
+  html.light [data-radix-select-trigger] span,
+  html.light [data-radix-select-trigger] > span,
+  html.light button[role="combobox"] span {
+    color: rgb(15 15 23) !important;
+  }
+
+  /* Placeholder text in dropdowns */
+  html.light [data-radix-select-trigger][data-placeholder],
+  html.light [data-radix-select-trigger][data-placeholder] span {
+    color: rgba(107, 114, 128, 1) !important;
+  }
+
+  /* Dropdown icons */
+  html.light [data-radix-select-trigger] svg,
+  html.light [data-radix-dropdown-menu-trigger] svg {
+    color: rgb(107 114 128) !important;
+  }
+
+  /* Navigation dropdown specific */
+  html.light nav [data-radix-dropdown-menu-content],
+  html.light nav [role="menu"] {
+    background-color: rgb(255 255 255) !important;
+    border: 1px solid rgba(91, 95, 238, 0.2) !important;
+  }
+
+  html.light nav [data-radix-dropdown-menu-item],
+  html.light nav [role="menuitem"] {
+    color: rgb(15 15 23) !important;
+  }
+
+  html.light nav [data-radix-dropdown-menu-item]:hover,
+  html.light nav [data-radix-dropdown-menu-item][data-highlighted] {
+    background-color: rgba(91, 95, 238, 0.08) !important;
+  }
+
+  /* Collapsible content in navigation */
+  html.light [data-radix-collapsible-content] {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    border: 1px solid rgba(91, 95, 238, 0.15) !important;
+  }
+
+  /* Form select elements */
+  html.light select,
+  html.light select option {
+    background-color: rgb(255 255 255) !important;
+    color: rgb(15 15 23) !important;
+    border: 1px solid rgba(91, 95, 238, 0.2) !important;
+  }
+
+  /* Fix any lingering dropdown content */
+  html.light [data-radix-popper-content-wrapper] *,
+  html.light [data-radix-select-viewport] * {
+    color: rgb(15 15 23) !important;
+  }
+
+  /* Override for separator in dropdowns */
+  html.light [data-radix-dropdown-menu-separator],
+  html.light [role="separator"] {
+    background-color: rgba(91, 95, 238, 0.15) !important;
+  }
+
+  /* ============================================ */
+  /* ULTRA-SPECIFIC SHADCN SELECT OVERRIDES */
+  /* ============================================ */
+
+  /* Override hardcoded bg-gray-900 in SelectContent */
+  html.light [data-radix-select-content].bg-gray-900 {
+    background-color: rgb(255 255 255) !important;
+  }
+
+  /* Override hardcoded border-gray-700 */
+  html.light [data-radix-select-content].border-gray-700 {
+    border-color: rgba(91, 95, 238, 0.2) !important;
+  }
+
+  /* Override hardcoded text-white in SelectContent */
+  html.light [data-radix-select-content].text-white,
+  html.light [data-radix-select-content].text-white * {
+    color: rgb(15 15 23) !important;
+  }
+
+  /* Override SelectItem text-white */
+  html.light [data-radix-select-item].text-white {
+    color: rgb(15 15 23) !important;
+  }
+
+  /* Override SelectItem hover:bg-gray-700 */
+  html.light [data-radix-select-item]:hover,
+  html.light [data-radix-select-item].hover\:bg-gray-700:hover {
+    background-color: rgba(91, 95, 238, 0.1) !important;
+  }
+
+  /* Override SelectLabel text-white */
+  html.light [data-radix-select-label].text-white {
+    color: rgb(15 15 23) !important;
+  }
+
+  /* Override SelectTrigger text-white */
+  html.light button[data-radix-select-trigger].text-white,
+  html.light button[data-radix-select-trigger].text-white span {
+    color: rgb(15 15 23) !important;
+  }
+
+  /* Force all Portal content to light mode */
+  html.light [data-radix-select-portal],
+  html.light [data-radix-dropdown-menu-portal],
+  html.light [data-radix-popover-portal] {
+    color: rgb(15 15 23) !important;
+  }
+
+  /* Additional specificity for items */
+  html.light [data-radix-select-item] span {
+    color: rgb(15 15 23) !important;
+  }
+
+  /* Check mark icon */
+  html.light [data-radix-select-item-indicator] svg {
+    color: rgb(91, 95, 238) !important;
+  }
+
+  /* Scroll buttons */
+  html.light [data-radix-select-scroll-up-button],
+  html.light [data-radix-select-scroll-down-button] {
+    color: rgb(107 114 128) !important;
+  }
+
+  /* ============================================ */
+  /* DROPDOWN MENU COMPONENT OVERRIDES */
+  /* ============================================ */
+
+  /* DropdownMenuContent hardcoded colors */
+  html.light [data-radix-dropdown-menu-content].bg-gray-900 {
+    background-color: rgb(255 255 255) !important;
+  }
+
+  html.light [data-radix-dropdown-menu-content].border-gray-700 {
+    border-color: rgba(91, 95, 238, 0.2) !important;
+  }
+
+  html.light [data-radix-dropdown-menu-content].text-white {
+    color: rgb(15 15 23) !important;
+  }
+
+  /* DropdownMenuSubContent */
+  html.light [data-radix-dropdown-menu-sub-content].bg-gray-900 {
+    background-color: rgb(255 255 255) !important;
+  }
+
+  html.light [data-radix-dropdown-menu-sub-content].border-gray-700 {
+    border-color: rgba(91, 95, 238, 0.2) !important;
+  }
+
+  html.light [data-radix-dropdown-menu-sub-content].text-white {
+    color: rgb(15 15 23) !important;
+  }
+
+  /* DropdownMenuItem text-white and hover */
+  html.light [data-radix-dropdown-menu-item].text-white {
+    color: rgb(15 15 23) !important;
+  }
+
+  html.light [data-radix-dropdown-menu-item].hover\:bg-gray-700:hover {
+    background-color: rgba(91, 95, 238, 0.1) !important;
+  }
+
+  /* DropdownMenuCheckboxItem */
+  html.light [data-radix-dropdown-menu-checkbox-item].text-white {
+    color: rgb(15 15 23) !important;
+  }
+
+  html.light [data-radix-dropdown-menu-checkbox-item].hover\:bg-gray-700:hover {
+    background-color: rgba(91, 95, 238, 0.1) !important;
+  }
+
+  /* DropdownMenuRadioItem */
+  html.light [data-radix-dropdown-menu-radio-item].text-white {
+    color: rgb(15 15 23) !important;
+  }
+
+  html.light [data-radix-dropdown-menu-radio-item].hover\:bg-gray-700:hover {
+    background-color: rgba(91, 95, 238, 0.1) !important;
+  }
+
+  /* DropdownMenuLabel */
+  html.light [data-radix-dropdown-menu-label].text-white {
+    color: rgb(15 15 23) !important;
+  }
+
+  /* DropdownMenuSubTrigger */
+  html.light [data-radix-dropdown-menu-sub-trigger].text-white {
+    color: rgb(15 15 23) !important;
+  }
+
+  /* All dropdown menu item text */
+  html.light [data-radix-dropdown-menu-item] *,
+  html.light [data-radix-dropdown-menu-checkbox-item] *,
+  html.light [data-radix-dropdown-menu-radio-item] * {
+    color: rgb(15 15 23) !important;
+  }
+
+  /* Indicator icons */
+  html.light [data-radix-dropdown-menu-item-indicator] svg {
+    color: rgb(91, 95, 238) !important;
+  }
+
+  /* ============================================ */
+  /* MEDIA STUDIO & POPOVER FIXES */
+  /* ============================================ */
+
+  /* Fix Popover backgrounds (Safari green/yellow issue) */
+  html.light [data-radix-popover-content],
+  html.light [data-radix-popover-content].bg-card {
+    background-color: rgb(255 255 255) !important;
+    border: 1px solid rgba(91, 95, 238, 0.2) !important;
+    color: rgb(15 15 23) !important;
+  }
+
+  /* Fix popover text colors */
+  html.light [data-radix-popover-content] h3,
+  html.light [data-radix-popover-content] label,
+  html.light [data-radix-popover-content] span,
+  html.light [data-radix-popover-content] p {
+    color: rgb(15 15 23) !important;
+  }
+
+  html.light [data-radix-popover-content] .text-white {
+    color: rgb(15 15 23) !important;
+  }
+
+  html.light [data-radix-popover-content] .text-gray-300,
+  html.light [data-radix-popover-content] .text-gray-400 {
+    color: rgb(107 114 128) !important;
+  }
+
+  /* Fix Badge component */
+  html.light [data-radix-popover-content] .bg-accent {
+    background-color: rgb(0 212 255) !important;
+  }
+
+  /* Fix SelectContent inside popover */
+  html.light [data-radix-popover-content] [data-radix-select-content] {
+    background-color: rgb(255 255 255) !important;
+  }
+
+  /* Fix Input backgrounds in popovers */
+  html.light [data-radix-popover-content] input {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid rgba(91, 95, 238, 0.2) !important;
+    color: rgb(15 15 23) !important;
+  }
+
+  /* Fix Media Studio specific elements */
+  html.light .bg-card.border-primary\/20 {
+    background-color: rgb(255 255 255) !important;
+    border-color: rgba(91, 95, 238, 0.2) !important;
+  }
+
+  /* Fix Media Studio SelectContent with inline styles */
+  html.light [class*="SelectContent"].bg-card {
+    background-color: rgb(255 255 255) !important;
+  }
+
+  /* Fix Media Studio SelectItem with inline styles */
+  html.light [class*="SelectItem"].text-white {
+    color: rgb(15 15 23) !important;
+  }
+
+  html.light [class*="SelectItem"].hover\:bg-white\/10:hover {
+    background-color: rgba(91, 95, 238, 0.1) !important;
+  }
+
+  /* Fix Label component */
+  html.light [data-radix-label],
+  html.light label.text-gray-300,
+  html.light label.text-sm.text-gray-300 {
+    color: rgb(75 85 99) !important;
+  }
+
+  /* Fix Safari-specific background rendering issues */
+  @supports (-webkit-appearance: none) {
+    html.light [data-radix-popover-content],
+    html.light [data-radix-select-content],
+    html.light [data-radix-dropdown-menu-content] {
+      background-color: rgb(255 255 255) !important;
+      background-image: none !important;
+    }
+  }
+
+  /* Ensure all card backgrounds are proper */
+  html.light .bg-card {
+    background-color: rgb(255 255 255) !important;
+  }
+
+  html.light .bg-background\/50 {
+    background-color: rgba(255, 255, 255, 0.5) !important;
+  }
+
+  /* Fix border colors */
+  html.light .border-primary\/20 {
+    border-color: rgba(91, 95, 238, 0.2) !important;
+  }
+
+  html.light .border-primary\/30 {
+    border-color: rgba(91, 95, 238, 0.3) !important;
+  }
+
+  /* ============================================ */
+  /* FIX SAFARI YELLOW/GREEN BACKGROUND BUG */
+  /* ============================================ */
+
+  /* Force proper background colors in Safari */
+  html.light .min-h-screen,
+  html.light main,
+  html.light div[class*="min-h-screen"] {
+    background-color: transparent !important;
+  }
+
+  /* Override any gradient backgrounds that use CSS variables */
+  html.light [class*="bg-gradient-to"] {
+    background-image: none !important;
+    background-color: transparent !important;
+  }
+
+  /* Ensure page wrapper has light gradient */
+  html.light body > div,
+  html.light #root,
+  html.light [class*="min-h-screen"][class*="bg-gradient"] {
+    background: linear-gradient(135deg, #FAFBFC 0%, #F0F4FF 50%, #E8F0FE 100%) !important;
+    background-attachment: fixed !important;
+  }
+
+  /* Fix card backgrounds specifically */
+  html.light .cosmic-card,
+  html.light [class*="Card"] {
+    background: rgba(255, 255, 255, 0.85) !important;
+  }
+
+  /* Safari-specific background fixes */
+  @supports (-webkit-appearance: none) {
+    html.light {
+      background: linear-gradient(135deg, #FAFBFC 0%, #F0F4FF 50%, #E8F0FE 100%) !important;
+      background-attachment: fixed !important;
+    }
+
+    html.light body {
+      background: linear-gradient(135deg, #FAFBFC 0%, #F0F4FF 50%, #E8F0FE 100%) !important;
+      background-attachment: fixed !important;
+    }
+
+    html.light * {
+      /* Remove any yellow/green tints */
+      -webkit-font-smoothing: antialiased;
+    }
+  }
+
+  /* ============================================ */
+  /* NUCLEAR OPTION: OVERRIDE ALL YELLOW/GREEN BACKGROUNDS */
+  /* ============================================ */
+
+  /* Override ALL possible background color utilities */
+  html.light .bg-background {
+    background-color: rgb(250 251 252) !important;
+  }
+
+  html.light .bg-card {
+    background-color: rgb(255 255 255) !important;
+  }
+
+  html.light .bg-popover {
+    background-color: rgb(255 255 255) !important;
+  }
+
+  html.light .bg-muted {
+    background-color: rgb(245 245 250) !important;
+  }
+
+  html.light .bg-secondary {
+    background-color: rgb(245 245 250) !important;
+  }
+
+  /* Override accent backgrounds */
+  html.light .bg-accent {
+    background-color: rgb(0 212 255) !important;
+  }
+
+  html.light .bg-accent\/20 {
+    background-color: rgba(0, 212, 255, 0.2) !important;
+  }
+
+  /* Override primary backgrounds */
+  html.light .bg-primary {
+    background-color: rgb(91 95 238) !important;
+  }
+
+  html.light .bg-primary\/30 {
+    background-color: rgba(91, 95, 238, 0.3) !important;
+  }
+
+  html.light .bg-primary\/20 {
+    background-color: rgba(91, 95, 238, 0.2) !important;
+  }
+
+  /* Fix opacity variants */
+  html.light .bg-background\/50 {
+    background-color: rgba(250, 251, 252, 0.5) !important;
+  }
+
+  html.light .bg-background\/80 {
+    background-color: rgba(250, 251, 252, 0.8) !important;
+  }
+
+  html.light .bg-background\/95 {
+    background-color: rgba(250, 251, 252, 0.95) !important;
+  }
+
+  /* Fix white backgrounds with opacity */
+  html.light .bg-white\/10 {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+  }
+
+  html.light .bg-white\/50 {
+    background-color: rgba(255, 255, 255, 0.5) !important;
+  }
+
+  /* Override any lingering green/yellow */
+  html.light .bg-green-600\/20 {
+    background-color: rgba(34, 197, 94, 0.2) !important;
+  }
+
+  html.light .bg-yellow-400\/20,
+  html.light .bg-yellow-500\/20 {
+    background-color: rgba(250, 204, 21, 0.2) !important;
+  }
+
+  /* Fix reference image upload area */
+  html.light [class*="upload"] {
+    background-color: rgba(250, 251, 252, 0.5) !important;
+  }
+
+  /* Override textarea backgrounds */
+  html.light textarea,
+  html.light textarea.bg-background\/50 {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid rgba(91, 95, 238, 0.2) !important;
+    color: rgb(15 15 23) !important;
+  }
+
+  html.light textarea::placeholder {
+    color: rgb(107 114 128) !important;
+  }
+
+  /* Fix input backgrounds */
+  html.light input.bg-background\/50 {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid rgba(91, 95, 238, 0.2) !important;
+    color: rgb(15 15 23) !important;
+  }
+
+  /* Fix any div with background utilities */
+  html.light div[class*="bg-background"] {
+    background-color: transparent !important;
+  }
+
+  /* Ensure cosmic cards stay white */
+  html.light .cosmic-card,
+  html.light .cosmic-card.cosmic-card {
+    background: rgba(255, 255, 255, 0.85) !important;
+  }
+
+  /* Fix button backgrounds */
+  html.light button:not(.cosmic-button):not([class*="bg-primary"]):not([class*="bg-accent"]) {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+  }
+
+  /* ============================================ */
+  /* FEATURES PAGE & MARKETING PAGES FIXES */
+  /* ============================================ */
+
+  /* Override cosmic gradient background */
+  html.light .bg-cosmic-gradient {
+    background: linear-gradient(135deg, #FAFBFC 0%, #F0F4FF 50%, #E8F0FE 100%) !important;
+  }
+
+  /* Fix all gray backgrounds to light equivalents */
+  html.light .bg-gray-900 {
+    background-color: rgba(255, 255, 255, 0.98) !important;
+  }
+
+  html.light .bg-gray-800 {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+  }
+
+  html.light .bg-gray-700 {
+    background-color: rgba(229, 231, 235, 1) !important;
+  }
+
+  html.light .bg-gray-800\/50 {
+    background-color: rgba(255, 255, 255, 0.5) !important;
+  }
+
+  html.light .bg-gray-900\/80 {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+  }
+
+  /* Keep green success colors */
+  html.light .text-green-400 {
+    color: rgb(34 197 94) !important;
+  }
+
+  html.light .text-green-300 {
+    color: rgb(74 222 128) !important;
+  }
+
+  html.light .text-green-500 {
+    color: rgb(34 197 94) !important;
+  }
+
+  html.light .bg-green-500,
+  html.light .from-green-500,
+  html.light .to-green-500 {
+    /* Keep green as-is for success states */
+  }
+
+  /* Fix emerald colors */
+  html.light .to-emerald-600,
+  html.light .from-emerald-600 {
+    /* Keep emerald as-is */
+  }
+
+  /* ============================================ */
+  /* NAVIGATION DROPDOWN & HOVER STATES FIXES */
+  /* ============================================ */
+
+  /* Fix navigation button (Home trigger, etc.) */
+  html.light nav button[data-radix-collapsible-trigger] {
+    color: rgb(75 85 99) !important;
+    background-color: transparent !important;
+  }
+
+  html.light nav button[data-radix-collapsible-trigger]:hover {
+    color: rgb(91, 95, 238) !important;
+    background-color: rgba(91, 95, 238, 0.08) !important;
+  }
+
+  html.light nav button[data-radix-collapsible-trigger][data-state="open"] {
+    color: rgb(91, 95, 238) !important;
+    background-color: rgba(91, 95, 238, 0.12) !important;
+  }
+
+  /* Fix hardcoded navigation text classes */
+  html.light nav button.text-gray-300,
+  html.light nav .text-gray-300 {
+    color: rgb(75 85 99) !important;
+  }
+
+  html.light nav .hover\:text-white:hover {
+    color: rgb(91, 95, 238) !important;
+  }
+
+  html.light nav .hover\:bg-white\/10:hover {
+    background-color: rgba(91, 95, 238, 0.08) !important;
+  }
+
+  /* Fix navigation collapsible content background */
+  html.light nav [data-radix-collapsible-content] {
+    background-color: rgba(255, 255, 255, 0.98) !important;
+    border: 1px solid rgba(91, 95, 238, 0.15) !important;
+    box-shadow: 0 4px 12px rgba(91, 95, 238, 0.1) !important;
+  }
+
+  /* Fix navigation dropdown items */
+  html.light nav [data-radix-collapsible-content] a {
+    color: rgb(15 15 23) !important;
+    background-color: transparent !important;
+  }
+
+  /* Fix navigation dropdown hover - NO CYAN! */
+  html.light nav [data-radix-collapsible-content] a:hover,
+  html.light nav a:hover:not(.cosmic-button) {
+    background-color: rgba(91, 95, 238, 0.08) !important;
+    color: rgb(91, 95, 238) !important;
+  }
+
+  /* Override any bg-accent on hover in navigation */
+  html.light nav .hover\:bg-accent:hover,
+  html.light nav [class*="hover:bg-accent"]:hover {
+    background-color: rgba(91, 95, 238, 0.08) !important;
+  }
+
+  /* Fix navigation active/selected states */
+  html.light nav [aria-current="page"],
+  html.light nav .active {
+    background-color: rgba(91, 95, 238, 0.12) !important;
+    color: rgb(91, 95, 238) !important;
+  }
+
+  /* ============================================ */
+  /* SETTINGS & LIBRARY PAGE FIXES */
+  /* ============================================ */
+
+  /* Fix table view / grid view toggle buttons */
+  html.light button[aria-pressed="true"],
+  html.light button[data-state="on"] {
+    background-color: rgba(91, 95, 238, 0.15) !important;
+    color: rgb(91, 95, 238) !important;
+  }
+
+  html.light button[aria-pressed="false"],
+  html.light button[data-state="off"] {
+    background-color: rgba(255, 255, 255, 0.5) !important;
+    color: rgb(107 114 128) !important;
+  }
+
+  /* Fix settings navigation sidebar */
+  html.light aside nav a,
+  html.light [class*="sidebar"] nav a {
+    color: rgb(75 85 99) !important;
+  }
+
+  html.light aside nav a:hover,
+  html.light [class*="sidebar"] nav a:hover {
+    background-color: rgba(91, 95, 238, 0.08) !important;
+    color: rgb(91, 95, 238) !important;
+  }
+
+  html.light aside nav a[aria-current="page"],
+  html.light [class*="sidebar"] nav a[aria-current="page"] {
+    background-color: rgba(91, 95, 238, 0.12) !important;
+    color: rgb(91, 95, 238) !important;
+    border-left: 3px solid rgb(91, 95, 238) !important;
+  }
+
+  /* Fix tabs component */
+  html.light [role="tablist"] button {
+    color: rgb(107 114 128) !important;
+  }
+
+  html.light [role="tablist"] button[data-state="active"],
+  html.light [role="tablist"] button[aria-selected="true"] {
+    color: rgb(91, 95, 238) !important;
+    border-bottom: 2px solid rgb(91, 95, 238) !important;
+  }
+
+  /* Fix any cyan/accent hover states globally */
+  html.light .hover\:bg-accent:hover,
+  html.light [class*="hover:bg-accent"]:hover {
+    background-color: rgba(91, 95, 238, 0.1) !important;
+  }
+
+  html.light .hover\:text-accent:hover,
+  html.light [class*="hover:text-accent"]:hover {
+    color: rgb(91, 95, 238) !important;
+  }
+
+  /* Fix toggle group items */
+  html.light [data-radix-toggle-group-item][data-state="on"] {
+    background-color: rgba(91, 95, 238, 0.15) !important;
+    color: rgb(91, 95, 238) !important;
+  }
+
+  html.light [data-radix-toggle-group-item][data-state="off"] {
+    background-color: transparent !important;
+    color: rgb(107 114 128) !important;
+  }
+
+  html.light [data-radix-toggle-group-item]:hover {
+    background-color: rgba(91, 95, 238, 0.08) !important;
   }
 
   /* RADIX TOAST STYLING - Fixed to match cosmic theme */
@@ -519,6 +1451,49 @@
 
   [data-sonner-toast] [data-description] {
     color: rgba(255, 255, 255, 0.9) !important;
+  }
+
+  /* Light Mode Toast Styling */
+  .light [data-radix-toast-root],
+  .light [data-sonner-toast] {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border: 1px solid rgba(91, 95, 238, 0.2) !important;
+    color: rgb(15 15 23) !important;
+    backdrop-filter: blur(20px) !important;
+    box-shadow: 0 10px 25px rgba(91, 95, 238, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+  }
+
+  .light [data-radix-toast-title],
+  .light [data-sonner-toast] [data-title] {
+    color: rgb(15 15 23) !important;
+  }
+
+  .light [data-radix-toast-description],
+  .light [data-sonner-toast] [data-description] {
+    color: rgb(75 85 99) !important;
+  }
+
+  .light [data-radix-toast-close] {
+    color: rgb(107 114 128) !important;
+  }
+
+  .light [data-radix-toast-close]:hover {
+    color: rgb(15 15 23) !important;
+    background: rgba(15, 15, 23, 0.05) !important;
+  }
+
+  .light [data-radix-toast-root].toast-success,
+  .light [data-sonner-toast][data-type="success"] {
+    background: rgba(240, 253, 244, 0.98) !important;
+    border: 1px solid rgba(34, 197, 94, 0.3) !important;
+    box-shadow: 0 10px 25px rgba(34, 197, 94, 0.15) !important;
+  }
+
+  .light [data-radix-toast-root].toast-error,
+  .light [data-sonner-toast][data-type="error"] {
+    background: rgba(254, 242, 242, 0.98) !important;
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+    box-shadow: 0 10px 25px rgba(239, 68, 68, 0.15) !important;
   }
 
   /* Tab styling fixes for proper alignment */
@@ -854,6 +1829,18 @@
     backdrop-filter: blur(10px) !important;
   }
 
+  /* Light Mode Tooltips */
+  .light [data-radix-tooltip-content] {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.98) 0%,
+      rgba(250, 250, 255, 0.98) 100%
+    ) !important;
+    border: 1px solid rgba(91, 95, 238, 0.2) !important;
+    box-shadow: 0 4px 20px rgba(91, 95, 238, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+    color: rgb(15 15 23) !important;
+  }
+
   @keyframes tooltip-fade-in {
     from {
       opacity: 0;
@@ -871,6 +1858,13 @@
     background: rgba(0, 0, 0, 0.85) !important;
     backdrop-filter: blur(8px) !important;
     animation: overlay-fade-in 0.3s ease !important;
+  }
+
+  /* Light Mode Dialog Backdrop */
+  .light [data-radix-dialog-overlay],
+  .light [data-radix-alert-dialog-overlay] {
+    background: rgba(15, 15, 23, 0.5) !important;
+    backdrop-filter: blur(12px) !important;
   }
 
   @keyframes overlay-fade-in {
@@ -1001,5 +1995,393 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
     }
+  }
+
+  /* ============================================ */
+  /* THEME TOGGLE BUTTON STYLING */
+  /* ============================================ */
+
+  .theme-toggle-button {
+    transition: all 0.3s ease;
+  }
+
+  /* Dark mode toggle (shows sun icon) */
+  .theme-toggle-button:hover {
+    background: rgba(91, 95, 238, 0.1);
+    color: rgb(91, 95, 238);
+  }
+
+  /* Light mode toggle */
+  .light .theme-toggle-button {
+    color: rgb(91, 95, 238);
+  }
+
+  .light .theme-toggle-button:hover {
+    background: rgba(91, 95, 238, 0.1);
+    color: rgb(91, 95, 238);
+  }
+
+  /* ============================================ */
+  /* NAVIGATION LIGHT MODE FIXES */
+  /* ============================================ */
+
+  /* Navigation text colors in light mode */
+  .light nav {
+    background: rgba(255, 255, 255, 0.8) !important;
+    border-bottom: 1px solid rgba(91, 95, 238, 0.15) !important;
+  }
+
+  .light nav a,
+  .light nav button:not(.cosmic-button):not([class*="bg-"]) {
+    color: rgb(75 85 99) !important;
+  }
+
+  .light nav a:hover,
+  .light nav button:not(.cosmic-button):not([class*="bg-"]):hover {
+    color: rgb(91, 95, 238) !important;
+    background: rgba(91, 95, 238, 0.05) !important;
+  }
+
+  .light nav .text-white {
+    color: rgb(15 15 23) !important;
+  }
+
+  .light nav .text-gray-300,
+  .light nav .text-gray-400 {
+    color: rgb(107 114 128) !important;
+  }
+
+  /* ============================================ */
+  /* LIGHT MODE MEDIA STUDIO STYLES */
+  /* ============================================ */
+
+  .light .media-studio-glass {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.9) 0%,
+      rgba(240, 244, 255, 0.85) 50%,
+      rgba(255, 255, 255, 0.9) 100%
+    ) !important;
+    border: 1px solid rgba(91, 95, 238, 0.15) !important;
+    box-shadow:
+      0 8px 32px 0 rgba(91, 95, 238, 0.08),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.9),
+      0 0 40px 0 rgba(0, 212, 255, 0.05) !important;
+  }
+
+  .light .media-studio-sidebar {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.98) 0%,
+      rgba(250, 251, 255, 0.95) 50%,
+      rgba(255, 255, 255, 0.98) 100%
+    ) !important;
+    border-right: 1px solid rgba(91, 95, 238, 0.15) !important;
+    box-shadow:
+      4px 0 20px rgba(91, 95, 238, 0.05),
+      inset -1px 0 0 rgba(91, 95, 238, 0.1) !important;
+  }
+
+  .light .media-card-gradient {
+    background: linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.95) 0%,
+      rgba(240, 244, 255, 0.9) 50%,
+      rgba(255, 255, 255, 0.95) 100%
+    ) !important;
+    border: 1px solid rgba(91, 95, 238, 0.12) !important;
+  }
+
+  .light .media-card-gradient:hover {
+    background: linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.98) 0%,
+      rgba(235, 240, 255, 0.95) 50%,
+      rgba(255, 255, 255, 0.98) 100%
+    ) !important;
+    border: 1px solid rgba(91, 95, 238, 0.25) !important;
+    box-shadow:
+      0 8px 30px rgba(91, 95, 238, 0.12),
+      0 0 40px rgba(0, 212, 255, 0.08) !important;
+  }
+
+  .light .upload-zone-active {
+    background: linear-gradient(
+      135deg,
+      rgba(0, 212, 255, 0.08) 0%,
+      rgba(91, 95, 238, 0.08) 100%
+    ) !important;
+    border: 2px dashed rgba(0, 212, 255, 0.4) !important;
+    box-shadow:
+      0 0 30px rgba(0, 212, 255, 0.15),
+      inset 0 0 20px rgba(0, 212, 255, 0.05) !important;
+  }
+
+  /* Light mode scrollbar */
+  .light .media-library-scroll::-webkit-scrollbar-track {
+    background: rgba(91, 95, 238, 0.03);
+  }
+
+  .light .media-library-scroll::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(91, 95, 238, 0.4), rgba(0, 212, 255, 0.4));
+  }
+
+  .light .media-library-scroll::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(91, 95, 238, 0.6), rgba(0, 212, 255, 0.6));
+  }
+
+  /* Light mode skeleton loading */
+  .light .skeleton-loading {
+    background: linear-gradient(
+      90deg,
+      rgba(91, 95, 238, 0.03) 0%,
+      rgba(0, 212, 255, 0.06) 50%,
+      rgba(91, 95, 238, 0.03) 100%
+    );
+  }
+
+  /* Light mode focus visible */
+  .light *:focus-visible {
+    outline: 2px solid rgba(91, 95, 238, 0.4);
+  }
+
+  /* Light mode input focus glow */
+  .light input:focus,
+  .light textarea:focus,
+  .light select:focus {
+    box-shadow:
+      0 0 0 3px rgba(91, 95, 238, 0.1),
+      0 0 20px rgba(91, 95, 238, 0.15) !important;
+  }
+
+  /* ============================================ */
+  /* THEME-AWARE UTILITY CLASSES */
+  /* ============================================ */
+
+  /* Text Colors - Auto-adjusting */
+  .text-theme-primary {
+    color: white;
+  }
+
+  .light .text-theme-primary {
+    color: rgb(15 15 23);
+  }
+
+  .text-theme-secondary {
+    color: rgb(209 213 219);
+  }
+
+  .light .text-theme-secondary {
+    color: rgb(107 114 128);
+  }
+
+  .text-theme-muted {
+    color: rgb(156 163 175);
+  }
+
+  .light .text-theme-muted {
+    color: rgb(107 114 128);
+  }
+
+  /* Heading specific */
+  .text-theme-heading {
+    color: white !important;
+  }
+
+  .light .text-theme-heading {
+    color: rgb(15 15 23) !important;
+  }
+
+  /* Override hardcoded white text */
+  .light .text-white:not(.cosmic-button):not(.cosmic-button *) {
+    color: rgb(15 15 23) !important;
+  }
+
+  /* Override hardcoded gray text classes */
+  .light .text-gray-300 {
+    color: rgb(107 114 128) !important;
+  }
+
+  .light .text-gray-400 {
+    color: rgb(107 114 128) !important;
+  }
+
+  .light .text-gray-200 {
+    color: rgb(156 163 175) !important;
+  }
+
+  /* Keep certain whites as-is (for icons on colored backgrounds) */
+  .light .bg-primary .text-white,
+  .light .bg-accent .text-white,
+  .light .cosmic-button .text-white,
+  .light [class*="bg-gradient"] .text-white {
+    color: white !important;
+  }
+
+  /* Icon colors */
+  .light svg:not(.cosmic-button svg):not([class*="bg-"] svg) {
+    color: inherit;
+  }
+
+  /* Transparent backgrounds for hero sections */
+  .light section {
+    background: transparent;
+  }
+
+  /* Fix any lingering white text in hero/feature sections */
+  .light h1, .light h2, .light h3, .light h4, .light h5, .light h6 {
+    color: rgb(15 15 23);
+  }
+
+  .light p {
+    color: rgb(55 65 81);
+  }
+
+  /* But keep white text on colored/gradient backgrounds */
+  .light .bg-primary h1,
+  .light .bg-primary h2,
+  .light .bg-primary h3,
+  .light .bg-primary h4,
+  .light .bg-primary h5,
+  .light .bg-primary h6,
+  .light .bg-primary p,
+  .light .bg-accent h1,
+  .light .bg-accent h2,
+  .light .bg-accent h3,
+  .light .bg-accent h4,
+  .light .bg-accent h5,
+  .light .bg-accent h6,
+  .light .bg-accent p,
+  .light [class*="bg-gradient"] h1,
+  .light [class*="bg-gradient"] h2,
+  .light [class*="bg-gradient"] h3,
+  .light [class*="bg-gradient"] h4,
+  .light [class*="bg-gradient"] h5,
+  .light [class*="bg-gradient"] h6,
+  .light [class*="bg-gradient"] p {
+    color: white;
+  }
+
+  /* Specific overrides for sections with cosmic/gradient backgrounds */
+  .light section[class*="gradient"] *,
+  .light div[class*="cosmic"] * {
+    /* Let cosmic elements handle their own colors */
+  }
+
+  /* Fix button text on non-cosmic buttons */
+  .light button:not(.cosmic-button) {
+    color: inherit;
+  }
+
+  /* Fix anchor tags */
+  .light a {
+    color: rgb(91, 95, 238);
+  }
+
+  .light a:hover {
+    color: rgb(71, 75, 208);
+  }
+
+  /* Special case: keep icon colors on colored backgrounds */
+  .light [class*="bg-["] .text-white,
+  .light [class*="from-["] .text-white,
+  .light [class*="to-["] .text-white {
+    color: white !important;
+  }
+
+  /* ============================================ */
+  /* AGGRESSIVE LIGHT MODE TEXT FIXES */
+  /* ============================================ */
+
+  /* Override ALL white text that's not on special backgrounds */
+  .light span.text-white:not(.cosmic-button span):not([class*="bg-gradient"] span):not([class*="bg-primary"] span):not([class*="bg-accent"] span):not([class*="bg-["] span):not([class*="from-["] span),
+  .light div.text-white:not(.cosmic-button):not(.cosmic-button div):not([class*="bg-gradient"]):not([class*="bg-primary"]):not([class*="bg-accent"]):not([class*="bg-["]):not([class*="from-["]) {
+    color: rgb(15 15 23) !important;
+  }
+
+  /* Override specific card content */
+  .light .cosmic-card .text-white:not([class*="bg-gradient"] *):not([class*="bg-primary"] *):not([class*="bg-accent"] *) {
+    color: rgb(15 15 23) !important;
+  }
+
+  .light .cosmic-card .text-gray-300,
+  .light .cosmic-card .text-gray-200,
+  .light .cosmic-card .text-gray-400 {
+    color: rgb(107 114 128) !important;
+  }
+
+  /* Fix section backgrounds that might interfere */
+  .light section[class*="bg-gradient"] {
+    /* Keep gradient backgrounds as-is */
+  }
+
+  /* Fix Footer specific */
+  .light footer h3,
+  .light footer h4 {
+    color: rgb(15 15 23) !important;
+  }
+
+  .light footer p,
+  .light footer li,
+  .light footer a {
+    color: rgb(107 114 128) !important;
+  }
+
+  .light footer a:hover {
+    color: rgb(91, 95, 238) !important;
+  }
+
+  .light footer {
+    background: rgba(255, 255, 255, 0.5) !important;
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(91, 95, 238, 0.15) !important;
+  }
+
+  /* Override CardContent text colors */
+  .light .Card CardContent .text-white,
+  .light [class*="Card"] [class*="Content"] .text-white:not([class*="bg-gradient"] *):not([class*="bg-primary"] *):not([class*="bg-accent"] *) {
+    color: rgb(15 15 23) !important;
+  }
+
+  /* Hero Section specifics - target by structure */
+  .light section h1 span.text-white:not(.text-cosmic):not([class*="bg-"]),
+  .light section h2 span.text-white:not(.text-cosmic):not([class*="bg-"]),
+  .light section h3 span.text-white:not(.text-cosmic):not([class*="bg-"]) {
+    color: rgb(15 15 23) !important;
+  }
+
+  /* Reviews and testimonial cards */
+  .light .review-card,
+  .light [class*="review"],
+  .light [class*="testimonial"] {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid rgba(91, 95, 238, 0.15) !important;
+  }
+
+  .light .review-card *,
+  .light [class*="review"] *,
+  .light [class*="testimonial"] * {
+    color: rgb(15 15 23) !important;
+  }
+
+  /* Process steps cards */
+  .light .cosmic-card .text-2xl.font-bold.text-white {
+    color: rgb(91, 95, 238) !important;
+  }
+
+  /* Keep gradient icons white */
+  .light [class*="bg-gradient-to"] .text-white {
+    color: white !important;
+  }
+
+  /* Roadmap and timeline elements */
+  .light [class*="roadmap"] .text-white:not([class*="bg-gradient"] *),
+  .light [class*="timeline"] .text-white:not([class*="bg-gradient"] *) {
+    color: rgb(15 15 23) !important;
+  }
+
+  .light [class*="roadmap"] .text-gray-300,
+  .light [class*="timeline"] .text-gray-300 {
+    color: rgb(107 114 128) !important;
   }
 }

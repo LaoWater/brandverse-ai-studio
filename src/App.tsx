@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CompanyProvider } from "@/contexts/CompanyContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import Footer from "@/components/Footer";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
@@ -91,9 +92,10 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <AuthProvider>
-        <CompanyProvider>
-          <BrowserRouter>
+      <ThemeProvider>
+        <AuthProvider>
+          <CompanyProvider>
+            <BrowserRouter>
             <ScrollManager />
             <div className="flex flex-col min-h-screen">
               <Routes>
@@ -196,9 +198,10 @@ const App = () => (
               <ChatButton />
               <Footer />
             </div>
-          </BrowserRouter>
-        </CompanyProvider>
-      </AuthProvider>
+            </BrowserRouter>
+          </CompanyProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

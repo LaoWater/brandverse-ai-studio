@@ -21,6 +21,7 @@ import { useAdmin } from "@/hooks/useAdmin";
 import CreatorsMultiverseLogo from "@/components/CreatorsMultiverseLogo";
 import CreditsDisplay from "@/components/CreditsDisplay";
 import CreditsBar from "@/components/CreditsBar";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -127,6 +128,9 @@ const Navigation = () => {
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
+            {/* Theme Toggle - Always visible */}
+            <ThemeToggle />
+
             {user ? (
               <div className="flex items-center space-x-4">
                 {/* Credits Display for Admins */}
@@ -199,7 +203,10 @@ const Navigation = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center space-x-2">
+            {/* Theme Toggle - Mobile */}
+            <ThemeToggle />
+
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="text-white p-2"
