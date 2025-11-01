@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ChevronDown, User, Settings, LogOut, CreditCard, Sparkles } from "lucide-react"; 
@@ -10,11 +10,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -30,6 +25,24 @@ const Navigation = () => {
   const { selectedCompany } = useCompany();
   const { isAdmin } = useAdmin();
   const navigate = useNavigate();
+  const homeMenuRef = useRef<HTMLDivElement>(null);
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (homeMenuRef.current && !homeMenuRef.current.contains(event.target as Node)) {
+        setIsHomeMenuOpen(false);
+      }
+    };
+
+    if (isHomeMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isHomeMenuOpen]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -73,32 +86,30 @@ const Navigation = () => {
             {user ? (
               <>
                 {/* Collapsible Home Menu for authenticated users */}
-                <div className="relative">
-                  <Collapsible open={isHomeMenuOpen} onOpenChange={setIsHomeMenuOpen}>
-                    <CollapsibleTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        className="text-gray-300 hover:text-white transition-colors flex items-center gap-1"
-                      >
-                        Home
-                        <ChevronDown className={`w-4 h-4 transition-transform ${isHomeMenuOpen ? 'rotate-180' : ''}`} />
-                      </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="absolute top-full left-0 mt-2 w-48 bg-card border border-primary/20 rounded-md shadow-lg z-50">
+                <div className="relative" ref={homeMenuRef}>
+                  <button
+                    onClick={() => setIsHomeMenuOpen(!isHomeMenuOpen)}
+                    className="text-gray-300 hover:text-white transition-colors flex items-center gap-1"
+                  >
+                    Home
+                    <ChevronDown className={`w-4 h-4 transition-transform ${isHomeMenuOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {isHomeMenuOpen && (
+                    <div className="absolute top-full left-0 mt-2 w-48 shadow-lg z-50 nav-dropdown-content">
                       <div className="py-2">
                         {publicNavItems.map((item) => (
                           <Link
                             key={item.name}
                             to={item.href}
-                            className="block px-4 py-2 text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
+                            className="block px-4 py-2 text-gray-300 hover:text-white hover:bg-white/10 transition-colors nav-dropdown-item"
                             onClick={() => setIsHomeMenuOpen(false)}
                           >
                             {item.name}
                           </Link>
                         ))}
                       </div>
-                    </CollapsibleContent>
-                  </Collapsible>
+                    </div>
+                  )}
                 </div>
 
                 {/* Main authenticated navigation */}
@@ -235,29 +246,32 @@ const Navigation = () => {
                   </div>
                   
                   {/* Mobile Home Menu */}
-                  <Collapsible>
-                    <CollapsibleTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        className="text-gray-300 hover:text-white transition-colors w-full justify-between"
-                      >
-                        Home
-                        <ChevronDown className="w-4 h-4" />
-                      </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="ml-4 mt-2 space-y-2">
-                      {publicNavItems.map((item) => (
-                        <Link
-                          key={item.name}
-                          to={item.href}
-                          className="block text-gray-300 hover:text-white transition-colors py-2"
-                          onClick={() => setIsOpen(false)}
-                        >
-                          {item.name}
-                        </Link>
-                      ))}
-                    </CollapsibleContent>
-                  </Collapsible>
+                  <div>
+                    <button
+                      onClick={() => setIsHomeMenuOpen(!isHomeMenuOpen)}
+                      className="text-gray-300 hover:text-white transition-colors w-full flex justify-between items-center py-2"
+                    >
+                      Home
+                      <ChevronDown className={`w-4 h-4 transition-transform ${isHomeMenuOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {isHomeMenuOpen && (
+                      <div className="ml-4 mt-2 space-y-2">
+                        {publicNavItems.map((item) => (
+                          <Link
+                            key={item.name}
+                            to={item.href}
+                            className="block text-gray-300 hover:text-white transition-colors py-2"
+                            onClick={() => {
+                              setIsOpen(false);
+                              setIsHomeMenuOpen(false);
+                            }}
+                          >
+                            {item.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Mobile authenticated navigation */}
                   {authNavItems.map((item) => (
