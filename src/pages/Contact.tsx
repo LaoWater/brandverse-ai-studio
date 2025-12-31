@@ -195,7 +195,7 @@ const Contact = () => {
                     <Mail className="w-5 h-5 text-accent mt-1 flex-shrink-0" />
                     <div>
                       <h4 className="text-white font-medium">Email</h4>
-                      <p className="text-gray-300">hello@creatorsmultiverse.com</p>
+                      <p className="text-gray-300">contact@creators-multiverse.com</p>
                     </div>
                   </div>
 
@@ -203,7 +203,7 @@ const Contact = () => {
                     <Phone className="w-5 h-5 text-accent mt-1 flex-shrink-0" />
                     <div>
                       <h4 className="text-white font-medium">Phone</h4>
-                      <p className="text-gray-300">+1 (555) 123-4567</p>
+                      <p className="text-gray-300">+40 (740476485)</p>
                     </div>
                   </div>
 
@@ -212,8 +212,8 @@ const Contact = () => {
                     <div>
                       <h4 className="text-white font-medium">Office</h4>
                       <p className="text-gray-300">
-                        123 Innovation Drive<br />
-                        Tech Valley, CA 94043
+                        349B Avram Iancu<br />
+                        Cluj, Romania 407280
                       </p>
                     </div>
                   </div>

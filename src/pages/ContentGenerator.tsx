@@ -11,9 +11,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { 
-    ArrowRight, Sparkles, Instagram, Facebook, Twitter, Linkedin, Info, 
-    Image as ImageIconLucide, Video as VideoIconLucide, Type as TypeIconLucide, 
+import {
+    ArrowRight, Award, Instagram, Facebook, Twitter, Linkedin, Info,
+    Image as ImageIconLucide, Video as VideoIconLucide, Type as TypeIconLucide,
     Wand2, Check, FileText, Bot, Palette, Globe, SaveIcon, Loader2, Coins, Image, Video
 } from "lucide-react";
 import { FaXTwitter } from "react-icons/fa6";
@@ -467,7 +467,7 @@ const ContentGenerator = () => {
                         >
                           <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-yellow-500/20 to-orange-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                           <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-yellow-500/10 to-orange-500/10 blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                          <Sparkles className="w-5 h-5 relative z-10 drop-shadow-lg" />
+                          <Award className="w-5 h-5 relative z-10 drop-shadow-lg" />
                           <span className="text-sm font-medium relative z-10">
                             Quality: {imageQuality === 'fast' ? 'Fast' : imageQuality === 'balanced' ? 'Balanced' : 'Ultra'}
                           </span>
@@ -477,7 +477,7 @@ const ContentGenerator = () => {
                         <DialogHeader>
                           <DialogTitle className="text-white text-2xl font-bold flex items-center space-x-3">
                             <div className="p-2 rounded-lg bg-gradient-to-br from-yellow-500/20 to-orange-500/20">
-                              <Sparkles className="w-6 h-6 text-white" />
+                              <Award className="w-6 h-6 text-white" />
                             </div>
                             <span>Image Generation Quality</span>
                           </DialogTitle>
@@ -858,9 +858,20 @@ const ContentGenerator = () => {
                         </div>
                       </div>
                       {!hasEnoughCredits && (
-                        <p className="text-red-400 text-sm mt-2">
-                          Insufficient credits. Credits reset daily if under 10.
-                        </p>
+                        <div className="mt-3 space-y-2">
+                          <p className="text-red-400 text-sm">
+                            Insufficient credits. Credits reset daily if under 10.
+                          </p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="w-full border-accent text-accent hover:bg-accent/10"
+                            onClick={() => navigate('/pricing')}
+                          >
+                            Go to Pricing & Subscriptions
+                          </Button>
+                        </div>
                       )}
                     </div>
                   )}
@@ -997,30 +1008,30 @@ const ContentGenerator = () => {
                                             
                                             <div className="space-y-6 mt-6">
                                               <div className="p-6 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20">
-                                                <div className="space-y-4 text-gray-200">
-                                                  <p className="text-lg font-medium text-purple-300">
+                                                <div className="space-y-4" style={{ color: 'rgb(15, 15, 23)' }}>
+                                                  <p className="text-lg font-medium" style={{ color: 'rgb(126, 58, 242)' }}>
                                                     The Current Reality
                                                   </p>
-                                                  <p>
-                                                    Current video models have significant limitations, with quality content generation costs reaching up to <span className="text-yellow-400 font-semibold">$0.70 per second</span> and often falling short of creating favorable engaging content-cost equity.
+                                                  <p style={{ color: 'rgb(15, 15, 23)' }}>
+                                                    Current video models have significant limitations, with quality content generation costs reaching up to <span className="font-semibold" style={{ color: 'rgb(234, 179, 8)' }}>$0.70 per second</span> and often falling short of creating favorable engaging content-cost equity.
                                                   </p>
-                                                  
-                                                  <p className="text-lg font-medium text-purple-300 mt-6">
+
+                                                  <p className="text-lg font-medium mt-6" style={{ color: 'rgb(126, 58, 242)' }}>
                                                     Our Vision Forward
                                                   </p>
-                                                  <p>
+                                                  <p style={{ color: 'rgb(15, 15, 23)' }}>
                                                     We are working on a revolutionary new way to automatize Video Creation - which will include a comprehensive pipeline of Video Scripts generation, creating clear scripts blueprints & execution plans, so they can easily be filmed.
                                                   </p>
-                                                  
-                                                  <p>
+
+                                                  <p style={{ color: 'rgb(15, 15, 23)' }}>
                                                     As Leading AI Providers companies grow stronger and video models improve, we will transition to video generation as well - keeping the same Promise towards our clients and our very mission.
                                                   </p>
-                                                  
+
                                                   <div className="p-4 rounded-lg bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 mt-6">
-                                                    <p className="text-cyan-300 font-medium text-center">
+                                                    <p className="font-medium text-center" style={{ color: 'rgb(14, 116, 144)' }}>
                                                       Our mission is to generate Human-Level-Performance quality content, not just Content.
                                                     </p>
-                                                    <p className="text-center text-sm text-gray-300 mt-2">
+                                                    <p className="text-center text-sm mt-2" style={{ color: 'rgb(75, 85, 99)' }}>
                                                       Because we want to create something as close to HLP as possible.
                                                     </p>
                                                   </div>
