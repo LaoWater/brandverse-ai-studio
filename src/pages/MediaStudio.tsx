@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import React from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
@@ -13,7 +14,7 @@ import ReferenceImageUpload from '@/components/media/ReferenceImageUpload';
 import MediaLibrary from '@/components/media/MediaLibrary';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Sparkles, Zap, ArrowRight, Loader, CheckCircle, Library } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -28,7 +29,11 @@ const MediaStudioContent = () => {
     prompt,
     selectedImageModel,
     aspectRatio,
-    quality,
+    numberOfImages,
+    imageSize,
+    seed,
+    negativePrompt,
+    enhancePrompt,
     referenceImage,
     isGenerating,
     generationProgress,
@@ -52,11 +57,17 @@ const MediaStudioContent = () => {
       // Upload reference image if provided
       let referenceImageUrl: string | undefined;
       if (referenceImage && user) {
+        console.log('[MediaStudio] Uploading reference image...', referenceImage.name);
         const uploadedUrl = await uploadReferenceImage(referenceImage, user.id);
+        console.log('[MediaStudio] Reference image uploaded:', uploadedUrl);
         if (uploadedUrl) {
           referenceImageUrl = uploadedUrl;
+        } else {
+          console.error('[MediaStudio] Reference image upload failed - no URL returned');
         }
       }
+
+      console.log('[MediaStudio] Calling generateMediaWithProgress with referenceImageUrl:', referenceImageUrl);
 
       // Generate media with progress
       const result = await generateMediaWithProgress(
@@ -65,8 +76,14 @@ const MediaStudioContent = () => {
           mediaType: 'image',
           model: selectedImageModel,
           aspectRatio,
-          quality,
+          numberOfImages,
+          imageSize,
+          seed,
+          negativePrompt,
+          enhancePrompt,
           referenceImageUrl,
+          userId: user.id,
+          companyId: selectedCompany?.id,
         },
         (progress, stage) => {
           updateGenerationProgress(progress, stage);
@@ -76,6 +93,24 @@ const MediaStudioContent = () => {
       return { result, referenceImageUrl };
     },
     onSuccess: async ({ result, referenceImageUrl }) => {
+      // Handle error result (when generateMedia returns success: false)
+      if (!result.success) {
+        resetGeneration(); // Close the modal immediately
+
+        const errorMessage = result.error || 'Something went wrong. Please try again.';
+        const isGeminiHelpfulError = errorMessage.includes("Gemini couldn't generate") ||
+                                      errorMessage.includes("💡 Tip:");
+
+        toast({
+          title: isGeminiHelpfulError ? 'Need More Details' : 'Generation Failed',
+          description: errorMessage,
+          variant: 'destructive',
+          duration: isGeminiHelpfulError ? 8000 : 5000,
+        });
+        return;
+      }
+
+      // Handle success result
       if (result.success && user) {
         // Save to database
         await saveMediaRecord({
@@ -91,7 +126,7 @@ const MediaStudioContent = () => {
           prompt,
           model_used: selectedImageModel,
           aspect_ratio: aspectRatio,
-          quality,
+          quality: imageSize || '1K', // Store quality/size
           duration: null,
           reference_image_url: referenceImageUrl || null,
           tags: [],
@@ -119,14 +154,20 @@ const MediaStudioContent = () => {
         }, 2000);
       }
     },
-    onError: (error) => {
-      console.error('Generation error:', error);
+    onError: (error: any) => {
+      // This handles network/fetch errors or thrown exceptions
+      console.error('Generation error (network/exception):', error);
+
+      resetGeneration(); // Close the modal immediately
+
+      const errorMessage = error?.message || 'Network error. Please check your connection and try again.';
+
       toast({
-        title: 'Generation Failed',
-        description: 'Something went wrong. Please try again.',
+        title: 'Connection Error',
+        description: errorMessage,
         variant: 'destructive',
+        duration: 5000,
       });
-      resetGeneration();
     },
   });
 
@@ -310,8 +351,19 @@ const MediaStudioContent = () => {
       </div>
 
       {/* Generation Progress Modal */}
-      <Dialog open={isGenerating}>
-        <DialogContent className="media-studio-glass max-w-md border-primary/30">
+      <Dialog open={isGenerating} onOpenChange={(open) => {
+        // Prevent closing during generation
+        if (!open && isGenerating && generationProgress < 100) {
+          return;
+        }
+      }}>
+        <DialogContent className="bg-card/95 backdrop-blur-sm max-w-md border-primary/30">
+          <DialogTitle className="sr-only">Image Generation Progress</DialogTitle>
+          <DialogDescription className="sr-only">
+            {generationProgress < 100
+              ? `Generating your image: ${currentStage || 'Starting...'}`
+              : 'Image generation complete'}
+          </DialogDescription>
           <div className="text-center py-8">
             {generationProgress < 100 ? (
               <>
@@ -322,10 +374,10 @@ const MediaStudioContent = () => {
                   <div className="absolute top-0 left-1/2 w-2 h-2 bg-accent rounded-full blur-sm animate-cosmic-drift" />
                   <div className="absolute bottom-0 right-1/2 w-2 h-2 bg-primary rounded-full blur-sm animate-cosmic-drift" style={{ animationDelay: '-5s' }} />
                 </div>
-                <h3 className="text-2xl font-bold text-gradient-animate mb-3">
+                <h3 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-3">
                   Creating Magic...
                 </h3>
-                <p className="text-gray-300 mb-6">{currentStage}</p>
+                <p className="text-gray-300 mb-6">{currentStage || 'Initializing...'}</p>
                 <div className="space-y-2">
                   <div className="relative">
                     <Progress value={generationProgress} className="h-2 cosmic-progress-bar" />
@@ -357,11 +409,58 @@ const MediaStudioContent = () => {
   );
 };
 
+// Error boundary component
+class MediaStudioErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('MediaStudio Error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-gradient-to-b from-background via-background to-background/95 flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-card border border-destructive/50 rounded-lg p-8 text-center">
+            <h2 className="text-2xl font-bold text-white mb-4">Oops! Something went wrong</h2>
+            <p className="text-gray-400 mb-6">
+              {this.state.error?.message || 'An unexpected error occurred'}
+            </p>
+            <Button
+              onClick={() => {
+                this.setState({ hasError: false, error: null });
+                window.location.reload();
+              }}
+              className="cosmic-button"
+            >
+              Reload Page
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 const MediaStudio = () => {
   return (
-    <MediaStudioProvider>
-      <MediaStudioContent />
-    </MediaStudioProvider>
+    <MediaStudioErrorBoundary>
+      <MediaStudioProvider>
+        <MediaStudioContent />
+      </MediaStudioProvider>
+    </MediaStudioErrorBoundary>
   );
 };
 

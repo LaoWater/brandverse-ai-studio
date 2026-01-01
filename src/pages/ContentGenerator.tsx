@@ -64,19 +64,17 @@ const ContentGenerator = () => {
   });
 
   // Image Quality / Model Selection State
-  const [imageQuality, setImageQuality] = useState<'fast' | 'balanced' | 'ultra'>('fast');
+  const [imageQuality, setImageQuality] = useState<'balanced' | 'ultra'>('balanced');
 
   // Map quality to model names
-  const getModelFromQuality = (quality: 'fast' | 'balanced' | 'ultra'): string => {
+  const getModelFromQuality = (quality: 'balanced' | 'ultra'): string => {
     switch (quality) {
-      case 'fast':
-        return 'imagen-4.0-fast-generate-001';
       case 'balanced':
-        return 'imagen-4.0-generate-preview-06-06';
+        return 'imagen-4.0-generate-001';
       case 'ultra':
         return 'imagen-4.0-ultra-generate-preview-06-06';
       default:
-        return 'imagen-4.0-fast-generate-001';
+        return 'imagen-4.0-generate-001';
     }
   };
 
@@ -161,13 +159,22 @@ const ContentGenerator = () => {
     "Educational", "Urgent", "Conversational", "Authoritative", "Neutral"
   ];
 
+  // Calculate credits based on quality for image/video
+  const getMediaCredits = (mediaType: string): number => {
+    if (mediaType === 'text') return 1;
+    if (mediaType === 'image' || mediaType === 'video') {
+      return imageQuality === 'ultra' ? 4 : 3;
+    }
+    return 3;
+  };
+
   const mediaOptions = [
-    { value: 'text', label: 'Text', icon: TypeIconLucide, credits: 1 },
-    { value: 'image', label: 'Image + Text', icon: ImageIconLucide, credits: 3 },
-    { value: 'video', label: 'Video + Text (Coming Soon)', icon: VideoIconLucide, credits: 3, comingSoon: true, wide: true },
+    { value: 'text', label: 'Text', icon: TypeIconLucide },
+    { value: 'image', label: 'Image + Text', icon: ImageIconLucide },
+    { value: 'video', label: 'Video + Text (Coming Soon)', icon: VideoIconLucide, comingSoon: true, wide: true },
   ];
 
-  const creditsNeeded = calculateCreditsNeeded(formData.platforms, formData.platformMedia);
+  const creditsNeeded = calculateCreditsNeeded(formData.platforms, formData.platformMedia, imageQuality);
   const hasEnoughCredits = userCredits >= creditsNeeded;
 
   const handlePlatformToggle = (platformId: string) => {
@@ -469,7 +476,7 @@ const ContentGenerator = () => {
                           <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-yellow-500/10 to-orange-500/10 blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                           <Award className="w-5 h-5 relative z-10 drop-shadow-lg" />
                           <span className="text-sm font-medium relative z-10">
-                            Quality: {imageQuality === 'fast' ? 'Fast' : imageQuality === 'balanced' ? 'Balanced' : 'Ultra'}
+                            Quality: {imageQuality === 'balanced' ? 'Balanced' : 'Ultra'}
                           </span>
                         </Button>
                       </DialogTrigger>
@@ -487,49 +494,6 @@ const ContentGenerator = () => {
                         </DialogHeader>
 
                         <div className="space-y-4 mt-6">
-                          {/* Fast Option */}
-                          <div
-                            className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                              imageQuality === 'fast'
-                                ? 'border-accent bg-accent/10'
-                                : 'border-white/10 hover:border-white/30 bg-white/5'
-                            }`}
-                            onClick={() => setImageQuality('fast')}
-                          >
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <h3 className="text-white font-semibold text-lg flex items-center gap-2">
-                                  Fast
-                                  <span className="text-xs px-2 py-1 rounded bg-accent/20 text-accent">Default</span>
-                                </h3>
-                                <p className="text-gray-400 text-sm mt-1">
-                                  Best balance of speed, quality, and cost
-                                </p>
-                                <div className="mt-3 space-y-1 text-xs text-gray-300">
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-medium">Speed:</span>
-                                    <span>Fast</span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-medium">Quality:</span>
-                                    <span>High</span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-medium">Cost:</span>
-                                    <span>Moderate</span>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                                imageQuality === 'fast'
-                                  ? 'bg-accent border-accent'
-                                  : 'border-white/20'
-                              }`}>
-                                {imageQuality === 'fast' && <Check className="w-3 h-3 text-gray-900" />}
-                              </div>
-                            </div>
-                          </div>
-
                           {/* Balanced Option */}
                           <div
                             className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
@@ -541,9 +505,12 @@ const ContentGenerator = () => {
                           >
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
-                                <h3 className="text-white font-semibold text-lg">Balanced</h3>
+                                <h3 className="text-white font-semibold text-lg flex items-center gap-2">
+                                  Balanced
+                                  <span className="text-xs px-2 py-1 rounded bg-accent/20 text-accent">Default</span>
+                                </h3>
                                 <p className="text-gray-400 text-sm mt-1">
-                                  Premium quality, worth the extra cost
+                                  Great balance of quality and cost
                                 </p>
                                 <div className="mt-3 space-y-1 text-xs text-gray-300">
                                   <div className="flex items-center gap-2">
@@ -556,7 +523,7 @@ const ContentGenerator = () => {
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <span className="font-medium">Cost:</span>
-                                    <span>+15%</span>
+                                    <span>3 credits per image</span>
                                   </div>
                                 </div>
                               </div>
@@ -596,7 +563,7 @@ const ContentGenerator = () => {
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <span className="font-medium">Cost:</span>
-                                    <span>+25%</span>
+                                    <span>4 credits per image (+1)</span>
                                   </div>
                                 </div>
                               </div>
@@ -978,7 +945,8 @@ const ContentGenerator = () => {
                             {isSelected && (
                               <div className="mt-3 pl-8 space-y-2">
                                 <div className="grid grid-cols-2 gap-2">
-                                  {mediaOptions.map(({ value, label, icon: Icon, credits, comingSoon, wide }) => {
+                                  {mediaOptions.map(({ value, label, icon: Icon, comingSoon, wide }) => {
+                                    const credits = getMediaCredits(value);
                                     if (comingSoon) {
                                       return (
                                         <Dialog key={value}>

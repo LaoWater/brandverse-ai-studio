@@ -44,17 +44,68 @@ export const deductCredits = async (creditsToDeduct: number): Promise<boolean> =
   return data;
 };
 
-export const calculateCreditsNeeded = (platforms: string[], platformMedia: Record<string, string>): number => {
+export const calculateCreditsNeeded = (
+  platforms: string[],
+  platformMedia: Record<string, string>,
+  imageQuality?: 'balanced' | 'ultra'
+): number => {
   let totalCredits = 0;
-  
+
+  // Base credits per media type
+  const TEXT_CREDITS = 1;
+  const IMAGE_BASE_CREDITS = 3;
+
+  // Quality multiplier - ultra adds +1 credit per image
+  const qualityMultiplier = imageQuality === 'ultra' ? 1 : 0;
+
   platforms.forEach(platform => {
     const mediaType = platformMedia[platform];
     if (mediaType === 'text') {
-      totalCredits += 1;
+      totalCredits += TEXT_CREDITS;
     } else if (mediaType === 'image' || mediaType === 'video' || mediaType === 'auto') {
-      totalCredits += 3;
+      totalCredits += IMAGE_BASE_CREDITS + qualityMultiplier;
     }
   });
-  
+
   return totalCredits;
+};
+
+/**
+ * Calculate credits needed for Media Studio generation
+ * Based on model, quality/size, and number of images
+ */
+export const calculateMediaStudioCredits = (
+  model: string,
+  imageSize: '1K' | '2K' = '1K',
+  numberOfImages: number = 1
+): number => {
+  let creditsPerImage = 3; // Default
+
+  if (model === 'gemini-2.5-flash-image') {
+    creditsPerImage = 2; // Gemini is always 2 credits (no quality options)
+  } else if (model === 'imagen-4.0-generate-001') {
+    creditsPerImage = imageSize === '2K' ? 4 : 3; // Imagen 4: 1K=3, 2K=4
+  } else if (model === 'gpt-image-1.5') {
+    creditsPerImage = imageSize === '2K' ? 5 : 3; // GPT: Standard=3, HD=5
+  }
+
+  return creditsPerImage * numberOfImages;
+};
+
+/**
+ * Legacy function for backwards compatibility with quality tiers
+ * @deprecated Use calculateMediaStudioCredits with model parameter instead
+ */
+export const calculateMediaStudioCreditsByTier = (
+  qualityTier: 'fast' | 'standard' | 'ultra',
+  numberOfImages: number = 1
+): number => {
+  const CREDIT_COSTS = {
+    fast: 2,       // Gemini 2.5 Flash
+    standard: 3,   // Imagen 4 Standard
+    ultra: 4,      // GPT-image-1.5 or Imagen 4 High
+  };
+
+  const creditsPerImage = CREDIT_COSTS[qualityTier];
+  return creditsPerImage * numberOfImages;
 };

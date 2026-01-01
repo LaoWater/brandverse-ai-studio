@@ -52,11 +52,17 @@ export interface StorageUsage {
 export interface GenerationConfig {
   prompt: string;
   mediaType: 'video' | 'image';
-  model: string;
-  aspectRatio: string;
-  quality: string;
-  duration?: number;
+  model: string;               // API model identifier (e.g., 'gemini-2.5-flash-image', 'imagen-4.0-generate-001', 'gpt-image-1.5')
+  aspectRatio: string;         // '1:1', '16:9', '9:16', '3:4', '4:3', '3:2'
+  numberOfImages?: number;     // 1-4 for Imagen, 1-10 for GPT-image
+  imageSize?: '1K' | '2K';     // For Imagen 4 Standard/Ultra
+  seed?: number;               // For reproducible generation (Imagen 4, GPT-image)
+  negativePrompt?: string;     // For Imagen 4
+  enhancePrompt?: boolean;     // For Imagen 4
+  duration?: number;           // For video (future)
   referenceImageUrl?: string;
+  userId?: string;             // For tracking
+  companyId?: string;          // For tracking
 }
 
 export interface GenerationResult {
@@ -68,115 +74,514 @@ export interface GenerationResult {
     prompt: string;
     duration?: number;
     aspectRatio: string;
-    quality: string;
+    numberOfImages?: number;
+    imageSize?: string;
+    seed?: number;
     referenceImageUrl?: string;
   };
+  error?: string;
 }
 
-// ============================================
-// DUMMY GENERATION FOR TESTING
-// Replace with real API in Phase 2
-// ============================================
+// API Payload for backend
+export interface MediaGenerationAPIPayload {
+  prompt: string;
+  model: string;                    // 'gemini-2.5-flash-image' | 'imagen-4.0-generate-001' | 'gpt-image-1.5'
+  aspect_ratio: string;             // '1:1', '16:9', '9:16', '3:4', '4:3', '3:2'
+  number_of_images?: number;        // 1-4 for Imagen, 1-10 for GPT-image (default: 1)
+  image_size?: '1K' | '2K';         // For Imagen 4 (default: '1K')
+  seed?: number;                    // For reproducible generation
+  negative_prompt?: string;         // For Imagen 4
+  enhance_prompt?: boolean;         // For Imagen 4 (default: true)
+  reference_image_url?: string;     // Optional reference image
+  user_id?: string;
+  company_id?: string;
+}
 
+// Supabase imports
+import { supabase } from '@/integrations/supabase/client';
+
+// Supabase Edge Function URL - hardcoded since it's in the client config
+const SUPABASE_FUNCTION_URL = 'https://vcgaqikuaaazjpwyzvwb.supabase.co/functions/v1';
+
+/**
+ * Prepare API payload for media generation
+ * Converts frontend config to backend API format
+ */
+export const prepareMediaAPIPayload = (config: GenerationConfig): MediaGenerationAPIPayload => {
+  const payload: MediaGenerationAPIPayload = {
+    prompt: config.prompt,
+    model: config.model,
+    aspect_ratio: config.aspectRatio,
+  };
+
+  // Add optional parameters based on model
+  if (config.numberOfImages !== undefined) {
+    payload.number_of_images = config.numberOfImages;
+  }
+
+  if (config.imageSize) {
+    payload.image_size = config.imageSize;
+  }
+
+  if (config.seed !== undefined) {
+    payload.seed = config.seed;
+  }
+
+  if (config.negativePrompt) {
+    payload.negative_prompt = config.negativePrompt;
+  }
+
+  if (config.enhancePrompt !== undefined) {
+    payload.enhance_prompt = config.enhancePrompt;
+  }
+
+  if (config.referenceImageUrl) {
+    payload.reference_image_url = config.referenceImageUrl;
+  }
+
+  if (config.userId) {
+    payload.user_id = config.userId;
+  }
+
+  if (config.companyId) {
+    payload.company_id = config.companyId;
+  }
+
+  return payload;
+};
+
+/**
+ * Generate media using Supabase Edge Function
+ * Sends model name and parameters to backend for image generation
+ */
 export const generateMedia = async (
   config: GenerationConfig,
   onProgress?: (progress: number, stage: string) => void
 ): Promise<GenerationResult> => {
-  // Simulate progress updates
-  const stages = [
-    { progress: 10, stage: 'Initializing generation...' },
-    { progress: 30, stage: 'Processing prompt...' },
-    { progress: 50, stage: `Generating with ${config.model}...` },
-    { progress: 70, stage: 'Applying quality settings...' },
-    { progress: 90, stage: 'Finalizing output...' },
-    { progress: 100, stage: 'Complete!' },
-  ];
+  try {
+    // Prepare API payload
+    const payload = prepareMediaAPIPayload(config);
 
-  for (const { progress, stage } of stages) {
-    await new Promise(resolve => setTimeout(resolve, 800));
-    onProgress?.(progress, stage);
+    console.log("=== MEDIA STUDIO GENERATION PAYLOAD ===");
+    console.log(JSON.stringify(payload, null, 2));
+    console.log("=======================================");
+
+    // Update progress - initialization
+    onProgress?.(10, 'Initializing generation...');
+
+    // Get auth session for edge function
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error("Not authenticated");
+    }
+
+    // Update progress - processing
+    onProgress?.(30, 'Sending request to AI...');
+
+    // Call Supabase Edge Function
+    const response = await fetch(`${SUPABASE_FUNCTION_URL}/generate-media-image`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    onProgress?.(50, `Generating with ${config.model}...`);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: "Media generation failed." }));
+      throw new Error(errorData?.error || `Server error: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (!result.success) {
+      // Pass through the detailed error message from the backend
+      throw new Error(result.error || "Generation failed. Please try again.");
+    }
+
+    onProgress?.(90, 'Finalizing and saving...');
+
+    onProgress?.(100, 'Complete!');
+
+    return {
+      success: true,
+      mediaUrl: result.image_url,
+      thumbnailUrl: result.thumbnail_url || result.image_url,
+      metadata: {
+        model: config.model,
+        prompt: config.prompt,
+        aspectRatio: config.aspectRatio,
+        numberOfImages: config.numberOfImages,
+        imageSize: config.imageSize,
+        seed: config.seed,
+        referenceImageUrl: config.referenceImageUrl,
+      },
+    };
+  } catch (error: any) {
+    console.error("Error during media generation:", error);
+    return {
+      success: false,
+      mediaUrl: '',
+      error: error.message || "An unexpected error occurred during media generation.",
+      metadata: {
+        model: config.model,
+        prompt: config.prompt,
+        aspectRatio: config.aspectRatio,
+      },
+    };
   }
-
-  // Return mock result
-  const mockImageUrl = `https://picsum.photos/seed/${Date.now()}/1024/1024`;
-  
-  return {
-    success: true,
-    mediaUrl: mockImageUrl,
-    thumbnailUrl: mockImageUrl,
-    metadata: {
-      model: config.model,
-      prompt: config.prompt,
-      aspectRatio: config.aspectRatio,
-      quality: config.quality,
-      referenceImageUrl: config.referenceImageUrl,
-    },
-  };
 };
 
-// Placeholder functions for future database integration
+/**
+ * Get user's media library with optional filters
+ */
 export const getUserMediaLibrary = async (
   userId: string,
   companyId?: string | null,
   filters?: MediaFilters
 ): Promise<MediaFile[]> => {
-  console.log('Database integration pending');
-  return [];
+  try {
+    let query = supabase
+      .from('media_files')
+      .select('*')
+      .eq('user_id', userId);
+
+    // Filter by company if specified
+    if (companyId) {
+      query = query.eq('company_id', companyId);
+    }
+
+    // Filter by file type
+    if (filters?.fileType && filters.fileType !== 'all') {
+      query = query.eq('file_type', filters.fileType);
+    }
+
+    // Filter by favorite
+    if (filters?.isFavorite !== undefined) {
+      query = query.eq('is_favorite', filters.isFavorite);
+    }
+
+    // Search query (searches in prompt, custom_title, and notes)
+    if (filters?.searchQuery) {
+      query = query.or(
+        `prompt.ilike.%${filters.searchQuery}%,custom_title.ilike.%${filters.searchQuery}%,notes.ilike.%${filters.searchQuery}%`
+      );
+    }
+
+    // Filter by tags
+    if (filters?.tags && filters.tags.length > 0) {
+      query = query.contains('tags', filters.tags);
+    }
+
+    // Date range filters
+    if (filters?.dateFrom) {
+      query = query.gte('created_at', filters.dateFrom);
+    }
+    if (filters?.dateTo) {
+      query = query.lte('created_at', filters.dateTo);
+    }
+
+    // Filter by model
+    if (filters?.model) {
+      query = query.eq('model_used', filters.model);
+    }
+
+    // Sorting
+    const sortBy = filters?.sortBy || 'created_at';
+    const sortOrder = filters?.sortOrder || 'desc';
+    query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching media library:', error);
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getUserMediaLibrary:', error);
+    return [];
+  }
 };
 
+/**
+ * Save a new media record to the database
+ */
 export const saveMediaRecord = async (
   mediaData: Omit<MediaFile, 'id' | 'created_at' | 'updated_at' | 'download_count' | 'view_count'>
 ): Promise<{ data: MediaFile | null; error: any }> => {
-  console.log('Database integration pending');
-  return { data: null, error: 'Not implemented' };
+  try {
+    const { data, error } = await supabase
+      .from('media_files')
+      .insert([mediaData])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error saving media record:', error);
+      return { data: null, error };
+    }
+
+    console.log('Media record saved successfully:', data);
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error in saveMediaRecord:', error);
+    return { data: null, error };
+  }
 };
 
+/**
+ * Delete a media file from both storage and database
+ */
 export const deleteMediaFile = async (
   mediaId: string,
   storagePath: string,
   fileType: 'video' | 'image'
 ): Promise<{ success: boolean }> => {
-  console.log('Database integration pending');
-  return { success: false };
+  try {
+    // Delete from storage bucket
+    const bucketName = fileType === 'video' ? 'media-studio-videos' : 'media-studio-images';
+
+    // Extract the path from the full storage_path if it contains bucket info
+    const path = storagePath.includes('/') ? storagePath : storagePath;
+
+    const { error: storageError } = await supabase.storage
+      .from(bucketName)
+      .remove([path]);
+
+    if (storageError) {
+      console.error('Error deleting from storage:', storageError);
+      // Continue with database deletion even if storage fails
+    }
+
+    // Delete from database
+    const { error: dbError } = await supabase
+      .from('media_files')
+      .delete()
+      .eq('id', mediaId);
+
+    if (dbError) {
+      console.error('Error deleting from database:', dbError);
+      return { success: false };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error in deleteMediaFile:', error);
+    return { success: false };
+  }
 };
 
+/**
+ * Toggle favorite status of a media file
+ */
 export const toggleFavorite = async (
   mediaId: string,
   isFavorite: boolean
 ): Promise<{ success: boolean }> => {
-  console.log('Database integration pending');
-  return { success: false };
+  try {
+    const { error } = await supabase
+      .from('media_files')
+      .update({ is_favorite: isFavorite })
+      .eq('id', mediaId);
+
+    if (error) {
+      console.error('Error toggling favorite:', error);
+      return { success: false };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error in toggleFavorite:', error);
+    return { success: false };
+  }
 };
 
+/**
+ * Update media file metadata
+ */
 export const updateMediaMetadata = async (
   mediaId: string,
   updates: Partial<MediaFile>
 ): Promise<{ success: boolean; error?: any }> => {
-  console.log('Database integration pending');
-  return { success: false };
+  try {
+    const { error } = await supabase
+      .from('media_files')
+      .update(updates)
+      .eq('id', mediaId);
+
+    if (error) {
+      console.error('Error updating media metadata:', error);
+      return { success: false, error };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error in updateMediaMetadata:', error);
+    return { success: false, error };
+  }
 };
 
-export const getUserStorageUsage = async (): Promise<StorageUsage | null> => {
-  console.log('Database integration pending');
-  return null;
+/**
+ * Get user's storage usage statistics
+ */
+export const getUserStorageUsage = async (userId: string): Promise<StorageUsage | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('media_files')
+      .select('file_type, file_size')
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error fetching storage usage:', error);
+      return null;
+    }
+
+    const usage: StorageUsage = {
+      total_files: data.length,
+      total_size_mb: data.reduce((sum, file) => sum + (file.file_size || 0), 0) / (1024 * 1024),
+      video_count: data.filter(f => f.file_type === 'video').length,
+      image_count: data.filter(f => f.file_type === 'image').length,
+    };
+
+    return usage;
+  } catch (error) {
+    console.error('Error in getUserStorageUsage:', error);
+    return null;
+  }
 };
 
-export const getTrendingTags = async (): Promise<{ tag: string; usage_count: number }[]> => {
-  console.log('Database integration pending');
-  return [];
+/**
+ * Get trending tags from all media files
+ */
+export const getTrendingTags = async (userId?: string): Promise<{ tag: string; usage_count: number }[]> => {
+  try {
+    let query = supabase
+      .from('media_files')
+      .select('tags');
+
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching trending tags:', error);
+      return [];
+    }
+
+    // Count tag occurrences
+    const tagCounts: Record<string, number> = {};
+    data.forEach(file => {
+      (file.tags || []).forEach(tag => {
+        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+      });
+    });
+
+    // Convert to array and sort by usage
+    return Object.entries(tagCounts)
+      .map(([tag, usage_count]) => ({ tag, usage_count }))
+      .sort((a, b) => b.usage_count - a.usage_count)
+      .slice(0, 20); // Return top 20 tags
+  } catch (error) {
+    console.error('Error in getTrendingTags:', error);
+    return [];
+  }
 };
 
+/**
+ * Increment download count for a media file
+ */
 export const incrementDownloadCount = async (mediaId: string): Promise<void> => {
-  console.log('Database integration pending');
+  try {
+    const { error } = await supabase.rpc('increment_media_download_count', {
+      media_id: mediaId
+    });
+
+    if (error) {
+      // Fallback to manual increment if RPC doesn't exist
+      const { data: current } = await supabase
+        .from('media_files')
+        .select('download_count')
+        .eq('id', mediaId)
+        .single();
+
+      if (current) {
+        await supabase
+          .from('media_files')
+          .update({ download_count: (current.download_count || 0) + 1 })
+          .eq('id', mediaId);
+      }
+    }
+  } catch (error) {
+    console.error('Error incrementing download count:', error);
+  }
 };
 
+/**
+ * Increment view count for a media file
+ */
 export const incrementViewCount = async (mediaId: string): Promise<void> => {
-  console.log('Database integration pending');
+  try {
+    const { error } = await supabase.rpc('increment_media_view_count', {
+      media_id: mediaId
+    });
+
+    if (error) {
+      // Fallback to manual increment if RPC doesn't exist
+      const { data: current } = await supabase
+        .from('media_files')
+        .select('view_count')
+        .eq('id', mediaId)
+        .single();
+
+      if (current) {
+        await supabase
+          .from('media_files')
+          .update({ view_count: (current.view_count || 0) + 1 })
+          .eq('id', mediaId);
+      }
+    }
+  } catch (error) {
+    console.error('Error incrementing view count:', error);
+  }
 };
 
+/**
+ * Upload a reference image to storage
+ */
 export const uploadReferenceImage = async (file: File, userId: string): Promise<string | null> => {
-  console.log('Database integration pending');
-  return null;
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${userId}/${Date.now()}_reference.${fileExt}`;
+
+    const { data, error } = await supabase.storage
+      .from('media-studio-images')
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      console.error('Error uploading reference image:', error);
+      return null;
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('media-studio-images')
+      .getPublicUrl(data.path);
+
+    return publicUrl;
+  } catch (error) {
+    console.error('Error in uploadReferenceImage:', error);
+    return null;
+  }
 };
 
 export const generateMediaWithProgress = async (
