@@ -16,7 +16,7 @@ const logStep = (step: string, details?: any) => {
 // Type definitions for API payloads
 interface MediaGenerationRequest {
   prompt: string;
-  model: 'gemini-2.5-flash-image' | 'imagen-4.0-generate-001' | 'gpt-image-1.5';
+  model: 'gemini-2.5-flash-image' | 'imagen-4.0-generate-001' | 'imagen-4.0-ultra-generate-001' | 'gpt-image-1.5';
   aspect_ratio: string;
   number_of_images?: number;
   image_size?: '1K' | '2K';
@@ -239,19 +239,22 @@ async function generateWithImagen(request: MediaGenerationRequest): Promise<stri
   const apiKey = Deno.env.get("GOOGLE_API_KEY");
   if (!apiKey) throw new Error("GOOGLE_API_KEY not configured");
 
+  // Select model variant based on quality
+  // 1K = Standard quality → imagen-4.0-generate-001
+  // 2K = High quality → imagen-4.0-ultra-generate-001
+  const modelVariant = request.image_size === '2K'
+    ? 'imagen-4.0-ultra-generate-001'
+    : 'imagen-4.0-generate-001';
+
   logStep("Generating with Imagen 4", {
+    model: modelVariant,
     prompt: request.prompt.substring(0, 50),
     size: request.image_size,
     hasReference: !!request.reference_image_url
   });
 
-  // Google Vertex AI Imagen endpoint
-  // Note: This requires proper GCP project setup
-  const projectId = Deno.env.get("GCP_PROJECT_ID") || "your-project-id";
-  const location = "us-central1";
-  const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/imagen-4.0-generate-001:predict`;
-
-  const dimensions = getImageDimensions(request.aspect_ratio, request.image_size);
+  // Use Generative Language API endpoint (same auth as Gemini!)
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelVariant}:predict`;
 
   // Build instance object
   const instance: any = {
@@ -275,14 +278,14 @@ async function generateWithImagen(request: MediaGenerationRequest): Promise<stri
       ...(request.image_size && { imageSize: request.image_size }),
       ...(request.negative_prompt && { negativePrompt: request.negative_prompt }),
       ...(request.seed && { seed: request.seed }),
-      ...(request.enhance_prompt !== undefined && { enhancePrompt: request.enhance_prompt }),
+      // Note: enhancePrompt is not supported in Generative Language API version
     }
   };
 
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
+      'x-goog-api-key': apiKey,  // ✅ Use same auth as Gemini!
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(payload)
@@ -464,7 +467,8 @@ serve(async (req) => {
         imageDataUrl = await generateWithGemini(request);
         break;
       case 'imagen-4.0-generate-001':
-        // Imagen 4 supports 1K/2K quality
+      case 'imagen-4.0-ultra-generate-001':
+        // Imagen 4 supports 1K/2K quality (auto-selects standard or ultra variant)
         imageDataUrl = await generateWithImagen(request);
         break;
       case 'gpt-image-1.5':

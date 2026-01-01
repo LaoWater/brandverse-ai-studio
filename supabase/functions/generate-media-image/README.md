@@ -9,11 +9,11 @@ This edge function handles AI image generation for the Media Studio feature, sup
    - 2 credits per image
    - Uses Google AI API
 
-2. **Google Imagen 4** - `imagen-4.0-generate-001`
+2. **Google Imagen 4** - `imagen-4.0-generate-001` / `imagen-4.0-ultra-generate-001`
    - Advanced high-quality generation
-   - Standard (1K): 3 credits
-   - High (2K): 4 credits
-   - Uses Google Vertex AI
+   - Standard (1K): 3 credits → uses `imagen-4.0-generate-001`
+   - High (2K): 4 credits → uses `imagen-4.0-ultra-generate-001` (ultra quality!)
+   - Uses Google Generative Language API
 
 3. **GPT-Image-1.5** - `gpt-image-1.5`
    - Best instruction following & realism
@@ -27,8 +27,7 @@ Set these in your Supabase project settings (Dashboard → Project Settings → 
 
 ```bash
 OPENAI_API_KEY=sk-...           # OpenAI API key for GPT-image-1.5
-GOOGLE_API_KEY=AIza...          # Google AI API key for Gemini
-GCP_PROJECT_ID=your-project-id  # Google Cloud Project ID for Imagen 4
+GOOGLE_API_KEY=AIza...          # Google AI API key for Gemini & Imagen 4
 SUPABASE_URL=https://...        # Auto-provided by Supabase
 SUPABASE_SERVICE_ROLE_KEY=...   # Auto-provided by Supabase
 ```
@@ -39,11 +38,8 @@ SUPABASE_SERVICE_ROLE_KEY=...   # Auto-provided by Supabase
 # Set OpenAI API Key
 supabase secrets set OPENAI_API_KEY=sk-your-key-here
 
-# Set Google API Key
+# Set Google API Key (used for both Gemini & Imagen)
 supabase secrets set GOOGLE_API_KEY=AIza-your-key-here
-
-# Set GCP Project ID (for Imagen)
-supabase secrets set GCP_PROJECT_ID=your-gcp-project
 ```
 
 ## API Request Format
