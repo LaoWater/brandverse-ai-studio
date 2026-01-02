@@ -25,17 +25,17 @@ const ModelSelector = () => {
     {
       value: 'gemini-2.5-flash-image',
       label: 'Google Nano Banana',
-      description: 'Fast & creative generation',
+      description: 'Flagship Visual Models',
     },
     {
       value: 'imagen-4.0-generate-001',
       label: 'Google Imagen 4',
-      description: 'Advanced Generation HQ',
+      description: 'Leading text-to-image model',
     },
     {
       value: 'gpt-image-1.5',
-      label: 'Latest ChatGPT Image',
-      description: 'Instruction following & realism',
+      label: 'OpenAI GPT Image 1.5',
+      description: 'Instruction Following & Realism',
     },
   ];
 
@@ -50,12 +50,12 @@ const ModelSelector = () => {
     {
       value: 'standard',
       label: 'Standard',
-      description: 'Fast & creative - 2.5 Flash',
+      description: 'Fast & Creative',
     },
     {
       value: 'pro',
       label: 'Pro',
-      description: 'Supports 4K & Multi-reference',
+      description: 'Realistic 4K & Multi-reference',
     },
   ];
 

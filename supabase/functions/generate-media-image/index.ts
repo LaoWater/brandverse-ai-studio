@@ -430,7 +430,10 @@ async function generateWithImagen(request: MediaGenerationRequest): Promise<stri
       ...(request.image_size && { imageSize: request.image_size }),
       ...(request.negative_prompt && { negativePrompt: request.negative_prompt }),
       ...(request.seed && { seed: request.seed }),
-      // Note: enhancePrompt is not supported in Generative Language API version
+      // Note: Prompt enhancement (prompt rewriter) is ENABLED BY DEFAULT for Imagen 4
+      // It automatically enhances prompts < 30 words with LLM-based detail addition
+      // The enhancePrompt parameter allows disabling it (set to false), but we keep it enabled
+      // See: https://cloud.google.com/vertex-ai/generative-ai/docs/image/generate-images#prompt-rewriter
     }
   };
 

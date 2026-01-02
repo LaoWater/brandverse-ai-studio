@@ -2384,9 +2384,28 @@
     border: 1px solid rgba(0, 119, 181, 0.3) !important;
   }
 
+  .light section .bg-gradient-to-br.from-\[\#833AB4\] {
+    background: linear-gradient(to bottom right, #833AB4, #E1306C, #F77737) !important;
+    border: 1px solid rgba(225, 48, 108, 0.3) !important;
+  }
+
   .light section .bg-black {
-    background-color: #1a1a1a !important;
-    border: 1px solid rgba(26, 26, 26, 0.5) !important;
+    background-color: #000000 !important;
+    border: 1px solid rgba(0, 0, 0, 0.8) !important;
+  }
+
+  /* Ensure ALL icons inside colored/gradient backgrounds remain white in light mode */
+  .light section .bg-\[#1877F2\] svg,
+  .light section .bg-gradient-to-br.from-\[\#833AB4\] svg,
+  .light section .bg-\[#0077B5\] svg,
+  .light section .bg-black svg,
+  .light section .bg-gradient-to-br.from-sky-400 svg,
+  .light section .bg-gradient-to-br.from-primary svg,
+  .light section .bg-gradient-to-br svg,
+  .light section [class*="bg-gradient"] svg,
+  .light section .rounded-full[class*="bg-"] svg {
+    color: #ffffff !important;
+    fill: currentColor !important;
   }
 
   /* Text labels for the circles and publishing section */
@@ -2586,6 +2605,19 @@
   /* Icon colors */
   .light svg:not(.cosmic-button svg):not([class*="bg-"] svg) {
     color: inherit;
+  }
+
+  /* OVERRIDE: Keep icons white inside ALL colored circles and gradient backgrounds */
+  .light .bg-\[#1877F2\] svg,
+  .light .bg-gradient-to-br svg,
+  .light .bg-\[#0077B5\] svg,
+  .light .bg-black svg,
+  .light .rounded-full[class*="bg-gradient"] svg,
+  .light .rounded-full[class*="bg-[#"] svg,
+  .light [class*="from-sky-"] svg,
+  .light [class*="from-primary"] svg {
+    color: #ffffff !important;
+    fill: currentColor !important;
   }
 
   /* Transparent backgrounds for hero sections */

@@ -43,7 +43,7 @@ export interface MediaStudioState {
   imageSize: '1K' | '2K' | '4K'; // For Imagen 4 and Gemini 3 Pro
   seed?: number;                 // For reproducible generation (Imagen 4, GPT-image)
   negativePrompt?: string;       // For Imagen 4
-  enhancePrompt: boolean;        // For Imagen 4
+  enhancePrompt: boolean;        // For Imagen 4 - LLM-based prompt rewriting (enabled by default)
 
   // Generation state
   isGenerating: boolean;
