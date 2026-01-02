@@ -22,7 +22,7 @@ const ThemeToggle = () => {
         >
           {/* Sun icon for light mode (shows when in dark mode) */}
           <Sun
-            className={`absolute w-5 h-5 transition-all duration-500 ${
+            className={`sun-icon absolute w-5 h-5 transition-all duration-500 ${
               theme === 'dark'
                 ? 'rotate-0 scale-100 opacity-100'
                 : 'rotate-90 scale-0 opacity-0'
@@ -30,7 +30,7 @@ const ThemeToggle = () => {
           />
           {/* Moon icon for dark mode (shows when in light mode) */}
           <Moon
-            className={`absolute w-5 h-5 transition-all duration-500 ${
+            className={`moon-icon absolute w-5 h-5 transition-all duration-500 ${
               theme === 'light'
                 ? 'rotate-0 scale-100 opacity-100'
                 : '-rotate-90 scale-0 opacity-0'

@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+}
+
 @layer base {
   :root {
     --background: 222.2 84% 4.9%;
@@ -896,10 +902,20 @@
     background-color: transparent !important;
   }
 
-  /* Override any gradient backgrounds that use CSS variables */
-  html.light [class*="bg-gradient-to"] {
+  /* Override any gradient backgrounds that use CSS variables - but keep icon containers and social media icons vibrant */
+  html.light [class*="bg-gradient-to"]:not(.icon-gradient-container):not(.rounded-full) {
     background-image: none !important;
     background-color: transparent !important;
+  }
+
+  /* Force icon containers to keep their gradients in light mode */
+  html.light .icon-gradient-container.bg-gradient-to-br {
+    background-image: linear-gradient(to bottom right, var(--tw-gradient-stops)) !important;
+  }
+
+  /* Force social media platform icons to keep their gradients */
+  html.light .rounded-full[class*="bg-gradient-to"] {
+    background-image: linear-gradient(to bottom right, var(--tw-gradient-stops)) !important;
   }
 
   /* Ensure page wrapper has light gradient */
@@ -2042,6 +2058,27 @@
     color: rgb(91, 95, 238);
   }
 
+  /* Theme toggle icon colors - force correct colors with higher specificity */
+  .light .theme-toggle-button .moon-icon,
+  .light nav .theme-toggle-button .moon-icon {
+    color: rgb(30, 41, 59) !important; /* slate-800 - dark and visible in light mode */
+  }
+
+  .dark .theme-toggle-button .moon-icon,
+  .dark nav .theme-toggle-button .moon-icon {
+    color: rgb(203, 213, 225) !important; /* slate-300 - visible in dark mode */
+  }
+
+  .theme-toggle-button .sun-icon,
+  nav .theme-toggle-button .sun-icon {
+    color: rgb(250, 204, 21) !important; /* yellow-400 - bright sun */
+  }
+
+  /* Extra specificity for moon icon - ensure it's always visible */
+  .light .moon-icon {
+    color: rgb(30, 41, 59) !important; /* slate-800 - very dark */
+  }
+
   /* ============================================ */
   /* NAVIGATION LIGHT MODE FIXES */
   /* ============================================ */
@@ -2374,34 +2411,34 @@
   }
 
   /* Publishing social media icons - they already have inline bg colors, but ensure visibility */
-  .light section .bg-\[#1877F2\] {
+  /* Using attribute selectors to avoid CSS syntax errors with Tailwind arbitrary values */
+  .light section [class*="bg-[#1877F2]"] {
     background-color: #1877F2 !important;
     border: 1px solid rgba(24, 119, 242, 0.3) !important;
   }
 
-  .light section .bg-\[#0077B5\] {
+  .light section [class*="bg-[#0077B5]"] {
     background-color: #0077B5 !important;
     border: 1px solid rgba(0, 119, 181, 0.3) !important;
   }
 
-  .light section .bg-gradient-to-br.from-\[\#833AB4\] {
+  .light section [class*="from-[#833AB4]"] {
     background: linear-gradient(to bottom right, #833AB4, #E1306C, #F77737) !important;
     border: 1px solid rgba(225, 48, 108, 0.3) !important;
   }
 
-  .light section .bg-black {
+  .light section [class*="bg-black"] {
     background-color: #000000 !important;
     border: 1px solid rgba(0, 0, 0, 0.8) !important;
   }
 
   /* Ensure ALL icons inside colored/gradient backgrounds remain white in light mode */
-  .light section .bg-\[#1877F2\] svg,
-  .light section .bg-gradient-to-br.from-\[\#833AB4\] svg,
-  .light section .bg-\[#0077B5\] svg,
-  .light section .bg-black svg,
-  .light section .bg-gradient-to-br.from-sky-400 svg,
-  .light section .bg-gradient-to-br.from-primary svg,
-  .light section .bg-gradient-to-br svg,
+  .light section [class*="bg-[#1877F2]"] svg,
+  .light section [class*="from-[#833AB4]"] svg,
+  .light section [class*="bg-[#0077B5]"] svg,
+  .light section [class*="bg-black"] svg,
+  .light section [class*="from-sky-400"] svg,
+  .light section [class*="from-primary"] svg,
   .light section [class*="bg-gradient"] svg,
   .light section .rounded-full[class*="bg-"] svg {
     color: #ffffff !important;
@@ -2576,8 +2613,8 @@
     color: rgb(15 15 23) !important;
   }
 
-  /* Override hardcoded white text */
-  .light .text-white:not(.cosmic-button):not(.cosmic-button *) {
+  /* Override hardcoded white text - with exceptions for icons in colored containers */
+  .light .text-white:not(.cosmic-button):not(.cosmic-button *):not(.moon-icon):not([class*="bg-gradient"] *):not([class*="bg-[#"] *):not(.rounded-full[class*="bg-"] *) {
     color: rgb(15 15 23) !important;
   }
 
@@ -2594,35 +2631,9 @@
     color: rgb(156 163 175) !important;
   }
 
-  /* Keep certain whites as-is (for icons on colored backgrounds) */
-  /* Increased specificity to (0,4,0) to override line 2580's aggressive .text-white rule */
-  /* Using attribute selectors to avoid CSS syntax errors with arbitrary values */
-  .light .rounded-full[class*="bg-primary"] .text-white,
-  .light .rounded-full[class*="bg-accent"] .text-white,
-  .light .cosmic-button .text-white,
-  .light .rounded-full[class*="bg-gradient"] .text-white,
-  .light .rounded-full[class*="bg-[#"] .text-white,
-  .light .rounded-full[class*="bg-black"] .text-white,
-  .light .rounded-full[class*="from-sky-"] .text-white,
-  .light .rounded-full[class*="from-primary"] .text-white {
-    color: white !important;
-  }
-
-  /* Icon colors */
+  /* Icon colors - inherit from parent by default */
   .light svg:not(.cosmic-button svg):not([class*="bg-"] svg) {
     color: inherit;
-  }
-
-  /* OVERRIDE: Keep icons white inside ALL colored circles and gradient backgrounds */
-  /* Increased specificity to (0,4,0) to properly override aggressive light mode rules */
-  /* Using attribute selectors to avoid CSS syntax errors with arbitrary values */
-  .light .rounded-full[class*="bg-gradient"] svg,
-  .light .rounded-full[class*="bg-[#"] svg,
-  .light .rounded-full[class*="bg-black"] svg,
-  .light .rounded-full[class*="from-sky-"] svg,
-  .light .rounded-full[class*="from-primary"] svg {
-    color: #ffffff !important;
-    fill: currentColor !important;
   }
 
   /* Transparent backgrounds for hero sections */
@@ -2783,26 +2794,25 @@
   }
 
   /* ============================================ */
-  /* FORCE WHITE ICONS IN COLORED CIRCLES - HIGHEST PRIORITY */
+  /* FORCE WHITE ICONS IN COLORED BACKGROUNDS - HIGHEST PRIORITY */
   /* ============================================ */
 
-  /* Social media icons and gradient circles MUST stay white */
-  /* Specificity boosted to (0,4,0) using attribute selectors to avoid CSS syntax errors */
-  .light .rounded-full[class*="bg-[#"] svg,
-  .light .rounded-full[class*="bg-[#"] *,
-  .light .rounded-full[class*="bg-black"] svg,
-  .light .rounded-full[class*="bg-black"] *,
-  .light .rounded-full[class*="bg-gradient"] svg,
-  .light .rounded-full[class*="bg-gradient"] *,
-  .light .rounded-full[class*="from-sky-"] svg,
-  .light .rounded-full[class*="from-sky-"] *,
-  .light .rounded-full[class*="from-primary"] svg,
-  .light .rounded-full[class*="from-primary"] *,
-  .light .rounded-full[class*="bg-primary"] svg,
-  .light .rounded-full[class*="bg-primary"] *,
-  .light .rounded-full[class*="bg-accent"] svg,
-  .light .rounded-full[class*="bg-accent"] * {
+  /* Keep ALL icons white inside gradient backgrounds (cards, circles, etc) */
+  .light [class*="bg-gradient"] svg,
+  .light [class*="from-sky-"] svg,
+  .light [class*="from-primary"] svg,
+  .light [class*="from-accent"] svg,
+  .light [class*="bg-[#"] svg {
     color: #ffffff !important;
+    fill: currentColor !important;
+  }
+
+  /* Social media platform icons - rounded-full specific */
+  .light .rounded-full[class*="bg-[#"] svg,
+  .light .rounded-full[class*="bg-black"] svg,
+  .light .rounded-full[class*="bg-gradient"] svg {
+    color: #ffffff !important;
+    fill: currentColor !important;
   }
 
   .light [class*="roadmap"] .text-gray-300,

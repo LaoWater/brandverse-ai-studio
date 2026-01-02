@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, Calendar, Zap, Globe, Share2, Lightbulb, Target, Rocket, Play, Users, TrendingUp, Clock, Activity, GitGraph, DatabaseIcon } from "lucide-react";
+import { ArrowRight, Calendar, Zap, Globe, Share2, Lightbulb, Target, Rocket, Play, Users, TrendingUp, Clock, Activity, GitGraph, DatabaseIcon, Sparkles, Radio } from "lucide-react";
 import { FaFacebookF, FaInstagram, FaLinkedinIn, FaXTwitter } from "react-icons/fa6";
 import ReviewsSection from "./ReviewsSection";
 
@@ -71,26 +71,67 @@ const HeroSection = () => {
               LinkedIn, and Facebook.
             </p>
 
-            {/* Visual concept representation - Speed Theme */}
-            <div className="flex justify-center items-center space-x-8 my-12">
-              <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-sky-400 to-indigo-500 rounded-full flex items-center justify-center mb-2 mx-auto animate-pulse">
-                <Lightbulb className="w-8 h-8 text-white" />
+            {/* Visual concept representation - 3D Holographic Cards */}
+            <div className="flex justify-center items-center space-x-12 my-16">
+              {/* Your Ideas Card */}
+              <div className="group relative">
+                <div className="relative transform hover:scale-105 transition-all duration-500 hover:-rotate-2">
+                  {/* Animated gradient glow border */}
+                  <div className="absolute -inset-1 bg-gradient-to-r from-sky-400 via-indigo-500 to-sky-400 rounded-3xl opacity-60 blur-lg animate-pulse group-hover:opacity-80 transition-opacity"></div>
+
+                  {/* Glass card with proper light/dark mode */}
+                  <div className="relative bg-gradient-to-br from-white/80 to-white/60 dark:from-black/40 dark:to-black/20 backdrop-blur-2xl rounded-3xl p-6 border-2 border-sky-400/30 shadow-2xl overflow-visible">
+                    {/* Floating icon above card */}
+                    <div className="relative -mt-14 mb-3 flex justify-center">
+                      {/* Icon glow effect */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-sky-400 to-indigo-500 rounded-2xl blur-2xl opacity-40 animate-pulse scale-110"></div>
+
+                      {/* Icon container - boosted vibrant colors */}
+                      <div className="icon-gradient-container relative bg-gradient-to-br from-sky-600 to-indigo-700 rounded-2xl p-4 shadow-2xl transform hover:rotate-12 hover:scale-110 transition-all duration-300">
+                        <Lightbulb className="w-9 h-9 text-white drop-shadow-2xl" />
+                      </div>
+                    </div>
+
+                    {/* Label with solid color fallback */}
+                    <p className="text-sm font-bold text-center bg-gradient-to-r from-sky-600 to-indigo-600 dark:from-sky-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                      Your Ideas
+                    </p>
+                  </div>
                 </div>
-                <p className="text-sm text-gray-400">Your Ideas</p>
               </div>
-              
-              <div className="flex space-x-1">
-                <div className="w-8 h-1 bg-gradient-to-r from-accent to-transparent animate-pulse"></div>
-                <div className="w-8 h-1 bg-gradient-to-r from-primary to-transparent animate-pulse" style={{ animationDelay: '0.1s' }}></div>
-                <div className="w-8 h-1 bg-gradient-to-r from-accent to-transparent animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+
+              {/* Speed Animation - Enhanced */}
+              <div className="flex space-x-1.5">
+                <div className="w-12 h-1.5 bg-gradient-to-r from-accent to-transparent animate-pulse rounded-full shadow-lg shadow-accent/50"></div>
+                <div className="w-12 h-1.5 bg-gradient-to-r from-primary to-transparent animate-pulse rounded-full shadow-lg shadow-primary/50" style={{ animationDelay: '0.15s' }}></div>
+                <div className="w-12 h-1.5 bg-gradient-to-r from-accent to-transparent animate-pulse rounded-full shadow-lg shadow-accent/50" style={{ animationDelay: '0.3s' }}></div>
               </div>
-              
-              <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center mb-2 mx-auto">
-                  <Target className="w-8 h-8 text-white" />
+
+              {/* Instant Impact Card */}
+              <div className="group relative">
+                <div className="relative transform hover:scale-105 transition-all duration-500 hover:rotate-2">
+                  {/* Animated gradient glow border */}
+                  <div className="absolute -inset-1 bg-gradient-to-r from-primary via-accent to-primary rounded-3xl opacity-60 blur-lg animate-pulse group-hover:opacity-80 transition-opacity" style={{ animationDelay: '0.5s' }}></div>
+
+                  {/* Glass card with proper light/dark mode */}
+                  <div className="relative bg-gradient-to-br from-white/80 to-white/60 dark:from-black/40 dark:to-black/20 backdrop-blur-2xl rounded-3xl p-6 border-2 border-primary/30 shadow-2xl overflow-visible">
+                    {/* Floating icon above card */}
+                    <div className="relative -mt-14 mb-3 flex justify-center">
+                      {/* Icon glow effect */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent rounded-2xl blur-2xl opacity-40 animate-pulse scale-110"></div>
+
+                      {/* Icon container - vibrant in light mode */}
+                      <div className="icon-gradient-container relative bg-gradient-to-br from-primary to-accent rounded-2xl p-4 shadow-2xl transform hover:-rotate-12 hover:scale-110 transition-all duration-300">
+                        <Target className="w-9 h-9 text-white drop-shadow-2xl" />
+                      </div>
+                    </div>
+
+                    {/* Label - fallback to solid color in light mode to avoid background issue */}
+                    <p className="text-sm font-bold text-center text-primary/90 dark:bg-gradient-to-r dark:from-primary dark:to-accent dark:bg-clip-text dark:text-transparent">
+                      Instant Impact
+                    </p>
+                  </div>
                 </div>
-                <p className="text-sm text-gray-400">Instant Impact</p>
               </div>
             </div>
 
