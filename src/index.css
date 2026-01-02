@@ -2595,10 +2595,16 @@
   }
 
   /* Keep certain whites as-is (for icons on colored backgrounds) */
-  .light .bg-primary .text-white,
-  .light .bg-accent .text-white,
+  /* Increased specificity to (0,4,0) to override line 2580's aggressive .text-white rule */
+  /* Using attribute selectors to avoid CSS syntax errors with arbitrary values */
+  .light .rounded-full[class*="bg-primary"] .text-white,
+  .light .rounded-full[class*="bg-accent"] .text-white,
   .light .cosmic-button .text-white,
-  .light [class*="bg-gradient"] .text-white {
+  .light .rounded-full[class*="bg-gradient"] .text-white,
+  .light .rounded-full[class*="bg-[#"] .text-white,
+  .light .rounded-full[class*="bg-black"] .text-white,
+  .light .rounded-full[class*="from-sky-"] .text-white,
+  .light .rounded-full[class*="from-primary"] .text-white {
     color: white !important;
   }
 
@@ -2608,14 +2614,13 @@
   }
 
   /* OVERRIDE: Keep icons white inside ALL colored circles and gradient backgrounds */
-  .light .bg-\[#1877F2\] svg,
-  .light .bg-gradient-to-br svg,
-  .light .bg-\[#0077B5\] svg,
-  .light .bg-black svg,
+  /* Increased specificity to (0,4,0) to properly override aggressive light mode rules */
+  /* Using attribute selectors to avoid CSS syntax errors with arbitrary values */
   .light .rounded-full[class*="bg-gradient"] svg,
   .light .rounded-full[class*="bg-[#"] svg,
-  .light [class*="from-sky-"] svg,
-  .light [class*="from-primary"] svg {
+  .light .rounded-full[class*="bg-black"] svg,
+  .light .rounded-full[class*="from-sky-"] svg,
+  .light .rounded-full[class*="from-primary"] svg {
     color: #ffffff !important;
     fill: currentColor !important;
   }
@@ -2775,6 +2780,29 @@
   .light [class*="roadmap"] .text-white:not([class*="bg-gradient"] *),
   .light [class*="timeline"] .text-white:not([class*="bg-gradient"] *) {
     color: rgb(15 15 23) !important;
+  }
+
+  /* ============================================ */
+  /* FORCE WHITE ICONS IN COLORED CIRCLES - HIGHEST PRIORITY */
+  /* ============================================ */
+
+  /* Social media icons and gradient circles MUST stay white */
+  /* Specificity boosted to (0,4,0) using attribute selectors to avoid CSS syntax errors */
+  .light .rounded-full[class*="bg-[#"] svg,
+  .light .rounded-full[class*="bg-[#"] *,
+  .light .rounded-full[class*="bg-black"] svg,
+  .light .rounded-full[class*="bg-black"] *,
+  .light .rounded-full[class*="bg-gradient"] svg,
+  .light .rounded-full[class*="bg-gradient"] *,
+  .light .rounded-full[class*="from-sky-"] svg,
+  .light .rounded-full[class*="from-sky-"] *,
+  .light .rounded-full[class*="from-primary"] svg,
+  .light .rounded-full[class*="from-primary"] *,
+  .light .rounded-full[class*="bg-primary"] svg,
+  .light .rounded-full[class*="bg-primary"] *,
+  .light .rounded-full[class*="bg-accent"] svg,
+  .light .rounded-full[class*="bg-accent"] * {
+    color: #ffffff !important;
   }
 
   .light [class*="roadmap"] .text-gray-300,
