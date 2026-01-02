@@ -52,15 +52,15 @@ export interface StorageUsage {
 export interface GenerationConfig {
   prompt: string;
   mediaType: 'video' | 'image';
-  model: string;               // API model identifier (e.g., 'gemini-2.5-flash-image', 'imagen-4.0-generate-001', 'gpt-image-1.5')
+  model: string;               // API model identifier (e.g., 'gemini-2.5-flash-image', 'gemini-3-pro-image-preview', 'imagen-4.0-generate-001', 'gpt-image-1.5')
   aspectRatio: string;         // '1:1', '16:9', '9:16', '3:4', '4:3', '3:2'
   numberOfImages?: number;     // 1-4 for Imagen, 1-10 for GPT-image
-  imageSize?: '1K' | '2K';     // For Imagen 4 Standard/Ultra
+  imageSize?: '1K' | '2K' | '4K';  // For Imagen 4 and Gemini 3 Pro
   seed?: number;               // For reproducible generation (Imagen 4, GPT-image)
   negativePrompt?: string;     // For Imagen 4
   enhancePrompt?: boolean;     // For Imagen 4
   duration?: number;           // For video (future)
-  referenceImageUrl?: string;
+  referenceImageUrls?: string[]; // Multiple reference images (up to 14 for Gemini 3 Pro)
   userId?: string;             // For tracking
   companyId?: string;          // For tracking
 }
@@ -77,7 +77,7 @@ export interface GenerationResult {
     numberOfImages?: number;
     imageSize?: string;
     seed?: number;
-    referenceImageUrl?: string;
+    referenceImageUrls?: string[];
   };
   error?: string;
 }
@@ -85,14 +85,14 @@ export interface GenerationResult {
 // API Payload for backend
 export interface MediaGenerationAPIPayload {
   prompt: string;
-  model: string;                    // 'gemini-2.5-flash-image' | 'imagen-4.0-generate-001' | 'gpt-image-1.5'
+  model: string;                    // 'gemini-2.5-flash-image' | 'gemini-3-pro-image-preview' | 'imagen-4.0-generate-001' | 'gpt-image-1.5'
   aspect_ratio: string;             // '1:1', '16:9', '9:16', '3:4', '4:3', '3:2'
   number_of_images?: number;        // 1-4 for Imagen, 1-10 for GPT-image (default: 1)
-  image_size?: '1K' | '2K';         // For Imagen 4 (default: '1K')
+  image_size?: '1K' | '2K' | '4K';  // For Imagen 4 and Gemini 3 Pro (default: '1K')
   seed?: number;                    // For reproducible generation
   negative_prompt?: string;         // For Imagen 4
   enhance_prompt?: boolean;         // For Imagen 4 (default: true)
-  reference_image_url?: string;     // Optional reference image
+  reference_image_urls?: string[];  // Multiple reference images (up to 14 for Gemini 3 Pro)
   user_id?: string;
   company_id?: string;
 }
@@ -135,8 +135,8 @@ export const prepareMediaAPIPayload = (config: GenerationConfig): MediaGeneratio
     payload.enhance_prompt = config.enhancePrompt;
   }
 
-  if (config.referenceImageUrl) {
-    payload.reference_image_url = config.referenceImageUrl;
+  if (config.referenceImageUrls && config.referenceImageUrls.length > 0) {
+    payload.reference_image_urls = config.referenceImageUrls;
   }
 
   if (config.userId) {

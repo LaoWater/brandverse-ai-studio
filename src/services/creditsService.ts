@@ -76,13 +76,22 @@ export const calculateCreditsNeeded = (
  */
 export const calculateMediaStudioCredits = (
   model: string,
-  imageSize: '1K' | '2K' = '1K',
+  imageSize: '1K' | '2K' | '4K' = '1K',
   numberOfImages: number = 1
 ): number => {
   let creditsPerImage = 3; // Default
 
   if (model === 'gemini-2.5-flash-image') {
-    creditsPerImage = 2; // Gemini is always 2 credits (no quality options)
+    creditsPerImage = 2; // Nano Banana Standard: always 2 credits (no quality options)
+  } else if (model === 'gemini-3-pro-image-preview') {
+    // Nano Banana Pro: varies by quality
+    if (imageSize === '4K') {
+      creditsPerImage = 8;
+    } else if (imageSize === '2K') {
+      creditsPerImage = 5;
+    } else {
+      creditsPerImage = 3; // 1K
+    }
   } else if (model === 'imagen-4.0-generate-001') {
     creditsPerImage = imageSize === '2K' ? 4 : 3; // Imagen 4: 1K=3, 2K=4
   } else if (model === 'gpt-image-1.5') {

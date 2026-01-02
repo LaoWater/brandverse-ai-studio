@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown, Building2, Plus } from 'lucide-react';
+import { ChevronDown, Building2, Plus, ImageIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const CompanySelector = () => {
@@ -41,12 +41,22 @@ export const CompanySelector = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           className="justify-between bg-white/5 border-white/20 text-white hover:bg-white/10 hover:text-white min-w-[200px]"
         >
           <div className="flex items-center space-x-2">
-            <Building2 className="w-4 h-4" />
+            {selectedCompany?.logo_path ? (
+              <div className="w-5 h-5 rounded overflow-hidden bg-white/10 flex items-center justify-center flex-shrink-0">
+                <img
+                  src={selectedCompany.logo_path}
+                  alt={`${selectedCompany.name} logo`}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            ) : (
+              <Building2 className="w-4 h-4" />
+            )}
             <span className="truncate">
               {selectedCompany?.name || 'Select Company'}
             </span>
@@ -62,9 +72,22 @@ export const CompanySelector = () => {
             className="text-white hover:bg-blue-600/20 hover:text-white cursor-pointer"
           >
             <div className="flex items-center justify-between w-full">
-              <span className="truncate">{company.name}</span>
+              <div className="flex items-center space-x-2 flex-1 min-w-0">
+                {company.logo_path ? (
+                  <div className="w-5 h-5 rounded overflow-hidden bg-white/10 flex items-center justify-center flex-shrink-0">
+                    <img
+                      src={company.logo_path}
+                      alt={`${company.name} logo`}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                ) : (
+                  <Building2 className="w-4 h-4 flex-shrink-0" />
+                )}
+                <span className="truncate">{company.name}</span>
+              </div>
               {selectedCompany?.id === company.id && (
-                <Badge variant="outline" className="ml-2 border-accent text-accent">
+                <Badge variant="outline" className="ml-2 border-accent text-accent flex-shrink-0">
                   Active
                 </Badge>
               )}

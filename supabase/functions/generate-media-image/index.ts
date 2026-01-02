@@ -16,14 +16,15 @@ const logStep = (step: string, details?: any) => {
 // Type definitions for API payloads
 interface MediaGenerationRequest {
   prompt: string;
-  model: 'gemini-2.5-flash-image' | 'imagen-4.0-generate-001' | 'imagen-4.0-ultra-generate-001' | 'gpt-image-1.5';
+  model: 'gemini-2.5-flash-image' | 'gemini-3-pro-image-preview' | 'imagen-4.0-generate-001' | 'imagen-4.0-ultra-generate-001' | 'gpt-image-1.5';
   aspect_ratio: string;
   number_of_images?: number;
-  image_size?: '1K' | '2K';
+  image_size?: '1K' | '2K' | '4K';
   seed?: number;
   negative_prompt?: string;
   enhance_prompt?: boolean;
-  reference_image_url?: string;
+  reference_image_url?: string; // Deprecated - use reference_image_urls
+  reference_image_urls?: string[]; // Multiple reference images (up to 14 for Gemini 3 Pro)
   user_id?: string;
   company_id?: string;
 }
@@ -44,30 +45,40 @@ interface MediaGenerationResponse {
 }
 
 // Helper to convert aspect ratio to dimensions
-const getImageDimensions = (aspectRatio: string, size: '1K' | '2K' = '1K'): { width: number; height: number } => {
-  const baseSize = size === '2K' ? 1536 : 1024;
+const getImageDimensions = (aspectRatio: string, size: '1K' | '2K' | '4K' = '1K'): { width: number; height: number } => {
+  const baseSize = size === '4K' ? 2048 : size === '2K' ? 1536 : 1024;
 
   switch (aspectRatio) {
     case '1:1':
       return { width: baseSize, height: baseSize };
     case '16:9':
-      return size === '2K'
+      return size === '4K'
+        ? { width: 2048, height: 1152 }
+        : size === '2K'
         ? { width: 1536, height: 864 }
         : { width: 1024, height: 576 };
     case '9:16':
-      return size === '2K'
+      return size === '4K'
+        ? { width: 1152, height: 2048 }
+        : size === '2K'
         ? { width: 864, height: 1536 }
         : { width: 576, height: 1024 };
     case '4:3':
-      return size === '2K'
+      return size === '4K'
+        ? { width: 2048, height: 1536 }
+        : size === '2K'
         ? { width: 1536, height: 1152 }
         : { width: 1024, height: 768 };
     case '3:4':
-      return size === '2K'
+      return size === '4K'
+        ? { width: 1536, height: 2048 }
+        : size === '2K'
         ? { width: 1152, height: 1536 }
         : { width: 768, height: 1024 };
     case '3:2':
-      return size === '2K'
+      return size === '4K'
+        ? { width: 2048, height: 1366 }
+        : size === '2K'
         ? { width: 1536, height: 1024 }
         : { width: 1024, height: 683 };
     default:
@@ -110,21 +121,28 @@ async function generateWithGemini(request: MediaGenerationRequest): Promise<stri
   const apiKey = Deno.env.get("GOOGLE_API_KEY");
   if (!apiKey) throw new Error("GOOGLE_API_KEY not configured");
 
+  // Get reference URLs from either new or old field (backwards compatibility)
+  const referenceUrls = request.reference_image_urls ||
+                       (request.reference_image_url ? [request.reference_image_url] : []);
+
   logStep("Generating with Gemini 2.5 Flash", {
     prompt: request.prompt.substring(0, 50),
     aspectRatio: request.aspect_ratio,
-    hasReference: !!request.reference_image_url
+    referenceCount: referenceUrls.length
   });
 
   // Gemini 2.5 Flash Image API endpoint
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent`;
 
-  // Build parts array - add reference image if provided
+  // Build parts array - add reference images if provided
   const requestParts: any[] = [];
 
-  // Add reference image first if provided (Gemini is multimodal)
-  if (request.reference_image_url) {
-    const { data, mimeType } = await fetchReferenceImageAsBase64(request.reference_image_url);
+  // Add reference image(s) first if provided (Gemini is multimodal)
+  // Note: Standard Gemini 2.5 Flash works best with 1 reference, use Pro for multiple
+  if (referenceUrls.length > 0) {
+    // Only use the first reference image for standard model
+    const imageUrl = referenceUrls[0];
+    const { data, mimeType } = await fetchReferenceImageAsBase64(imageUrl);
     requestParts.push({
       inlineData: {
         mimeType: mimeType,
@@ -136,7 +154,7 @@ async function generateWithGemini(request: MediaGenerationRequest): Promise<stri
 
   // Add text prompt
   requestParts.push({
-    text: request.reference_image_url
+    text: referenceUrls.length > 0
       ? `Using the reference image provided, generate a new image with this description: ${request.prompt}`
       : request.prompt
   });
@@ -217,6 +235,140 @@ async function generateWithGemini(request: MediaGenerationRequest): Promise<stri
       partsStructure: parts.map((p: any) => Object.keys(p))
     });
     throw new Error("No image data in Gemini response. Try a more descriptive prompt.");
+  }
+
+  // Handle both snake_case and camelCase
+  const imageData = imagePart.inline_data?.data || imagePart.inlineData?.data;
+
+  if (!imageData) {
+    throw new Error("No image data found in response part");
+  }
+
+  logStep("Image data extracted successfully", {
+    dataLength: imageData.length,
+    mimeType: imagePart.inline_data?.mime_type || imagePart.inlineData?.mimeType
+  });
+
+  return `data:image/png;base64,${imageData}`;
+}
+
+// Generate image using Gemini 3 Pro Image (Advanced reasoning, 4K support, multi-reference)
+async function generateWithGeminiPro(request: MediaGenerationRequest): Promise<string> {
+  const apiKey = Deno.env.get("GOOGLE_API_KEY");
+  if (!apiKey) throw new Error("GOOGLE_API_KEY not configured");
+
+  // Get reference URLs from either new or old field
+  const referenceUrls = request.reference_image_urls ||
+                       (request.reference_image_url ? [request.reference_image_url] : []);
+
+  logStep("Generating with Gemini 3 Pro Image", {
+    prompt: request.prompt.substring(0, 50),
+    aspectRatio: request.aspect_ratio,
+    imageSize: request.image_size || '1K',
+    referenceCount: referenceUrls.length
+  });
+
+  // Gemini 3 Pro Image API endpoint
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent`;
+
+  // Build parts array - add reference images if provided
+  const requestParts: any[] = [];
+
+  // Add all reference images first (Gemini 3 Pro supports up to 14)
+  if (referenceUrls.length > 0) {
+    for (const imageUrl of referenceUrls) {
+      const { data, mimeType } = await fetchReferenceImageAsBase64(imageUrl);
+      requestParts.push({
+        inlineData: {
+          mimeType: mimeType,
+          data: data
+        }
+      });
+    }
+    logStep(`${referenceUrls.length} reference image(s) added to Gemini Pro prompt`);
+  }
+
+  // Add text prompt
+  requestParts.push({
+    text: referenceUrls.length > 0
+      ? `Using the ${referenceUrls.length} reference image(s) provided, generate a new image with this description: ${request.prompt}`
+      : request.prompt
+  });
+
+  const payload: any = {
+    contents: [{
+      parts: requestParts
+    }],
+    generationConfig: {
+      responseModalities: ["TEXT", "IMAGE"],
+      imageConfig: {
+        aspectRatio: request.aspect_ratio,
+        // Gemini 3 Pro supports 1K, 2K, and 4K
+        imageSize: request.image_size || '1K'
+      }
+    }
+  };
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'x-goog-api-key': apiKey,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    logStep("Gemini Pro API Error", { status: response.status, error });
+    throw new Error(`Gemini Pro API error: ${error}`);
+  }
+
+  const data = await response.json();
+
+  // Log the FULL response to debug
+  logStep("Gemini Pro FULL response", { response: JSON.stringify(data, null, 2) });
+
+  if (!data.candidates || data.candidates.length === 0) {
+    throw new Error("No candidates in Gemini Pro response");
+  }
+
+  const candidate = data.candidates[0];
+  logStep("Candidate structure", {
+    hasContent: !!candidate.content,
+    hasParts: !!candidate.content?.parts,
+    partsLength: candidate.content?.parts?.length || 0,
+    candidateKeys: Object.keys(candidate)
+  });
+
+  // Extract image from response
+  const parts = candidate.content?.parts || [];
+
+  if (parts.length === 0) {
+    logStep("Empty parts - full candidate", { candidate: JSON.stringify(candidate) });
+    throw new Error("No parts in Gemini Pro response content");
+  }
+
+  // Find the part with inline_data (image)
+  const imagePart = parts.find((part: any) => part.inline_data || part.inlineData);
+
+  if (!imagePart) {
+    // Check if Gemini returned a text response explaining why it couldn't generate
+    const textPart = parts.find((part: any) => part.text);
+
+    if (textPart && textPart.text) {
+      logStep("Gemini Pro returned text instead of image", { text: textPart.text });
+
+      throw new Error(
+        `Gemini Pro couldn't generate an image. It says: "${textPart.text}"\n\n` +
+        `💡 Tip: Try a more detailed prompt or check your reference images for clarity.`
+      );
+    }
+
+    logStep("No image part found", {
+      partsStructure: parts.map((p: any) => Object.keys(p))
+    });
+    throw new Error("No image data in Gemini Pro response. Try a more descriptive prompt.");
   }
 
   // Handle both snake_case and camelCase
@@ -463,8 +615,12 @@ serve(async (req) => {
 
     switch (request.model) {
       case 'gemini-2.5-flash-image':
-        // Gemini only uses aspect ratio, no size/quality parameters
+        // Gemini 2.5 Flash - Fast & creative (1K/2K)
         imageDataUrl = await generateWithGemini(request);
+        break;
+      case 'gemini-3-pro-image-preview':
+        // Gemini 3 Pro - Advanced reasoning, 4K support, multi-reference (up to 14 images)
+        imageDataUrl = await generateWithGeminiPro(request);
         break;
       case 'imagen-4.0-generate-001':
       case 'imagen-4.0-ultra-generate-001':

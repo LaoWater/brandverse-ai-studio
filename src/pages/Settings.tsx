@@ -7,15 +7,18 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  User, 
-  Settings as SettingsIcon, 
-  Building2, 
-  Trash2, 
-  Plus, 
+import {
+  User,
+  Settings as SettingsIcon,
+  Building2,
+  Trash2,
+  Plus,
   Bell,
   Shield,
-  Mail
+  Mail,
+  Upload,
+  X,
+  ImageIcon
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,6 +26,7 @@ import { useCompany } from "@/contexts/CompanyContext";
 import { supabase } from "@/integrations/supabase/client";
 import { CompanySelector } from "@/components/CompanySelector";
 import { useNavigate } from "react-router-dom";
+import { uploadCompanyLogo, deleteCompanyLogo, updateCompanyLogoPath } from "@/services/companyService";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -40,8 +44,12 @@ const Settings = () => {
     mission: "",
     tone_of_voice: "",
     primary_color_1: "#5B5FEE",
-    primary_color_2: "#00D4FF"
+    primary_color_2: "#00D4FF",
+    logo_path: null as string | null
   });
+
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   const [preferences, setPreferences] = useState({
     newsletter: true,
@@ -79,8 +87,12 @@ const Settings = () => {
         mission: selectedCompany.mission || "",
         tone_of_voice: selectedCompany.tone_of_voice || "",
         primary_color_1: selectedCompany.primary_color_1 || "#5B5FEE",
-        primary_color_2: selectedCompany.primary_color_2 || "#00D4FF"
+        primary_color_2: selectedCompany.primary_color_2 || "#00D4FF",
+        logo_path: selectedCompany.logo_path || null
       });
+      // Reset logo upload state when company changes
+      setLogoFile(null);
+      setLogoPreview(null);
     }
   }, [selectedCompany]);
 
@@ -141,6 +153,62 @@ const Settings = () => {
     }
   };
 
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid File",
+          description: "Please upload an image file (PNG, JPG, etc.)",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File Too Large",
+          description: "Logo must be less than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setLogoFile(file);
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveLogo = async () => {
+    if (!selectedCompany) return;
+
+    // If there's an existing logo in the database, delete it
+    if (companyData.logo_path) {
+      const deleted = await deleteCompanyLogo(companyData.logo_path);
+      if (deleted) {
+        await updateCompanyLogoPath(selectedCompany.id, null);
+        setCompanyData(prev => ({ ...prev, logo_path: null }));
+        await refreshCompanies();
+        toast({
+          title: "Logo Removed",
+          description: "Company logo has been removed successfully.",
+        });
+      }
+    }
+
+    // Clear upload state
+    setLogoFile(null);
+    setLogoPreview(null);
+  };
+
   const handleSaveCompany = async () => {
     if (!selectedCompany) {
       toast({
@@ -154,7 +222,27 @@ const Settings = () => {
     setSaving(true);
     try {
       console.log('Saving company:', companyData, 'for company ID:', selectedCompany.id);
-      
+
+      // Upload new logo if one was selected
+      let logoPath = companyData.logo_path;
+      if (logoFile) {
+        // Delete old logo if it exists
+        if (companyData.logo_path) {
+          await deleteCompanyLogo(companyData.logo_path);
+        }
+
+        // Upload new logo
+        logoPath = await uploadCompanyLogo(logoFile, user!.id, selectedCompany.id);
+        if (!logoPath) {
+          toast({
+            title: "Logo Upload Failed",
+            description: "Company will be updated without a new logo.",
+            variant: "default",
+          });
+          logoPath = companyData.logo_path; // Keep existing logo
+        }
+      }
+
       const { error } = await supabase
         .from('companies')
         .update({
@@ -162,7 +250,8 @@ const Settings = () => {
           mission: companyData.mission,
           tone_of_voice: companyData.tone_of_voice,
           primary_color_1: companyData.primary_color_1,
-          primary_color_2: companyData.primary_color_2
+          primary_color_2: companyData.primary_color_2,
+          logo_path: logoPath
         })
         .eq('id', selectedCompany.id);
 
@@ -171,8 +260,12 @@ const Settings = () => {
         throw error;
       }
 
+      // Clear logo upload state after successful save
+      setLogoFile(null);
+      setLogoPreview(null);
+
       await refreshCompanies();
-      
+
       toast({
         title: "Company Updated! ✅",
         description: "Your company settings have been saved successfully."
@@ -403,6 +496,67 @@ const Settings = () => {
                         onChange={(e) => setCompanyData(prev => ({ ...prev, name: e.target.value }))}
                         className="bg-white/5 border-white/20 text-white focus:border-primary"
                       />
+                    </div>
+
+                    {/* Logo Upload Section */}
+                    <div className="space-y-3">
+                      <Label className="text-white font-medium">Company Logo</Label>
+                      {logoPreview || companyData.logo_path ? (
+                        <div className="relative w-full p-6 rounded-lg bg-white/5 border border-white/10">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                              <div className="w-20 h-20 rounded-lg bg-white/10 flex items-center justify-center overflow-hidden border border-white/20">
+                                <img
+                                  src={logoPreview || companyData.logo_path || ''}
+                                  alt="Logo preview"
+                                  className="w-full h-full object-contain"
+                                />
+                              </div>
+                              <div>
+                                <p className="text-white font-medium">
+                                  {logoFile?.name || 'Current logo'}
+                                </p>
+                                <p className="text-gray-400 text-sm">
+                                  {logoFile ? `${(logoFile.size / 1024).toFixed(1)} KB` : 'Click X to remove'}
+                                </p>
+                              </div>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={handleRemoveLogo}
+                              className="text-red-400 hover:text-red-300 hover:bg-red-400/10"
+                            >
+                              <X className="w-5 h-5" />
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleLogoChange}
+                            className="hidden"
+                            id="company-logo-upload"
+                          />
+                          <Label
+                            htmlFor="company-logo-upload"
+                            className="flex flex-col items-center justify-center w-full h-32 rounded-lg border-2 border-dashed border-white/20 hover:border-white/40 bg-white/5 hover:bg-white/10 cursor-pointer transition-all"
+                          >
+                            <div className="flex flex-col items-center space-y-2">
+                              <div className="p-3 rounded-full bg-white/10">
+                                <Upload className="w-6 h-6 text-white" />
+                              </div>
+                              <div className="text-center">
+                                <p className="text-white font-medium">Upload Company Logo</p>
+                                <p className="text-gray-400 text-xs mt-1">PNG, JPG up to 5MB</p>
+                              </div>
+                            </div>
+                          </Label>
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-2">

@@ -8,17 +8,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowRight, Upload, Instagram, Facebook, Twitter, Linkedin } from "lucide-react";
+import { ArrowRight, Upload, Instagram, Facebook, Twitter, Linkedin, X, ImageIcon } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
+import { uploadCompanyLogo } from "@/services/companyService";
 
 const BrandSetup = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { refreshCompanies } = useCompany();
   const [loading, setLoading] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     companyName: "",
     mission: "",
@@ -38,10 +41,49 @@ const BrandSetup = () => {
   const handlePlatformChange = (platformId: string, checked: boolean) => {
     setFormData(prev => ({
       ...prev,
-      platforms: checked 
+      platforms: checked
         ? [...prev.platforms, platformId]
         : prev.platforms.filter(p => p !== platformId)
     }));
+  };
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid File",
+          description: "Please upload an image file (PNG, JPG, etc.)",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File Too Large",
+          description: "Logo must be less than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setLogoFile(file);
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setLogoFile(null);
+    setLogoPreview(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -61,6 +103,19 @@ const BrandSetup = () => {
     console.log("Creating company with data:", formData);
 
     try {
+      // Upload logo if provided
+      let logoPath = null;
+      if (logoFile) {
+        logoPath = await uploadCompanyLogo(logoFile, user.id);
+        if (!logoPath) {
+          toast({
+            title: "Logo Upload Failed",
+            description: "Company will be created without a logo. You can add it later.",
+            variant: "default",
+          });
+        }
+      }
+
       const { data, error } = await supabase
         .from('companies')
         .insert({
@@ -69,6 +124,7 @@ const BrandSetup = () => {
           tone_of_voice: formData.toneOfVoice,
           primary_color_1: formData.primaryColor,
           primary_color_2: formData.secondaryColor,
+          logo_path: logoPath,
           user_id: user.id,
           other_info: {
             platforms: formData.platforms
@@ -194,10 +250,64 @@ const BrandSetup = () => {
                 <div className="space-y-4">
                   <Label className="text-white font-medium">Brand Assets</Label>
                   <div className="space-y-4">
-                    <Button type="button" variant="outline" className="w-full border-white/20 text-white hover:bg-white/10 h-12">
-                      <Upload className="w-4 h-4 mr-2" />
-                      Upload Logo
-                    </Button>
+                    {/* Logo Upload */}
+                    <div className="space-y-3">
+                      <Label className="text-white font-medium text-sm">Company Logo</Label>
+                      {logoPreview ? (
+                        <div className="relative w-full p-6 rounded-lg bg-white/5 border border-white/10">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                              <div className="w-20 h-20 rounded-lg bg-white/10 flex items-center justify-center overflow-hidden border border-white/20">
+                                <img
+                                  src={logoPreview}
+                                  alt="Logo preview"
+                                  className="w-full h-full object-contain"
+                                />
+                              </div>
+                              <div>
+                                <p className="text-white font-medium">{logoFile?.name}</p>
+                                <p className="text-gray-400 text-sm">
+                                  {logoFile && (logoFile.size / 1024).toFixed(1)} KB
+                                </p>
+                              </div>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={handleRemoveLogo}
+                              className="text-red-400 hover:text-red-300 hover:bg-red-400/10"
+                            >
+                              <X className="w-5 h-5" />
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleLogoChange}
+                            className="hidden"
+                            id="logo-upload"
+                          />
+                          <Label
+                            htmlFor="logo-upload"
+                            className="flex flex-col items-center justify-center w-full h-32 rounded-lg border-2 border-dashed border-white/20 hover:border-white/40 bg-white/5 hover:bg-white/10 cursor-pointer transition-all"
+                          >
+                            <div className="flex flex-col items-center space-y-2">
+                              <div className="p-3 rounded-full bg-white/10">
+                                <Upload className="w-6 h-6 text-white" />
+                              </div>
+                              <div className="text-center">
+                                <p className="text-white font-medium">Upload Company Logo</p>
+                                <p className="text-gray-400 text-xs mt-1">PNG, JPG up to 5MB</p>
+                              </div>
+                            </div>
+                          </Label>
+                        </div>
+                      )}
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="flex items-center space-x-4">
                         <Label htmlFor="primaryColor" className="text-white font-medium">Primary Color</Label>

@@ -11,18 +11,24 @@ import ModelSelector from '@/components/media/ModelSelector';
 import PromptInput from '@/components/media/PromptInput';
 import FormatControls from '@/components/media/FormatControls';
 import ReferenceImageUpload from '@/components/media/ReferenceImageUpload';
+import ReferenceImageLibrary from '@/components/media/ReferenceImageLibrary';
 import MediaLibrary from '@/components/media/MediaLibrary';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { Sparkles, Zap, ArrowRight, Loader, CheckCircle, Library } from 'lucide-react';
+import { Sparkles, Zap, ArrowRight, Loader, CheckCircle, Library, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   generateMediaWithProgress,
   saveMediaRecord,
   uploadReferenceImage,
 } from '@/services/mediaStudioService';
+import {
+  getUserCredits,
+  deductCredits,
+  calculateMediaStudioCredits,
+} from '@/services/creditsService';
 
 const MediaStudioContent = () => {
   const {
@@ -34,7 +40,7 @@ const MediaStudioContent = () => {
     seed,
     negativePrompt,
     enhancePrompt,
-    referenceImage,
+    referenceImages,
     isGenerating,
     generationProgress,
     currentStage,
@@ -51,23 +57,46 @@ const MediaStudioContent = () => {
   const navigate = useNavigate();
   const [showLibrary, setShowLibrary] = useState(false);
 
+  // Calculate generation cost based on current settings
+  const generationCost = calculateMediaStudioCredits(
+    selectedImageModel,
+    imageSize,
+    numberOfImages
+  );
+
   // Generation mutation
   const generateMutation = useMutation({
     mutationFn: async () => {
-      // Upload reference image if provided
-      let referenceImageUrl: string | undefined;
-      if (referenceImage && user) {
-        console.log('[MediaStudio] Uploading reference image...', referenceImage.name);
-        const uploadedUrl = await uploadReferenceImage(referenceImage, user.id);
-        console.log('[MediaStudio] Reference image uploaded:', uploadedUrl);
-        if (uploadedUrl) {
-          referenceImageUrl = uploadedUrl;
-        } else {
-          console.error('[MediaStudio] Reference image upload failed - no URL returned');
+      // Check if user has enough credits
+      const userCredits = await getUserCredits();
+      if (!userCredits || userCredits.available_credits < generationCost) {
+        throw new Error(
+          `Insufficient credits. You need ${generationCost} credits but only have ${userCredits?.available_credits || 0}.`
+        );
+      }
+
+      // Deduct credits before generation
+      const deductSuccess = await deductCredits(generationCost);
+      if (!deductSuccess) {
+        throw new Error('Failed to deduct credits. Please try again.');
+      }
+
+      // Upload reference images if provided
+      let referenceImageUrls: string[] = [];
+      if (referenceImages.length > 0 && user) {
+        console.log('[MediaStudio] Uploading reference images...', referenceImages.length);
+        for (const image of referenceImages) {
+          const uploadedUrl = await uploadReferenceImage(image, user.id);
+          console.log('[MediaStudio] Reference image uploaded:', uploadedUrl);
+          if (uploadedUrl) {
+            referenceImageUrls.push(uploadedUrl);
+          } else {
+            console.error('[MediaStudio] Reference image upload failed - no URL returned');
+          }
         }
       }
 
-      console.log('[MediaStudio] Calling generateMediaWithProgress with referenceImageUrl:', referenceImageUrl);
+      console.log('[MediaStudio] Calling generateMediaWithProgress with referenceImageUrls:', referenceImageUrls);
 
       // Generate media with progress
       const result = await generateMediaWithProgress(
@@ -81,7 +110,7 @@ const MediaStudioContent = () => {
           seed,
           negativePrompt,
           enhancePrompt,
-          referenceImageUrl,
+          referenceImageUrls,
           userId: user.id,
           companyId: selectedCompany?.id,
         },
@@ -90,9 +119,9 @@ const MediaStudioContent = () => {
         }
       );
 
-      return { result, referenceImageUrl };
+      return { result, referenceImageUrls };
     },
-    onSuccess: async ({ result, referenceImageUrl }) => {
+    onSuccess: async ({ result, referenceImageUrls }) => {
       // Handle error result (when generateMedia returns success: false)
       if (!result.success) {
         resetGeneration(); // Close the modal immediately
@@ -128,7 +157,7 @@ const MediaStudioContent = () => {
           aspect_ratio: aspectRatio,
           quality: imageSize || '1K', // Store quality/size
           duration: null,
-          reference_image_url: referenceImageUrl || null,
+          reference_image_url: referenceImageUrls.length > 0 ? referenceImageUrls[0] : null,
           tags: [],
           is_favorite: false,
           custom_title: null,
@@ -220,7 +249,7 @@ const MediaStudioContent = () => {
             >
               {showLibrary ? (
                 <>
-                  <Sparkles className="w-4 h-4" />
+                  <Plus className="w-4 h-4" />
                   Create New
                 </>
               ) : (
@@ -238,6 +267,7 @@ const MediaStudioContent = () => {
           <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
             {/* Left Sidebar - Controls */}
             <aside className="space-y-4">
+              {/* Generation Settings */}
               <Card className="cosmic-card border-0 p-6 space-y-6">
                 <div className="flex items-center gap-2 text-lg font-semibold text-white">
                   <Zap className="w-5 h-5 text-accent" />
@@ -278,6 +308,7 @@ const MediaStudioContent = () => {
                     <div className="space-y-6">
                       <PromptInput />
                       <ReferenceImageUpload />
+                      <ReferenceImageLibrary />
 
                       {/* Generate Button */}
                       <Button

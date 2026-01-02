@@ -5,9 +5,13 @@ export type MediaType = 'image';
 
 // Image Model Types - Mapped to API model identifiers
 export type ImageModel =
-  | 'gemini-2.5-flash-image'       // Fast - Gemini 2.5 Flash (Nano Banana)
+  | 'gemini-2.5-flash-image'       // Fast - Gemini 2.5 Flash (Nano Banana Standard)
+  | 'gemini-3-pro-image-preview'   // Pro - Gemini 3 Pro (Nano Banana Pro)
   | 'imagen-4.0-generate-001'      // Standard - Google Imagen 4
   | 'gpt-image-1.5';               // Ultra - OpenAI GPT Image 1.5
+
+// Nano Banana Variants
+export type NanoBananaVariant = 'standard' | 'pro';
 
 // Quality Tiers - Maps to specific models (kept for backwards compatibility)
 export type QualityTier = 'fast' | 'standard' | 'ultra';
@@ -23,17 +27,20 @@ export interface MediaStudioState {
   qualityTier: QualityTier;
   selectedImageModel: ImageModel;
 
+  // Nano Banana variant selection
+  nanoBananaVariant: NanoBananaVariant;
+
   // Prompt and reference
   prompt: string;
-  referenceImage: File | null;
-  referenceImagePreview: string | null;
+  referenceImages: File[];              // Multiple reference images (up to 14 for Pro)
+  referenceImagePreviews: string[];     // Previews for UI display
 
   // Format settings
   aspectRatio: AspectRatio;
 
   // Advanced settings (model-specific)
   numberOfImages: number;        // 1-4 for Imagen, 1-10 for GPT-image
-  imageSize: '1K' | '2K';        // For Imagen 4 Standard/Ultra
+  imageSize: '1K' | '2K' | '4K'; // For Imagen 4 and Gemini 3 Pro
   seed?: number;                 // For reproducible generation (Imagen 4, GPT-image)
   negativePrompt?: string;       // For Imagen 4
   enhancePrompt: boolean;        // For Imagen 4
@@ -53,11 +60,14 @@ interface MediaStudioContextType extends MediaStudioState {
   setMediaType: (type: MediaType) => void;
   setQualityTier: (tier: QualityTier) => void;
   setSelectedImageModel: (model: ImageModel) => void;
+  setNanoBananaVariant: (variant: NanoBananaVariant) => void;
   setPrompt: (prompt: string) => void;
-  setReferenceImage: (file: File | null) => void;
+  addReferenceImage: (file: File) => void;
+  removeReferenceImage: (index: number) => void;
+  clearReferenceImages: () => void;
   setAspectRatio: (ratio: AspectRatio) => void;
   setNumberOfImages: (num: number) => void;
-  setImageSize: (size: '1K' | '2K') => void;
+  setImageSize: (size: '1K' | '2K' | '4K') => void;
   setSeed: (seed: number | undefined) => void;
   setNegativePrompt: (prompt: string | undefined) => void;
   setEnhancePrompt: (enhance: boolean) => void;
@@ -78,10 +88,11 @@ const MediaStudioContext = createContext<MediaStudioContextType | undefined>(und
 const initialState: MediaStudioState = {
   mediaType: 'image',
   qualityTier: 'standard', // Default quality tier
-  selectedImageModel: 'gemini-2.5-flash-image', // Default to Gemini (fastest)
+  selectedImageModel: 'gemini-2.5-flash-image', // Default to Nano Banana Standard
+  nanoBananaVariant: 'standard', // Default to Standard variant
   prompt: '',
-  referenceImage: null,
-  referenceImagePreview: null,
+  referenceImages: [],
+  referenceImagePreviews: [],
   aspectRatio: '1:1',
   numberOfImages: 1,
   imageSize: '1K',
@@ -125,28 +136,45 @@ export const MediaStudioProvider: React.FC<{ children: ReactNode }> = ({ childre
     setState(prev => ({ ...prev, selectedImageModel: model }));
   };
 
+  const setNanoBananaVariant = (variant: NanoBananaVariant) => {
+    const model = variant === 'pro' ? 'gemini-3-pro-image-preview' : 'gemini-2.5-flash-image';
+    setState(prev => ({
+      ...prev,
+      nanoBananaVariant: variant,
+      selectedImageModel: model,
+    }));
+  };
+
   const setPrompt = (prompt: string) => {
     setState(prev => ({ ...prev, prompt }));
   };
 
-  const setReferenceImage = (file: File | null) => {
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setState(prev => ({
-          ...prev,
-          referenceImage: file,
-          referenceImagePreview: reader.result as string,
-        }));
-      };
-      reader.readAsDataURL(file);
-    } else {
+  const addReferenceImage = (file: File) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
       setState(prev => ({
         ...prev,
-        referenceImage: null,
-        referenceImagePreview: null,
+        referenceImages: [...prev.referenceImages, file],
+        referenceImagePreviews: [...prev.referenceImagePreviews, reader.result as string],
       }));
-    }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeReferenceImage = (index: number) => {
+    setState(prev => ({
+      ...prev,
+      referenceImages: prev.referenceImages.filter((_, i) => i !== index),
+      referenceImagePreviews: prev.referenceImagePreviews.filter((_, i) => i !== index),
+    }));
+  };
+
+  const clearReferenceImages = () => {
+    setState(prev => ({
+      ...prev,
+      referenceImages: [],
+      referenceImagePreviews: [],
+    }));
   };
 
   const setAspectRatio = (ratio: AspectRatio) => {
@@ -157,7 +185,7 @@ export const MediaStudioProvider: React.FC<{ children: ReactNode }> = ({ childre
     setState(prev => ({ ...prev, numberOfImages: num }));
   };
 
-  const setImageSize = (size: '1K' | '2K') => {
+  const setImageSize = (size: '1K' | '2K' | '4K') => {
     setState(prev => ({ ...prev, imageSize: size }));
   };
 
@@ -227,8 +255,11 @@ export const MediaStudioProvider: React.FC<{ children: ReactNode }> = ({ childre
     setMediaType,
     setQualityTier,
     setSelectedImageModel,
+    setNanoBananaVariant,
     setPrompt,
-    setReferenceImage,
+    addReferenceImage,
+    removeReferenceImage,
+    clearReferenceImages,
     setAspectRatio,
     setNumberOfImages,
     setImageSize,

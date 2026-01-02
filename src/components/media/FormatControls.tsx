@@ -1,4 +1,4 @@
-import { Settings2, Maximize2, Sparkles, Info } from 'lucide-react';
+import { Settings2, Maximize2, Sparkles, Info, Coins } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -38,6 +38,14 @@ const FormatControls = () => {
         { value: '2K', label: 'High (2K)', description: 'Higher resolution - 4 credits' },
       ];
     }
+    if (model === 'gemini-3-pro-image-preview') {
+      // Gemini 3 Pro supports 1K, 2K, and 4K
+      return [
+        { value: '1K', label: 'Standard (1K)', description: 'Fast & efficient - 3 credits' },
+        { value: '2K', label: 'High (2K)', description: 'Enhanced quality - 5 credits' },
+        { value: '4K', label: 'Ultra (4K)', description: 'Professional grade - 8 credits' },
+      ];
+    }
     if (model === 'gpt-image-1.5') {
       // GPT-Image-1.5 supports different sizes and quality
       return [
@@ -45,7 +53,7 @@ const FormatControls = () => {
         { value: '2K', label: 'HD', description: 'Ultra Quality - 5 credits' },
       ];
     }
-    // Gemini doesn't have quality settings
+    // Gemini 2.5 Flash doesn't have quality settings (always 1K)
     return [];
   };
 
@@ -55,6 +63,9 @@ const FormatControls = () => {
   // Calculate credits based on model and quality
   const getEstimatedCredits = () => {
     if (selectedImageModel === 'gemini-2.5-flash-image') return 2;
+    if (selectedImageModel === 'gemini-3-pro-image-preview') {
+      return imageSize === '4K' ? 8 : imageSize === '2K' ? 5 : 3;
+    }
     if (selectedImageModel === 'imagen-4.0-generate-001') {
       return imageSize === '2K' ? 4 : 3;
     }
@@ -125,7 +136,7 @@ const FormatControls = () => {
               </Tooltip>
             </TooltipProvider>
           </div>
-          <Select value={imageSize} onValueChange={(value) => setImageSize(value as '1K' | '2K')}>
+          <Select value={imageSize} onValueChange={(value) => setImageSize(value as '1K' | '2K' | '4K')}>
             <SelectTrigger className="w-full bg-background/50 border-primary/20 text-white hover:border-primary/40 transition-colors">
               <SelectValue />
             </SelectTrigger>
@@ -152,7 +163,7 @@ const FormatControls = () => {
         <div className="flex items-center justify-between text-sm">
           <span className="text-gray-400">Estimated Cost:</span>
           <span className="text-accent font-semibold flex items-center gap-1">
-            <Sparkles className="w-3.5 h-3.5" />
+            <Coins className="w-3.5 h-3.5" />
             {estimatedCredits} credits
           </span>
         </div>

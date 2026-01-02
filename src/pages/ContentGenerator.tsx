@@ -449,10 +449,23 @@ const ContentGenerator = () => {
           <div className="max-w-4xl mx-auto">
              <Card className="cosmic-card border-0 cosmic-glow mb-6">
               <CardHeader className="cosmic-card-header">
-                <CardTitle className="text-white text-xl">Company Selection</CardTitle>
-                <CardDescription className="text-gray-300">
-                  Choose the company you want to generate content for
-                </CardDescription>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <CardTitle className="text-white text-xl">Company Selection</CardTitle>
+                    <CardDescription className="text-gray-300">
+                      Choose the company you want to generate content for
+                    </CardDescription>
+                  </div>
+                  {selectedCompany?.logo_path && (
+                    <div className="ml-4 w-16 h-16 rounded-lg bg-white/10 flex items-center justify-center overflow-hidden border border-white/20 shadow-lg flex-shrink-0">
+                      <img
+                        src={selectedCompany.logo_path}
+                        alt={`${selectedCompany.name} logo`}
+                        className="w-full h-full object-contain p-1"
+                      />
+                    </div>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 <CompanySelector />
