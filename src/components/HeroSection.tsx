@@ -41,9 +41,9 @@ const HeroSection = () => {
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/30 rounded-full blur-3xl animate-pulse"></div>
           
           {/* Light speed streaks */}
-          <div className="absolute top-1/4 left-1/4 w-64 h-1 bg-gradient-to-r from-transparent via-accent/60 to-transparent rotate-45 blur-sm animate-pulse"></div>
-          <div className="absolute bottom-1/3 right-1/3 w-80 h-1 bg-gradient-to-r from-transparent via-primary/40 to-transparent -rotate-45 blur-sm animate-pulse" style={{ animationDelay: '-2s' }}></div>
-          <div className="absolute top-1/3 right-1/4 w-48 h-1 bg-gradient-to-r from-transparent via-accent/50 to-transparent rotate-12 blur-sm animate-pulse" style={{ animationDelay: '-4s' }}></div>
+          <div className="hero-light-rays absolute top-1/4 left-1/4 w-64 h-1 bg-gradient-to-r from-transparent via-accent/60 to-transparent rotate-45 blur-sm animate-pulse"></div>
+          <div className="hero-light-rays absolute bottom-1/3 right-1/3 w-80 h-1 bg-gradient-to-r from-transparent via-primary/40 to-transparent -rotate-45 blur-sm animate-pulse" style={{ animationDelay: '-2s' }}></div>
+          <div className="hero-light-rays absolute top-1/3 right-1/4 w-48 h-1 bg-gradient-to-r from-transparent via-accent/50 to-transparent rotate-12 blur-sm animate-pulse" style={{ animationDelay: '-4s' }}></div>
           
           {/* Speed particles */}
           <div className="absolute bottom-1/3 right-1/3 w-2 h-2 bg-primary rounded-full animate-ping" style={{ animationDelay: '-1s' }}></div>
@@ -111,23 +111,23 @@ const HeroSection = () => {
               <div className="group relative">
                 <div className="relative transform hover:scale-105 transition-all duration-500 hover:rotate-2">
                   {/* Animated gradient glow border */}
-                  <div className="absolute -inset-1 bg-gradient-to-r from-primary via-accent to-primary rounded-3xl opacity-60 blur-lg animate-pulse group-hover:opacity-80 transition-opacity" style={{ animationDelay: '0.5s' }}></div>
+                  <div className="absolute -inset-1 bg-gradient-to-r from-[#5B5FEE] via-[#00D4FF] to-[#5B5FEE] rounded-3xl opacity-60 blur-lg animate-pulse group-hover:opacity-80 transition-opacity" style={{ animationDelay: '0.5s' }}></div>
 
                   {/* Glass card with proper light/dark mode */}
-                  <div className="relative bg-gradient-to-br from-white/80 to-white/60 dark:from-black/40 dark:to-black/20 backdrop-blur-2xl rounded-3xl p-6 border-2 border-primary/30 shadow-2xl overflow-visible">
+                  <div className="relative bg-gradient-to-br from-white/80 to-white/60 dark:from-black/40 dark:to-black/20 backdrop-blur-2xl rounded-3xl p-6 border-2 border-[#5B5FEE]/30 shadow-2xl overflow-visible">
                     {/* Floating icon above card */}
                     <div className="relative -mt-14 mb-3 flex justify-center">
                       {/* Icon glow effect */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent rounded-2xl blur-2xl opacity-40 animate-pulse scale-110"></div>
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#5B5FEE] to-[#00D4FF] rounded-2xl blur-2xl opacity-40 animate-pulse scale-110"></div>
 
-                      {/* Icon container - vibrant in light mode */}
-                      <div className="icon-gradient-container relative bg-gradient-to-br from-primary to-accent rounded-2xl p-4 shadow-2xl transform hover:-rotate-12 hover:scale-110 transition-all duration-300">
+                      {/* Icon container - vibrant in light mode with hardcoded colors */}
+                      <div className="icon-gradient-container relative bg-gradient-to-br from-[#5B5FEE] to-[#00D4FF] rounded-2xl p-4 shadow-2xl transform hover:-rotate-12 hover:scale-110 transition-all duration-300">
                         <Target className="w-9 h-9 text-white drop-shadow-2xl" />
                       </div>
                     </div>
 
-                    {/* Label - fallback to solid color in light mode to avoid background issue */}
-                    <p className="text-sm font-bold text-center text-primary/90 dark:bg-gradient-to-r dark:from-primary dark:to-accent dark:bg-clip-text dark:text-transparent">
+                    {/* Label - solid color for light mode */}
+                    <p className="text-sm font-bold text-center text-[#5B5FEE]/90 dark:bg-gradient-to-r dark:from-[#5B5FEE] dark:to-[#00D4FF] dark:bg-clip-text dark:text-transparent">
                       Instant Impact
                     </p>
                   </div>

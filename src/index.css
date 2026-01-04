@@ -902,8 +902,8 @@
     background-color: transparent !important;
   }
 
-  /* Override any gradient backgrounds that use CSS variables - but keep icon containers and social media icons vibrant */
-  html.light [class*="bg-gradient-to"]:not(.icon-gradient-container):not(.rounded-full) {
+  /* Override any gradient backgrounds that use CSS variables - but keep icon containers, social media icons, hero cards, light rays, and hardcoded hex gradients vibrant */
+  html.light [class*="bg-gradient-to"]:not(.icon-gradient-container):not(.rounded-full):not(.hero-card-bg):not(.hero-light-rays):not([class*="from-[#"]):not([class*="from-sky-"]):not([class*="from-indigo-"]) {
     background-image: none !important;
     background-color: transparent !important;
   }
@@ -911,6 +911,13 @@
   /* Force icon containers to keep their gradients in light mode */
   html.light .icon-gradient-container.bg-gradient-to-br {
     background-image: linear-gradient(to bottom right, var(--tw-gradient-stops)) !important;
+  }
+
+  /* Force icons inside icon containers to stay white in light mode */
+  html.light .icon-gradient-container svg,
+  html.light .icon-gradient-container .text-white {
+    color: #ffffff !important;
+    fill: currentColor !important;
   }
 
   /* Force social media platform icons to keep their gradients */
@@ -1064,9 +1071,31 @@
     background: rgba(255, 255, 255, 0.85) !important;
   }
 
-  /* Fix button backgrounds */
-  html.light button:not(.cosmic-button):not([class*="bg-primary"]):not([class*="bg-accent"]) {
+  /* Fix button backgrounds - but EXCLUDE buttons that should be transparent */
+  html.light button:not(.cosmic-button):not([class*="bg-primary"]):not([class*="bg-accent"]):not(.text-gray-500):not(.text-white):not(.text-gray-300) {
     background-color: rgba(255, 255, 255, 0.9) !important;
+  }
+
+  /* Fix PostManager library toggle buttons - make them transparent in light mode */
+  html.light button.text-gray-500:not(.cosmic-button),
+  html.light button.text-white:not(.cosmic-button) {
+    background-color: transparent !important;
+  }
+
+  /* Ensure nav buttons stay transparent in light mode */
+  html.light nav button:not(.cosmic-button) {
+    background-color: transparent !important;
+  }
+
+  /* Fix PostManager library toggle buttons - make them transparent in dark mode */
+  button.text-gray-500:not(.cosmic-button),
+  button.text-white:not(.cosmic-button) {
+    background-color: transparent !important;
+  }
+
+  /* Ensure nav buttons stay transparent in dark mode */
+  nav button:not(.cosmic-button) {
+    background-color: transparent !important;
   }
 
   /* ============================================ */

@@ -79,12 +79,13 @@ async function fetchImageAsBase64(imageUrl: string): Promise<{ data: string; mim
   }
 }
 
-// Generate video using Google Veo 3.1
+
+// Generate video using Google Veo 3.1 (Gemini API - NOT Vertex AI!)
 async function generateVideoWithVeo(request: VideoGenerationRequest): Promise<string> {
   const apiKey = Deno.env.get("GOOGLE_API_KEY");
   if (!apiKey) throw new Error("GOOGLE_API_KEY not configured");
 
-  logStep("Generating with Veo 3.1", {
+  logStep("Generating with Veo via Gemini API", {
     model: request.model,
     mode: request.mode,
     prompt: request.prompt.substring(0, 50),
@@ -92,112 +93,42 @@ async function generateVideoWithVeo(request: VideoGenerationRequest): Promise<st
     duration: request.duration
   });
 
-  // Veo 3.1 API endpoint
+  // Gemini API endpoint for Veo
   const modelId = request.model;
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent`;
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:predictLongRunning`;
 
-  // Build the request payload based on generation mode
-  let payload: any;
+  // Build request payload
+  let instance: any = {
+    prompt: request.prompt,
+  };
 
-  switch (request.mode) {
-    case 'text-to-video': {
-      // Simple text-to-video generation
-      payload = {
-        contents: [{
-          parts: [{
-            text: request.prompt
-          }]
-        }],
-        generationConfig: {
-          responseModalities: ["VIDEO"],
-          videoConfig: {
-            aspectRatio: request.aspect_ratio,
-            duration: `${request.duration}s`,
-            fps: request.fps || 24
-          }
-        }
-      };
-      break;
-    }
-
-    case 'image-to-video': {
-      // Image-to-video: generate video from a single input image
-      if (!request.input_image_url) {
-        throw new Error("input_image_url is required for image-to-video mode");
-      }
-
-      const { data, mimeType } = await fetchImageAsBase64(request.input_image_url);
-
-      payload = {
-        contents: [{
-          parts: [
-            {
-              inlineData: {
-                mimeType: mimeType,
-                data: data
-              }
-            },
-            {
-              text: request.prompt
-            }
-          ]
-        }],
-        generationConfig: {
-          responseModalities: ["VIDEO"],
-          videoConfig: {
-            aspectRatio: request.aspect_ratio,
-            duration: `${request.duration}s`,
-            fps: request.fps || 24
-          }
-        }
-      };
-      break;
-    }
-
-    case 'keyframe-to-video': {
-      // Keyframe-to-video: generate video between first and last frame
-      if (!request.first_frame_url || !request.last_frame_url) {
-        throw new Error("first_frame_url and last_frame_url are required for keyframe-to-video mode");
-      }
-
+  // Add image if needed
+  if (request.mode === 'image-to-video' && request.input_image_url) {
+    const { data, mimeType } = await fetchImageAsBase64(request.input_image_url);
+    instance.image = {
+      bytesBase64Encoded: data,
+      mimeType: mimeType
+    };
+  } else if (request.mode === 'keyframe-to-video') {
+    if (request.first_frame_url && request.last_frame_url) {
       const firstFrame = await fetchImageAsBase64(request.first_frame_url);
       const lastFrame = await fetchImageAsBase64(request.last_frame_url);
-
-      payload = {
-        contents: [{
-          parts: [
-            {
-              inlineData: {
-                mimeType: firstFrame.mimeType,
-                data: firstFrame.data
-              }
-            },
-            {
-              inlineData: {
-                mimeType: lastFrame.mimeType,
-                data: lastFrame.data
-              }
-            },
-            {
-              text: request.prompt
-            }
-          ]
-        }],
-        generationConfig: {
-          responseModalities: ["VIDEO"],
-          videoConfig: {
-            aspectRatio: request.aspect_ratio,
-            duration: `${request.duration}s`,
-            fps: request.fps || 24
-          }
-        }
+      instance.firstImage = {
+        bytesBase64Encoded: firstFrame.data,
+        mimeType: firstFrame.mimeType
       };
-      break;
+      instance.lastImage = {
+        bytesBase64Encoded: lastFrame.data,
+        mimeType: lastFrame.mimeType
+      };
     }
-
-    default:
-      throw new Error(`Unsupported video generation mode: ${request.mode}`);
   }
+
+  const payload = {
+    instances: [instance]
+  };
+
+  logStep("Gemini API Payload", { endpoint, mode: request.mode });
 
   const response = await fetch(endpoint, {
     method: 'POST',
@@ -216,65 +147,81 @@ async function generateVideoWithVeo(request: VideoGenerationRequest): Promise<st
 
   const data = await response.json();
 
-  // Log the FULL response to debug
-  logStep("Veo FULL response", { response: JSON.stringify(data, null, 2) });
-
-  if (!data.candidates || data.candidates.length === 0) {
-    throw new Error("No candidates in Veo response");
+  // PredictLongRunning returns an operation object
+  if (!data.name) {
+    logStep("No operation name in response", { response: JSON.stringify(data, null, 2) });
+    throw new Error("Invalid Veo API response: no operation name");
   }
 
-  const candidate = data.candidates[0];
-  logStep("Candidate structure", {
-    hasContent: !!candidate.content,
-    hasParts: !!candidate.content?.parts,
-    partsLength: candidate.content?.parts?.length || 0,
-    candidateKeys: Object.keys(candidate)
-  });
+  const operationName = data.name;
+  logStep("Long-running operation started", { operationName });
 
-  // Extract video from response
-  const parts = candidate.content?.parts || [];
+  // Poll the operation until it completes (Gemini API)
+  const maxPolls = 60; // 5 minutes max (10 seconds * 60)
+  const pollInterval = 10000; // 10 seconds (recommended by docs)
 
-  if (parts.length === 0) {
-    logStep("Empty parts - full candidate", { candidate: JSON.stringify(candidate) });
-    throw new Error("No parts in Veo response content");
-  }
+  for (let i = 0; i < maxPolls; i++) {
+    await new Promise(resolve => setTimeout(resolve, pollInterval));
 
-  // Find the part with inline_data (video)
-  const videoPart = parts.find((part: any) => part.inline_data || part.inlineData);
+    // Gemini API polling endpoint
+    const pollUrl = `https://generativelanguage.googleapis.com/v1beta/${operationName}`;
 
-  if (!videoPart) {
-    // Check if Veo returned a text response explaining why it couldn't generate
-    const textPart = parts.find((part: any) => part.text);
+    logStep(`Polling operation attempt ${i + 1}`, { pollUrl });
 
-    if (textPart && textPart.text) {
-      logStep("Veo returned text instead of video", { text: textPart.text });
+    const pollResponse = await fetch(pollUrl, {
+      headers: {
+        'x-goog-api-key': apiKey,
+        'Content-Type': 'application/json'
+      }
+    });
 
-      throw new Error(
-        `Veo couldn't generate a video. It says: "${textPart.text}"\n\n` +
-        `💡 Tip: Try a more descriptive prompt with camera movements and actions (e.g., "Aerial drone shot descending toward a mountain lake at sunrise, smooth and slow")`
-      );
+    if (!pollResponse.ok) {
+      const errorBody = await pollResponse.text();
+      logStep("Poll error details", {
+        status: pollResponse.status,
+        error: errorBody
+      });
+      throw new Error(`Failed to poll operation: ${pollResponse.status} - ${errorBody}`);
     }
 
-    logStep("No video part found", {
-      partsStructure: parts.map((p: any) => Object.keys(p))
+    const pollData = await pollResponse.json();
+
+    if (pollData.done) {
+      logStep("Operation completed", { pollData });
+
+      // Check for errors
+      if (pollData.error) {
+        throw new Error(`Veo generation failed: ${JSON.stringify(pollData.error)}`);
+      }
+
+      // Gemini API returns video data directly in the response
+      // The response structure is: response.predictions[0].bytesBase64Encoded
+      // OR response.generatedSamples[0].video.bytesBase64Encoded
+      const videoBase64 =
+        pollData.response?.predictions?.[0]?.bytesBase64Encoded ||
+        pollData.response?.generatedSamples?.[0]?.video?.bytesBase64Encoded;
+
+      if (!videoBase64) {
+        logStep("No video data in response", {
+          response: JSON.stringify(pollData.response, null, 2)
+        });
+        throw new Error("Video generation completed but no video data found in response");
+      }
+
+      logStep("Video data received from Gemini API", {
+        sizeBytes: videoBase64.length
+      });
+
+      return `data:video/mp4;base64,${videoBase64}`;
+    }
+
+    logStep(`Polling operation (${i + 1}/${maxPolls})`, {
+      done: pollData.done,
+      metadata: pollData.metadata
     });
-    throw new Error("No video data in Veo response. Try a more descriptive prompt with camera movements.");
   }
 
-  // Handle both snake_case and camelCase
-  const videoData = videoPart.inline_data?.data || videoPart.inlineData?.data;
-
-  if (!videoData) {
-    throw new Error("No video data found in response part");
-  }
-
-  logStep("Video data extracted successfully", {
-    dataLength: videoData.length,
-    mimeType: videoPart.inline_data?.mime_type || videoPart.inlineData?.mimeType
-  });
-
-  // Return base64-encoded video (will be uploaded to storage)
-  return `data:video/mp4;base64,${videoData}`;
+  throw new Error("Video generation timed out after 5 minutes");
 }
 
 // Upload video to Supabase Storage
