@@ -72,13 +72,25 @@ export const calculateCreditsNeeded = (
 
 /**
  * Calculate credits needed for Media Studio generation
- * Based on model, quality/size, and number of images
+ * Based on model, quality/size, number of images, and media type
  */
 export const calculateMediaStudioCredits = (
   model: string,
   imageSize: '1K' | '2K' | '4K' = '1K',
-  numberOfImages: number = 1
+  numberOfImages: number = 1,
+  mediaType: 'image' | 'video' = 'image'
 ): number => {
+  // Handle video generation costs
+  if (mediaType === 'video') {
+    if (model === 'veo-3.1-fast-generate-001') {
+      return 10; // Fast model: cheaper, faster iterations
+    } else if (model === 'veo-3.1-generate-001') {
+      return 15; // Standard model: higher quality production videos
+    }
+    return 15; // Default video cost
+  }
+
+  // Handle image generation costs
   let creditsPerImage = 3; // Default
 
   if (model === 'gemini-2.5-flash-image') {

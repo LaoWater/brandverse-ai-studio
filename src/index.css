@@ -2194,9 +2194,8 @@
     margin: 0 !important;
   }
 
-  .light nav .text-white {
-    color: rgb(15 15 23) !important;
-  }
+  /* REMOVED: This was breaking navigation elements globally */
+  /* .light nav .text-white { color: rgb(15 15 23) !important; } */
 
   .light nav .text-gray-300,
   .light nav .text-gray-400 {
@@ -2410,37 +2409,37 @@
     opacity: 0.8 !important;
   }
 
-  /* Publishing social media icons - they already have inline bg colors, but ensure visibility */
+  /* Publishing social media icons - SCOPED TO HERO SECTION ONLY */
   /* Using attribute selectors to avoid CSS syntax errors with Tailwind arbitrary values */
-  .light section [class*="bg-[#1877F2]"] {
+  .light .hero-section-page section [class*="bg-[#1877F2]"] {
     background-color: #1877F2 !important;
     border: 1px solid rgba(24, 119, 242, 0.3) !important;
   }
 
-  .light section [class*="bg-[#0077B5]"] {
+  .light .hero-section-page section [class*="bg-[#0077B5]"] {
     background-color: #0077B5 !important;
     border: 1px solid rgba(0, 119, 181, 0.3) !important;
   }
 
-  .light section [class*="from-[#833AB4]"] {
+  .light .hero-section-page section [class*="from-[#833AB4]"] {
     background: linear-gradient(to bottom right, #833AB4, #E1306C, #F77737) !important;
     border: 1px solid rgba(225, 48, 108, 0.3) !important;
   }
 
-  .light section [class*="bg-black"] {
+  .light .hero-section-page section [class*="bg-black"] {
     background-color: #000000 !important;
     border: 1px solid rgba(0, 0, 0, 0.8) !important;
   }
 
-  /* Ensure ALL icons inside colored/gradient backgrounds remain white in light mode */
-  .light section [class*="bg-[#1877F2]"] svg,
-  .light section [class*="from-[#833AB4]"] svg,
-  .light section [class*="bg-[#0077B5]"] svg,
-  .light section [class*="bg-black"] svg,
-  .light section [class*="from-sky-400"] svg,
-  .light section [class*="from-primary"] svg,
-  .light section [class*="bg-gradient"] svg,
-  .light section .rounded-full[class*="bg-"] svg {
+  /* Ensure ALL icons inside colored/gradient backgrounds remain white - HERO SECTION ONLY */
+  .light .hero-section-page section [class*="bg-[#1877F2]"] svg,
+  .light .hero-section-page section [class*="from-[#833AB4]"] svg,
+  .light .hero-section-page section [class*="bg-[#0077B5]"] svg,
+  .light .hero-section-page section [class*="bg-black"] svg,
+  .light .hero-section-page section [class*="from-sky-400"] svg,
+  .light .hero-section-page section [class*="from-primary"] svg,
+  .light .hero-section-page section [class*="bg-gradient"] svg,
+  .light .hero-section-page section .rounded-full[class*="bg-"] svg {
     color: #ffffff !important;
     fill: currentColor !important;
   }
@@ -2613,9 +2612,19 @@
     color: rgb(15 15 23) !important;
   }
 
-  /* Override hardcoded white text - with exceptions for icons in colored containers */
-  .light .text-white:not(.cosmic-button):not(.cosmic-button *):not(.moon-icon):not([class*="bg-gradient"] *):not([class*="bg-[#"] *):not(.rounded-full[class*="bg-"] *) {
+  /* GLOBAL: Convert all text-white to dark in light mode */
+  .light .text-white:not(.cosmic-button):not(.cosmic-button *):not(.moon-icon) {
     color: rgb(15 15 23) !important;
+  }
+
+  /* EXCEPTION: Keep white text ONLY in HeroSection colored backgrounds */
+  .light .hero-section-page [class*="bg-gradient"] .text-white,
+  .light .hero-section-page [class*="bg-[#"] .text-white,
+  .light .hero-section-page [class*="from-sky-"] .text-white,
+  .light .hero-section-page [class*="from-primary"] .text-white,
+  .light .hero-section-page [class*="from-accent"] .text-white,
+  .light .hero-section-page .rounded-full[class*="bg-"] .text-white {
+    color: white !important;
   }
 
   /* Override hardcoded gray text classes */
@@ -2706,16 +2715,7 @@
   /* AGGRESSIVE LIGHT MODE TEXT FIXES */
   /* ============================================ */
 
-  /* Override ALL white text that's not on special backgrounds */
-  .light span.text-white:not(.cosmic-button span):not([class*="bg-gradient"] span):not([class*="bg-primary"] span):not([class*="bg-accent"] span):not([class*="bg-["] span):not([class*="from-["] span),
-  .light div.text-white:not(.cosmic-button):not(.cosmic-button div):not([class*="bg-gradient"]):not([class*="bg-primary"]):not([class*="bg-accent"]):not([class*="bg-["]):not([class*="from-["]) {
-    color: rgb(15 15 23) !important;
-  }
-
-  /* Override specific card content */
-  .light .cosmic-card .text-white:not([class*="bg-gradient"] *):not([class*="bg-primary"] *):not([class*="bg-accent"] *) {
-    color: rgb(15 15 23) !important;
-  }
+  /* REMOVED: Now handled by global rule above */
 
   .light .cosmic-card .text-gray-300,
   .light .cosmic-card .text-gray-200,
@@ -2750,18 +2750,9 @@
     border-top: 1px solid rgba(91, 95, 238, 0.15) !important;
   }
 
-  /* Override CardContent text colors */
-  .light .Card CardContent .text-white,
-  .light [class*="Card"] [class*="Content"] .text-white:not([class*="bg-gradient"] *):not([class*="bg-primary"] *):not([class*="bg-accent"] *) {
-    color: rgb(15 15 23) !important;
-  }
+  /* REMOVED: Now handled by global rule */
 
-  /* Hero Section specifics - target by structure */
-  .light section h1 span.text-white:not(.text-cosmic):not([class*="bg-"]),
-  .light section h2 span.text-white:not(.text-cosmic):not([class*="bg-"]),
-  .light section h3 span.text-white:not(.text-cosmic):not([class*="bg-"]) {
-    color: rgb(15 15 23) !important;
-  }
+  /* REMOVED: Now handled by global rule */
 
   /* Reviews and testimonial cards */
   .light .review-card,
@@ -2787,30 +2778,26 @@
     color: white !important;
   }
 
-  /* Roadmap and timeline elements */
-  .light [class*="roadmap"] .text-white:not([class*="bg-gradient"] *),
-  .light [class*="timeline"] .text-white:not([class*="bg-gradient"] *) {
-    color: rgb(15 15 23) !important;
-  }
+  /* REMOVED: Now handled by global rule */
 
   /* ============================================ */
-  /* FORCE WHITE ICONS IN COLORED BACKGROUNDS - HIGHEST PRIORITY */
+  /* FORCE WHITE ICONS IN COLORED BACKGROUNDS - HERO SECTION ONLY */
   /* ============================================ */
 
-  /* Keep ALL icons white inside gradient backgrounds (cards, circles, etc) */
-  .light [class*="bg-gradient"] svg,
-  .light [class*="from-sky-"] svg,
-  .light [class*="from-primary"] svg,
-  .light [class*="from-accent"] svg,
-  .light [class*="bg-[#"] svg {
+  /* Keep icons white inside gradient backgrounds - SCOPED TO HERO SECTION ONLY */
+  .light .hero-section-page [class*="bg-gradient"] svg,
+  .light .hero-section-page [class*="from-sky-"] svg,
+  .light .hero-section-page [class*="from-primary"] svg,
+  .light .hero-section-page [class*="from-accent"] svg,
+  .light .hero-section-page [class*="bg-[#"] svg {
     color: #ffffff !important;
     fill: currentColor !important;
   }
 
-  /* Social media platform icons - rounded-full specific */
-  .light .rounded-full[class*="bg-[#"] svg,
-  .light .rounded-full[class*="bg-black"] svg,
-  .light .rounded-full[class*="bg-gradient"] svg {
+  /* Social media platform icons - rounded-full specific - HERO SECTION ONLY */
+  .light .hero-section-page .rounded-full[class*="bg-[#"] svg,
+  .light .hero-section-page .rounded-full[class*="bg-black"] svg,
+  .light .hero-section-page .rounded-full[class*="bg-gradient"] svg {
     color: #ffffff !important;
     fill: currentColor !important;
   }

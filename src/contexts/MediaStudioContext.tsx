@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 // Types for Media Studio
-export type MediaType = 'image';
+export type MediaType = 'image' | 'video';
 
 // Image Model Types - Mapped to API model identifiers
 export type ImageModel =
@@ -9,6 +9,14 @@ export type ImageModel =
   | 'gemini-3-pro-image-preview'   // Pro - Gemini 3 Pro (Nano Banana Pro)
   | 'imagen-4.0-generate-001'      // Standard - Google Imagen 4
   | 'gpt-image-1.5';               // Ultra - OpenAI GPT Image 1.5
+
+// Video Model Types - Veo 3.1 models
+export type VideoModel =
+  | 'veo-3.1-generate-001'         // Standard - High-quality production videos
+  | 'veo-3.1-fast-generate-001';   // Fast - Rapid iterations, A/B testing
+
+// Video Generation Modes
+export type VideoGenerationMode = 'text-to-video' | 'image-to-video' | 'keyframe-to-video';
 
 // Nano Banana Variants
 export type NanoBananaVariant = 'standard' | 'pro';
@@ -23,9 +31,13 @@ export interface MediaStudioState {
   // Media type selection
   mediaType: MediaType;
 
-  // Model selection - Quality tier determines the model
+  // Image model selection
   qualityTier: QualityTier;
   selectedImageModel: ImageModel;
+
+  // Video model selection
+  selectedVideoModel: VideoModel;
+  videoGenerationMode: VideoGenerationMode;
 
   // Nano Banana variant selection
   nanoBananaVariant: NanoBananaVariant;
@@ -38,12 +50,22 @@ export interface MediaStudioState {
   // Format settings
   aspectRatio: AspectRatio;
 
-  // Advanced settings (model-specific)
+  // Image-specific settings
   numberOfImages: number;        // 1-4 for Imagen, 1-10 for GPT-image
   imageSize: '1K' | '2K' | '4K'; // For Imagen 4 and Gemini 3 Pro
   seed?: number;                 // For reproducible generation (Imagen 4, GPT-image)
   negativePrompt?: string;       // For Imagen 4
   enhancePrompt: boolean;        // For Imagen 4 - LLM-based prompt rewriting (enabled by default)
+
+  // Video-specific settings
+  videoDuration: 8;              // Veo 3.1 supports 8-second clips
+  videoFps: 24 | 30;             // 24fps or 30fps
+  firstFrameImage: File | null;  // For keyframe-to-video mode
+  firstFramePreview: string | null;
+  lastFrameImage: File | null;   // For keyframe-to-video mode
+  lastFramePreview: string | null;
+  inputVideoImage: File | null;  // For image-to-video mode (reusing reference image upload)
+  inputVideoImagePreview: string | null;
 
   // Generation state
   isGenerating: boolean;
@@ -56,16 +78,32 @@ export interface MediaStudioState {
 }
 
 interface MediaStudioContextType extends MediaStudioState {
-  // Setters
+  // Media type setters
   setMediaType: (type: MediaType) => void;
+
+  // Image model setters
   setQualityTier: (tier: QualityTier) => void;
   setSelectedImageModel: (model: ImageModel) => void;
   setNanoBananaVariant: (variant: NanoBananaVariant) => void;
+
+  // Video model setters
+  setSelectedVideoModel: (model: VideoModel) => void;
+  setVideoGenerationMode: (mode: VideoGenerationMode) => void;
+  setVideoDuration: (duration: 8) => void;
+  setVideoFps: (fps: 24 | 30) => void;
+  setFirstFrameImage: (file: File | null) => void;
+  setLastFrameImage: (file: File | null) => void;
+  setInputVideoImage: (file: File | null) => void;
+  clearVideoFrames: () => void;
+
+  // Common setters
   setPrompt: (prompt: string) => void;
   addReferenceImage: (file: File) => void;
   removeReferenceImage: (index: number) => void;
   clearReferenceImages: () => void;
   setAspectRatio: (ratio: AspectRatio) => void;
+
+  // Image-specific setters
   setNumberOfImages: (num: number) => void;
   setImageSize: (size: '1K' | '2K' | '4K') => void;
   setSeed: (seed: number | undefined) => void;
@@ -86,19 +124,42 @@ interface MediaStudioContextType extends MediaStudioState {
 const MediaStudioContext = createContext<MediaStudioContextType | undefined>(undefined);
 
 const initialState: MediaStudioState = {
+  // Media type
   mediaType: 'image',
-  qualityTier: 'standard', // Default quality tier
-  selectedImageModel: 'gemini-2.5-flash-image', // Default to Nano Banana Standard
-  nanoBananaVariant: 'standard', // Default to Standard variant
+
+  // Image models
+  qualityTier: 'standard',
+  selectedImageModel: 'gemini-2.5-flash-image',
+  nanoBananaVariant: 'standard',
+
+  // Video models
+  selectedVideoModel: 'veo-3.1-fast-generate-001', // Default to Fast for quicker iterations
+  videoGenerationMode: 'text-to-video', // Default mode
+
+  // Common settings
   prompt: '',
   referenceImages: [],
   referenceImagePreviews: [],
-  aspectRatio: '1:1',
+  aspectRatio: '9:16', // Default to vertical (social media optimized)
+
+  // Image-specific settings
   numberOfImages: 1,
   imageSize: '1K',
   seed: undefined,
   negativePrompt: undefined,
   enhancePrompt: true,
+
+  // Video-specific settings
+  videoDuration: 8,
+  videoFps: 24,
+  firstFrameImage: null,
+  firstFramePreview: null,
+  lastFrameImage: null,
+  lastFramePreview: null,
+  inputVideoImage: null,
+  inputVideoImagePreview: null,
+
+  // Generation state
   isGenerating: false,
   generationProgress: 0,
   currentStage: '',
@@ -201,6 +262,98 @@ export const MediaStudioProvider: React.FC<{ children: ReactNode }> = ({ childre
     setState(prev => ({ ...prev, enhancePrompt: enhance }));
   };
 
+  // Video model setters
+  const setSelectedVideoModel = (model: VideoModel) => {
+    setState(prev => ({ ...prev, selectedVideoModel: model }));
+  };
+
+  const setVideoGenerationMode = (mode: VideoGenerationMode) => {
+    setState(prev => ({ ...prev, videoGenerationMode: mode }));
+  };
+
+  const setVideoDuration = (duration: 8) => {
+    setState(prev => ({ ...prev, videoDuration: duration }));
+  };
+
+  const setVideoFps = (fps: 24 | 30) => {
+    setState(prev => ({ ...prev, videoFps: fps }));
+  };
+
+  const setFirstFrameImage = (file: File | null) => {
+    if (!file) {
+      setState(prev => ({
+        ...prev,
+        firstFrameImage: null,
+        firstFramePreview: null,
+      }));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setState(prev => ({
+        ...prev,
+        firstFrameImage: file,
+        firstFramePreview: reader.result as string,
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const setLastFrameImage = (file: File | null) => {
+    if (!file) {
+      setState(prev => ({
+        ...prev,
+        lastFrameImage: null,
+        lastFramePreview: null,
+      }));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setState(prev => ({
+        ...prev,
+        lastFrameImage: file,
+        lastFramePreview: reader.result as string,
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const setInputVideoImage = (file: File | null) => {
+    if (!file) {
+      setState(prev => ({
+        ...prev,
+        inputVideoImage: null,
+        inputVideoImagePreview: null,
+      }));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setState(prev => ({
+        ...prev,
+        inputVideoImage: file,
+        inputVideoImagePreview: reader.result as string,
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearVideoFrames = () => {
+    setState(prev => ({
+      ...prev,
+      firstFrameImage: null,
+      firstFramePreview: null,
+      lastFrameImage: null,
+      lastFramePreview: null,
+      inputVideoImage: null,
+      inputVideoImagePreview: null,
+    }));
+  };
+
   const startGeneration = () => {
     setState(prev => ({
       ...prev,
@@ -256,6 +409,14 @@ export const MediaStudioProvider: React.FC<{ children: ReactNode }> = ({ childre
     setQualityTier,
     setSelectedImageModel,
     setNanoBananaVariant,
+    setSelectedVideoModel,
+    setVideoGenerationMode,
+    setVideoDuration,
+    setVideoFps,
+    setFirstFrameImage,
+    setLastFrameImage,
+    setInputVideoImage,
+    clearVideoFrames,
     setPrompt,
     addReferenceImage,
     removeReferenceImage,

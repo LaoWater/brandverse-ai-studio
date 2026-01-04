@@ -52,15 +52,26 @@ export interface StorageUsage {
 export interface GenerationConfig {
   prompt: string;
   mediaType: 'video' | 'image';
-  model: string;               // API model identifier (e.g., 'gemini-2.5-flash-image', 'gemini-3-pro-image-preview', 'imagen-4.0-generate-001', 'gpt-image-1.5')
+  model: string;               // API model identifier (e.g., 'gemini-2.5-flash-image', 'veo-3.1-generate-001')
   aspectRatio: string;         // '1:1', '16:9', '9:16', '3:4', '4:3', '3:2'
+
+  // Image-specific
   numberOfImages?: number;     // 1-4 for Imagen, 1-10 for GPT-image
   imageSize?: '1K' | '2K' | '4K';  // For Imagen 4 and Gemini 3 Pro
   seed?: number;               // For reproducible generation (Imagen 4, GPT-image)
   negativePrompt?: string;     // For Imagen 4
   enhancePrompt?: boolean;     // For Imagen 4
-  duration?: number;           // For video (future)
   referenceImageUrls?: string[]; // Multiple reference images (up to 14 for Gemini 3 Pro)
+
+  // Video-specific
+  videoMode?: 'text-to-video' | 'image-to-video' | 'keyframe-to-video';
+  videoDuration?: 8;           // Veo 3.1 supports 8-second clips
+  videoFps?: 24 | 30;          // 24fps or 30fps
+  inputImageUrl?: string;      // For image-to-video mode
+  firstFrameUrl?: string;      // For keyframe-to-video mode
+  lastFrameUrl?: string;       // For keyframe-to-video mode
+
+  // Common
   userId?: string;             // For tracking
   companyId?: string;          // For tracking
 }
@@ -82,7 +93,7 @@ export interface GenerationResult {
   error?: string;
 }
 
-// API Payload for backend
+// API Payload for backend - Image generation
 export interface MediaGenerationAPIPayload {
   prompt: string;
   model: string;                    // 'gemini-2.5-flash-image' | 'gemini-3-pro-image-preview' | 'imagen-4.0-generate-001' | 'gpt-image-1.5'
@@ -97,6 +108,21 @@ export interface MediaGenerationAPIPayload {
   company_id?: string;
 }
 
+// API Payload for backend - Video generation
+export interface VideoGenerationAPIPayload {
+  prompt: string;
+  model: 'veo-3.1-generate-001' | 'veo-3.1-fast-generate-001';
+  mode: 'text-to-video' | 'image-to-video' | 'keyframe-to-video';
+  aspect_ratio: '16:9' | '9:16' | '1:1';
+  duration: 8;                      // Fixed at 8 seconds for Veo 3.1
+  fps?: 24 | 30;                    // 24fps or 30fps (default: 24)
+  input_image_url?: string;         // For image-to-video mode
+  first_frame_url?: string;         // For keyframe-to-video mode
+  last_frame_url?: string;          // For keyframe-to-video mode
+  user_id?: string;
+  company_id?: string;
+}
+
 // Supabase imports
 import { supabase } from '@/integrations/supabase/client';
 
@@ -104,7 +130,7 @@ import { supabase } from '@/integrations/supabase/client';
 const SUPABASE_FUNCTION_URL = 'https://vcgaqikuaaazjpwyzvwb.supabase.co/functions/v1';
 
 /**
- * Prepare API payload for media generation
+ * Prepare API payload for image generation
  * Converts frontend config to backend API format
  */
 export const prepareMediaAPIPayload = (config: GenerationConfig): MediaGenerationAPIPayload => {
@@ -151,20 +177,68 @@ export const prepareMediaAPIPayload = (config: GenerationConfig): MediaGeneratio
 };
 
 /**
+ * Prepare API payload for video generation
+ * Converts frontend config to backend API format
+ */
+export const prepareVideoAPIPayload = (config: GenerationConfig): VideoGenerationAPIPayload => {
+  if (!config.videoMode) {
+    throw new Error('Video mode is required for video generation');
+  }
+
+  const payload: VideoGenerationAPIPayload = {
+    prompt: config.prompt,
+    model: config.model as 'veo-3.1-generate-001' | 'veo-3.1-fast-generate-001',
+    mode: config.videoMode,
+    aspect_ratio: config.aspectRatio as '16:9' | '9:16' | '1:1',
+    duration: 8, // Fixed for Veo 3.1
+  };
+
+  if (config.videoFps) {
+    payload.fps = config.videoFps;
+  }
+
+  // Add mode-specific image URLs
+  if (config.videoMode === 'image-to-video' && config.inputImageUrl) {
+    payload.input_image_url = config.inputImageUrl;
+  }
+
+  if (config.videoMode === 'keyframe-to-video') {
+    if (config.firstFrameUrl) payload.first_frame_url = config.firstFrameUrl;
+    if (config.lastFrameUrl) payload.last_frame_url = config.lastFrameUrl;
+  }
+
+  if (config.userId) {
+    payload.user_id = config.userId;
+  }
+
+  if (config.companyId) {
+    payload.company_id = config.companyId;
+  }
+
+  return payload;
+};
+
+/**
  * Generate media using Supabase Edge Function
- * Sends model name and parameters to backend for image generation
+ * Routes to image or video generation based on mediaType
  */
 export const generateMedia = async (
   config: GenerationConfig,
   onProgress?: (progress: number, stage: string) => void
 ): Promise<GenerationResult> => {
   try {
-    // Prepare API payload
-    const payload = prepareMediaAPIPayload(config);
+    // Prepare API payload based on media type
+    const payload = config.mediaType === 'video'
+      ? prepareVideoAPIPayload(config)
+      : prepareMediaAPIPayload(config);
 
-    console.log("=== MEDIA STUDIO GENERATION PAYLOAD ===");
+    const endpointName = config.mediaType === 'video'
+      ? 'generate-media-video'
+      : 'generate-media-image';
+
+    console.log(`=== MEDIA STUDIO ${config.mediaType.toUpperCase()} GENERATION PAYLOAD ===`);
     console.log(JSON.stringify(payload, null, 2));
-    console.log("=======================================");
+    console.log("======================================================================");
 
     // Update progress - initialization
     onProgress?.(10, 'Initializing generation...');
@@ -179,7 +253,7 @@ export const generateMedia = async (
     onProgress?.(30, 'Sending request to AI...');
 
     // Call Supabase Edge Function
-    const response = await fetch(`${SUPABASE_FUNCTION_URL}/generate-media-image`, {
+    const response = await fetch(`${SUPABASE_FUNCTION_URL}/${endpointName}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -206,10 +280,13 @@ export const generateMedia = async (
 
     onProgress?.(100, 'Complete!');
 
+    // Return result with appropriate media URL field
+    const mediaUrl = config.mediaType === 'video' ? result.video_url : result.image_url;
+
     return {
       success: true,
-      mediaUrl: result.image_url,
-      thumbnailUrl: result.thumbnail_url || result.image_url,
+      mediaUrl: mediaUrl,
+      thumbnailUrl: result.thumbnail_url || mediaUrl,
       metadata: {
         model: config.model,
         prompt: config.prompt,
@@ -217,7 +294,8 @@ export const generateMedia = async (
         numberOfImages: config.numberOfImages,
         imageSize: config.imageSize,
         seed: config.seed,
-        referenceImageUrl: config.referenceImageUrl,
+        referenceImageUrls: config.referenceImageUrls,
+        duration: config.videoDuration,
       },
     };
   } catch (error: any) {
@@ -580,6 +658,42 @@ export const uploadReferenceImage = async (file: File, userId: string): Promise<
     return publicUrl;
   } catch (error) {
     console.error('Error in uploadReferenceImage:', error);
+    return null;
+  }
+};
+
+/**
+ * Upload a video frame image to storage (for video generation)
+ */
+export const uploadVideoFrameImage = async (
+  file: File,
+  userId: string,
+  frameType: 'first' | 'last' | 'input'
+): Promise<string | null> => {
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${userId}/${Date.now()}_${frameType}_frame.${fileExt}`;
+
+    const { data, error } = await supabase.storage
+      .from('media-studio-images') // Use same bucket as reference images
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      console.error(`Error uploading ${frameType} frame:`, error);
+      return null;
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('media-studio-images')
+      .getPublicUrl(data.path);
+
+    return publicUrl;
+  } catch (error) {
+    console.error(`Error in uploadVideoFrameImage (${frameType}):`, error);
     return null;
   }
 };

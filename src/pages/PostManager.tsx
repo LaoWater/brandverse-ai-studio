@@ -9,22 +9,25 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Edit, Trash2, Eye, Filter, Plus, Calendar, Image, Video, Instagram, Facebook, Twitter, Linkedin, Search, X } from "lucide-react";
+import { Edit, Trash2, Eye, Filter, Plus, Calendar, Image, Video, Instagram, Facebook, Twitter, Linkedin, Search, X, Library } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { EditPostDialog } from "@/components/EditPostDialog";
 import { FaXTwitter, FaInstagram, FaFacebook, FaLinkedin } from "react-icons/fa6";
 import { useCompany } from "@/contexts/CompanyContext";
+import MediaLibrary from "@/components/media/MediaLibrary";
 
 type Post = Database['public']['Tables']['posts']['Row'];
 type PostStatus = Database['public']['Enums']['post_status'];
 type PlatformType = Database['public']['Enums']['platform_type'];
+type ViewMode = 'posts' | 'studio';
 
 const PostManager = () => {
   const { selectedCompany } = useCompany();
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('posts');
   const [filters, setFilters] = useState({
     platform: 'all',
     status: 'all',
@@ -263,19 +266,44 @@ const PostManager = () => {
       <div className="container mx-auto px-4 pt-24 pb-12">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-white mb-4">
-              Post <span className="text-cosmic font-serif">Library</span>
-            </h1>
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <button
+                onClick={() => setViewMode('posts')}
+                className={`text-4xl font-bold transition-all ${
+                  viewMode === 'posts'
+                    ? 'text-white cursor-default'
+                    : 'text-gray-500 hover:text-gray-300 cursor-pointer'
+                }`}
+              >
+                Post <span className="text-cosmic font-serif">Library</span>
+              </button>
+              <span className="text-gray-500 text-3xl">/</span>
+              <button
+                onClick={() => setViewMode('studio')}
+                className={`text-4xl font-bold transition-all ${
+                  viewMode === 'studio'
+                    ? 'text-white cursor-default'
+                    : 'text-gray-500 hover:text-gray-300 cursor-pointer'
+                }`}
+              >
+                Studio <span className="text-cosmic font-serif">Library</span>
+              </button>
+            </div>
             <p className="text-gray-300 text-lg">
-              Manage all your social media content for <span className="text-accent font-semibold">{selectedCompany.name}</span>
+              {viewMode === 'posts'
+                ? <>Manage all your social media content for <span className="text-accent font-semibold">{selectedCompany.name}</span></>
+                : <>Browse and manage all AI-generated media for <span className="text-accent font-semibold">{selectedCompany.name}</span></>
+              }
             </p>
           </div>
 
-          <Card className="cosmic-card mb-6">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Filter className="w-5 h-5" />
-                Filters & Search
+          {viewMode === 'posts' ? (
+            <>
+              <Card className="cosmic-card mb-6">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <Filter className="w-5 h-5" />
+                    Filters & Search
                 {(filters.search || filters.platform !== 'all' || filters.status !== 'all' || 
                   filters.titleFilter || filters.detailsFilter || filters.platformFilter || filters.statusFilter) && (
                   <Button
@@ -620,6 +648,11 @@ const PostManager = () => {
               </div>
             </TabsContent>
           </Tabs>
+            </>
+          ) : (
+            /* Studio Library View */
+            <MediaLibrary onCreateNew={() => setViewMode('posts')} />
+          )}
         </div>
       </div>
 

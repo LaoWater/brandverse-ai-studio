@@ -8,10 +8,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import MediaTypeSwitcher from '@/components/media/MediaTypeSwitcher';
 import ModelSelector from '@/components/media/ModelSelector';
+import VideoModelSelector from '@/components/media/VideoModelSelector';
+import VideoGenerationModeSelector from '@/components/media/VideoGenerationModeSelector';
 import PromptInput from '@/components/media/PromptInput';
 import FormatControls from '@/components/media/FormatControls';
+import VideoFormatControls from '@/components/media/VideoFormatControls';
 import ReferenceImageUpload from '@/components/media/ReferenceImageUpload';
 import ReferenceImageLibrary from '@/components/media/ReferenceImageLibrary';
+import KeyframeImageUpload from '@/components/media/KeyframeImageUpload';
+import VideoPromptGuide from '@/components/media/VideoPromptGuide';
 import MediaLibrary from '@/components/media/MediaLibrary';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,6 +28,7 @@ import {
   generateMediaWithProgress,
   saveMediaRecord,
   uploadReferenceImage,
+  uploadVideoFrameImage,
 } from '@/services/mediaStudioService';
 import {
   getUserCredits,
@@ -32,8 +38,11 @@ import {
 
 const MediaStudioContent = () => {
   const {
+    mediaType,
     prompt,
     selectedImageModel,
+    selectedVideoModel,
+    videoGenerationMode,
     aspectRatio,
     numberOfImages,
     imageSize,
@@ -41,6 +50,9 @@ const MediaStudioContent = () => {
     negativePrompt,
     enhancePrompt,
     referenceImages,
+    firstFrameImage,
+    lastFrameImage,
+    inputVideoImage,
     isGenerating,
     generationProgress,
     currentStage,
@@ -59,9 +71,10 @@ const MediaStudioContent = () => {
 
   // Calculate generation cost based on current settings
   const generationCost = calculateMediaStudioCredits(
-    selectedImageModel,
+    mediaType === 'image' ? selectedImageModel : selectedVideoModel,
     imageSize,
-    numberOfImages
+    numberOfImages,
+    mediaType
   );
 
   // Generation mutation
@@ -81,36 +94,78 @@ const MediaStudioContent = () => {
         throw new Error('Failed to deduct credits. Please try again.');
       }
 
-      // Upload reference images if provided
       let referenceImageUrls: string[] = [];
-      if (referenceImages.length > 0 && user) {
-        console.log('[MediaStudio] Uploading reference images...', referenceImages.length);
-        for (const image of referenceImages) {
-          const uploadedUrl = await uploadReferenceImage(image, user.id);
-          console.log('[MediaStudio] Reference image uploaded:', uploadedUrl);
-          if (uploadedUrl) {
-            referenceImageUrls.push(uploadedUrl);
-          } else {
-            console.error('[MediaStudio] Reference image upload failed - no URL returned');
+      let firstFrameUrl: string | undefined;
+      let lastFrameUrl: string | undefined;
+      let inputImageUrl: string | undefined;
+
+      if (mediaType === 'image') {
+        // Upload reference images for image generation
+        if (referenceImages.length > 0 && user) {
+          console.log('[MediaStudio] Uploading reference images...', referenceImages.length);
+          for (const image of referenceImages) {
+            const uploadedUrl = await uploadReferenceImage(image, user.id);
+            console.log('[MediaStudio] Reference image uploaded:', uploadedUrl);
+            if (uploadedUrl) {
+              referenceImageUrls.push(uploadedUrl);
+            } else {
+              console.error('[MediaStudio] Reference image upload failed - no URL returned');
+            }
+          }
+        }
+      } else {
+        // Upload frame images for video generation based on mode
+        if (videoGenerationMode === 'image-to-video' && inputVideoImage && user) {
+          console.log('[MediaStudio] Uploading input image for image-to-video...');
+          inputImageUrl = await uploadVideoFrameImage(inputVideoImage, user.id, 'input');
+          if (!inputImageUrl) {
+            throw new Error('Failed to upload input image. Please try again.');
+          }
+          console.log('[MediaStudio] Input image uploaded:', inputImageUrl);
+        } else if (videoGenerationMode === 'keyframe-to-video' && user) {
+          if (firstFrameImage) {
+            console.log('[MediaStudio] Uploading first frame...');
+            firstFrameUrl = await uploadVideoFrameImage(firstFrameImage, user.id, 'first');
+            if (!firstFrameUrl) {
+              throw new Error('Failed to upload first frame. Please try again.');
+            }
+            console.log('[MediaStudio] First frame uploaded:', firstFrameUrl);
+          }
+          if (lastFrameImage) {
+            console.log('[MediaStudio] Uploading last frame...');
+            lastFrameUrl = await uploadVideoFrameImage(lastFrameImage, user.id, 'last');
+            if (!lastFrameUrl) {
+              throw new Error('Failed to upload last frame. Please try again.');
+            }
+            console.log('[MediaStudio] Last frame uploaded:', lastFrameUrl);
           }
         }
       }
 
-      console.log('[MediaStudio] Calling generateMediaWithProgress with referenceImageUrls:', referenceImageUrls);
+      console.log(`[MediaStudio] Calling generateMediaWithProgress for ${mediaType}...`);
 
       // Generate media with progress
       const result = await generateMediaWithProgress(
         {
           prompt,
-          mediaType: 'image',
-          model: selectedImageModel,
+          mediaType,
+          model: mediaType === 'image' ? selectedImageModel : selectedVideoModel,
           aspectRatio,
-          numberOfImages,
-          imageSize,
-          seed,
-          negativePrompt,
-          enhancePrompt,
-          referenceImageUrls,
+          // Image-specific
+          numberOfImages: mediaType === 'image' ? numberOfImages : undefined,
+          imageSize: mediaType === 'image' ? imageSize : undefined,
+          seed: mediaType === 'image' ? seed : undefined,
+          negativePrompt: mediaType === 'image' ? negativePrompt : undefined,
+          enhancePrompt: mediaType === 'image' ? enhancePrompt : undefined,
+          referenceImageUrls: mediaType === 'image' ? referenceImageUrls : undefined,
+          // Video-specific
+          videoMode: mediaType === 'video' ? videoGenerationMode : undefined,
+          videoDuration: mediaType === 'video' ? 8 : undefined,
+          videoFps: mediaType === 'video' ? 24 : undefined,
+          inputImageUrl: mediaType === 'video' ? inputImageUrl : undefined,
+          firstFrameUrl: mediaType === 'video' ? firstFrameUrl : undefined,
+          lastFrameUrl: mediaType === 'video' ? lastFrameUrl : undefined,
+          // Common
           userId: user.id,
           companyId: selectedCompany?.id,
         },
@@ -119,44 +174,48 @@ const MediaStudioContent = () => {
         }
       );
 
-      return { result, referenceImageUrls };
+      return { result, referenceImageUrls, mediaType };
     },
-    onSuccess: async ({ result, referenceImageUrls }) => {
+    onSuccess: async ({ result, referenceImageUrls, mediaType: generatedMediaType }) => {
       // Handle error result (when generateMedia returns success: false)
       if (!result.success) {
         resetGeneration(); // Close the modal immediately
 
         const errorMessage = result.error || 'Something went wrong. Please try again.';
-        const isGeminiHelpfulError = errorMessage.includes("Gemini couldn't generate") ||
-                                      errorMessage.includes("💡 Tip:");
+        const isHelpfulError = errorMessage.includes("couldn't generate") ||
+                               errorMessage.includes("💡 Tip:");
 
         toast({
-          title: isGeminiHelpfulError ? 'Need More Details' : 'Generation Failed',
+          title: isHelpfulError ? 'Need More Details' : 'Generation Failed',
           description: errorMessage,
           variant: 'destructive',
-          duration: isGeminiHelpfulError ? 8000 : 5000,
+          duration: isHelpfulError ? 8000 : 5000,
         });
         return;
       }
 
       // Handle success result
       if (result.success && user) {
+        const isVideo = generatedMediaType === 'video';
+        const fileExtension = isVideo ? 'mp4' : 'png';
+        const fileFormat = isVideo ? 'mp4' : 'png';
+
         // Save to database
         await saveMediaRecord({
           user_id: user.id,
           company_id: selectedCompany?.id || null,
-          file_name: `generated_${Date.now()}.png`,
-          file_type: 'image',
-          file_format: 'png',
+          file_name: `generated_${Date.now()}.${fileExtension}`,
+          file_type: isVideo ? 'video' : 'image',
+          file_format: fileFormat,
           file_size: null, // Will be updated when actual file is uploaded
           storage_path: result.mediaUrl, // Dummy for now
           public_url: result.mediaUrl,
           thumbnail_url: result.thumbnailUrl || null,
           prompt,
-          model_used: selectedImageModel,
+          model_used: isVideo ? selectedVideoModel : selectedImageModel,
           aspect_ratio: aspectRatio,
-          quality: imageSize || '1K', // Store quality/size
-          duration: null,
+          quality: isVideo ? null : (imageSize || '1K'),
+          duration: isVideo ? 8 : null,
           reference_image_url: referenceImageUrls.length > 0 ? referenceImageUrls[0] : null,
           tags: [],
           is_favorite: false,
@@ -172,7 +231,7 @@ const MediaStudioContent = () => {
         // Show success toast
         toast({
           title: 'Success!',
-          description: 'Your image has been generated successfully.',
+          description: `Your ${isVideo ? 'video' : 'image'} has been generated successfully.`,
           className: 'bg-green-600/90 border-green-600 text-white',
         });
 
@@ -237,7 +296,9 @@ const MediaStudioContent = () => {
                 Media Studio
               </h1>
               <p className="text-gray-400">
-                Create stunning visuals with AI-powered image generation
+                {mediaType === 'image'
+                  ? 'Create stunning visuals with AI-powered image generation'
+                  : 'Create dynamic videos with AI-powered video generation'}
               </p>
             </div>
 
@@ -275,8 +336,20 @@ const MediaStudioContent = () => {
                 </div>
 
                 <MediaTypeSwitcher />
-                <ModelSelector />
-                <FormatControls />
+
+                {/* Conditional rendering based on media type */}
+                {mediaType === 'image' ? (
+                  <>
+                    <ModelSelector />
+                    <FormatControls />
+                  </>
+                ) : (
+                  <>
+                    <VideoModelSelector />
+                    <VideoGenerationModeSelector />
+                    <VideoFormatControls />
+                  </>
+                )}
               </Card>
             </aside>
 
@@ -297,18 +370,33 @@ const MediaStudioContent = () => {
                   <CardContent className="relative z-10 p-8">
                     <div className="text-center mb-8">
                       <h2 className="text-3xl font-bold text-cosmic mb-3">
-                        What will you create today?
+                        {mediaType === 'image'
+                          ? 'What will you create today?'
+                          : 'What video will you bring to life?'}
                       </h2>
                       <p className="text-gray-300 text-lg">
-                        Describe your vision and watch AI bring it to life
+                        {mediaType === 'image'
+                          ? 'Describe your vision and watch AI bring it to life'
+                          : 'Describe the action and watch AI animate your vision'}
                       </p>
                     </div>
 
                     {/* Prompt Input */}
                     <div className="space-y-6">
                       <PromptInput />
-                      <ReferenceImageUpload />
-                      <ReferenceImageLibrary />
+
+                      {/* Conditional rendering based on media type */}
+                      {mediaType === 'image' ? (
+                        <>
+                          <ReferenceImageUpload />
+                          <ReferenceImageLibrary />
+                        </>
+                      ) : (
+                        <>
+                          <KeyframeImageUpload />
+                          <VideoPromptGuide />
+                        </>
+                      )}
 
                       {/* Generate Button */}
                       <Button
@@ -324,7 +412,7 @@ const MediaStudioContent = () => {
                         ) : (
                           <>
                             <Sparkles className="w-5 h-5 mr-2" />
-                            Generate Image
+                            {mediaType === 'image' ? 'Generate Image' : 'Generate Video'}
                             <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                           </>
                         )}
