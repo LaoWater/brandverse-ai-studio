@@ -486,22 +486,46 @@ const MediaStudioContent = () => {
           <div className="text-center py-8">
             {generationProgress < 100 ? (
               <>
-                <div className="relative inline-block mb-6">
-                  <Loader className="w-16 h-16 text-primary icon-spin-glow" />
-                  <Sparkles className="w-8 h-8 text-accent absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-pulse" />
-                  {/* Orbiting particles */}
-                  <div className="absolute top-0 left-1/2 w-2 h-2 bg-accent rounded-full blur-sm animate-cosmic-drift" />
-                  <div className="absolute bottom-0 right-1/2 w-2 h-2 bg-primary rounded-full blur-sm animate-cosmic-drift" style={{ animationDelay: '-5s' }} />
+                {/* Enhanced Magic Spinner */}
+                <div className="relative inline-block mb-8 magic-spinner-container">
+                  {/* Animated glow background */}
+                  <div className="magic-glow-bg w-32 h-32" />
+
+                  {/* Expanding rings */}
+                  <div className="magic-ring" />
+                  <div className="magic-ring" />
+                  <div className="magic-ring" />
+
+                  {/* Main rotating loader with 3D effect */}
+                  <div className="relative z-10">
+                    <Loader className="w-20 h-20 text-primary magic-spinner-ring" />
+                  </div>
+
+                  {/* Pulsing center sparkle */}
+                  <Sparkles className="w-10 h-10 text-white absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 magic-core-sparkle z-20" />
+
+                  {/* Orbiting energy particles */}
+                  <div className="absolute top-1/2 left-1/2 w-3 h-3 bg-gradient-to-r from-primary to-accent rounded-full magic-particle" />
+                  <div className="absolute top-1/2 left-1/2 w-3 h-3 bg-gradient-to-r from-accent to-primary rounded-full magic-particle" />
+                  <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-white rounded-full magic-particle" />
+                  <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-accent rounded-full magic-particle" />
+
+                  {/* Floating stars */}
+                  <div className="absolute -top-2 -right-2 text-accent magic-star" style={{ animationDelay: '0s' }}>✦</div>
+                  <div className="absolute -top-2 -left-2 text-primary magic-star" style={{ animationDelay: '0.5s' }}>✦</div>
+                  <div className="absolute -bottom-2 -right-2 text-primary magic-star" style={{ animationDelay: '1s' }}>✦</div>
+                  <div className="absolute -bottom-2 -left-2 text-accent magic-star" style={{ animationDelay: '1.5s' }}>✦</div>
                 </div>
-                <h3 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-3">
+
+                <h3 className="text-3xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent mb-3 animate-gradient-x">
                   Creating Magic...
                 </h3>
-                <p className="text-gray-300 mb-6">{currentStage || 'Initializing...'}</p>
-                <div className="space-y-2">
+                <p className="text-gray-300 mb-6 text-lg">{currentStage || 'Initializing...'}</p>
+                <div className="space-y-3">
                   <div className="relative">
-                    <Progress value={generationProgress} className="h-2 cosmic-progress-bar" />
+                    <Progress value={generationProgress} className="h-3 cosmic-progress-bar" />
                   </div>
-                  <p className="text-sm text-accent font-semibold">{Math.round(generationProgress)}%</p>
+                  <p className="text-base text-accent font-bold">{Math.round(generationProgress)}%</p>
                 </div>
               </>
             ) : (
