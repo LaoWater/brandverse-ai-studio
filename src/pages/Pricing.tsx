@@ -464,7 +464,7 @@ const Pricing = () => {
 
                               <div className="mb-4">
                                 <div className="flex items-baseline justify-center mb-1">
-                                  {index === 0 && <span className="text-5xl font-bold text-slate-500 dark:bg-gradient-to-r dark:from-slate-400 dark:to-gray-400 dark:bg-clip-text dark:text-transparent">{plan.price.replace('$', '')}</span>}
+                                  {index === 0 && <span className="text-5xl font-bold text-blue-600 dark:bg-gradient-to-r dark:from-blue-400 dark:to-indigo-400 dark:bg-clip-text dark:text-transparent">{plan.price.replace('$', '')}</span>}
                                   {index === 1 && <span className="text-5xl font-bold text-amber-600 dark:bg-gradient-to-r dark:from-amber-400 dark:to-orange-400 dark:bg-clip-text dark:text-transparent">{plan.price.replace('$', '')}</span>}
                                   {index === 2 && <span className="text-5xl font-bold text-purple-600 dark:bg-gradient-to-r dark:from-purple-400 dark:to-pink-400 dark:bg-clip-text dark:text-transparent">{plan.price.replace('$', '')}</span>}
                                   {plan.price !== "$0" && <span className="text-xl text-gray-400 ml-1.5">$</span>}
@@ -493,7 +493,7 @@ const Pricing = () => {
                                       <div className={`mt-0.5 w-4 h-4 rounded-full bg-gradient-to-br ${style.border} flex items-center justify-center flex-shrink-0`}>
                                         <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
                                       </div>
-                                      <span className="text-gray-300 light:text-gray-600 text-xs group-hover/item:text-white light:group-hover/item:text-gray-900 transition-colors leading-relaxed">
+                                      <span className="text-gray-300 light:text-gray-700 text-xs group-hover/item:text-white light:group-hover/item:text-gray-900 transition-colors leading-relaxed">
                                         {typeof feature === 'string' ? feature : feature.text}
                                       </span>
                                     </div>
