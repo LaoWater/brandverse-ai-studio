@@ -1,12 +1,12 @@
 // src/components/HowItWorksRoadmap.tsx
 import { useRef } from 'react';
 import { motion, useScroll, useTransform, useInView, easeOut } from 'framer-motion';
-import { ArrowRight, UploadCloud, Sparkles, Brain, Bot, Users, CalendarClock, Target, Share2, TrendingUp, Zap } from 'lucide-react';
+import { ArrowRight, Pen, Sparkles, Brain, Bot, Users, CalendarClock, Target, Share2, TrendingUp, Zap, Rocket, Wand2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const iconMap = {
-  UploadCloud, Sparkles, Brain, Bot, Users, CalendarClock, Target, Share2, TrendingUp, Zap,
+  Pen, Sparkles, Brain, Bot, Users, CalendarClock, Target, Share2, TrendingUp, Zap, Rocket, Wand2,
 };
 type IconName = keyof typeof iconMap;
 
@@ -17,7 +17,7 @@ const getIcon = (iconName: IconName) => {
 const steps = [ // Ensure icon names are valid IconName types
   {
     stepNumber: 1,
-    icon: "UploadCloud" as IconName,
+    icon: "Pen" as IconName,
     title: "Create & Define Your Voice",
     description: "Securely link your social media accounts. Tell our AI about your brand's unique personality, mission, target audience, and style.",
     details: [
@@ -32,7 +32,7 @@ const steps = [ // Ensure icon names are valid IconName types
   },
   {
     stepNumber: 2,
-    icon: "Sparkles" as IconName,
+    icon: "Wand2" as IconName,
     title: "AI Crafts & You Refine",
     description: "Our intelligent system analyzes your input and generates a diverse range of tailored content suggestions. From witty tweets to engaging Instagram captions and insightful LinkedIn posts, all adapted for each platform.",
     details: [
@@ -118,9 +118,9 @@ const RoadmapStep: React.FC<RoadmapStepProps> = ({ step, index, totalSteps, scro
     <div ref={ref} className="relative flex items-start my-12 md:my-16">
       <motion.div
         style={{ scale: nodeScale, opacity: nodeOpacity }}
-        className={`absolute left-1/2 -translate-x-1/2 z-10 w-8 h-8 md:w-10 md:h-10 rounded-full border-2 ${step.borderColor} bg-gradient-to-br ${step.bgColor.replace('/10', '/60')} dark:${step.bgColor.replace('/10', '/50')} flex items-center justify-center shadow-md dark:shadow-lg`}
+        className={`absolute left-1/2 -translate-x-1/2 z-10 w-8 h-8 md:w-10 md:h-10 rounded-full border-2 ${step.borderColor} bg-gradient-to-br ${step.bgColor.replace('/10', '/60')} dark:${step.bgColor.replace('/10', '/50')} flex items-center justify-center shadow-md dark:shadow-lg [&>svg]:!fill-transparent`}
       >
-        <IconComponent className={`w-4 h-4 md:w-5 md:h-5 ${step.iconColor}`} />
+        <IconComponent className={`w-4 h-4 md:w-5 md:h-5 ${step.iconColor} stroke-current`} strokeWidth={2} />
       </motion.div>
 
       <motion.div
@@ -142,7 +142,7 @@ const RoadmapStep: React.FC<RoadmapStepProps> = ({ step, index, totalSteps, scro
                 <IconComponent className={`w-6 h-6 ${step.iconColor}`} />
               </div>
               <div>
-                <CardDescription className={`${step.textColor} font-semibold`}>
+                <CardDescription className={`${step.textColor} dark:${step.textColor} font-semibold text-sm`}>
                   Step {step.stepNumber}
                 </CardDescription>
                 <CardTitle className={`text-2xl font-bold text-foreground dark:${step.textColor.replace('-300', '-100')}`}>{step.title}</CardTitle>
@@ -150,8 +150,8 @@ const RoadmapStep: React.FC<RoadmapStepProps> = ({ step, index, totalSteps, scro
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-foreground/90 dark:text-gray-300 leading-relaxed font-medium">{step.description}</p>
-            <ul className="list-disc list-inside space-y-1 text-muted-foreground dark:text-gray-400 text-sm">
+            <p className="text-foreground dark:text-gray-300 leading-relaxed font-medium">{step.description}</p>
+            <ul className="list-disc list-inside space-y-1.5 text-foreground/80 dark:text-gray-400 text-sm leading-relaxed">
               {step.details.map((detail, i) => (
                 <li key={i}>{detail}</li>
               ))}
@@ -181,8 +181,8 @@ export function HowItWorksRoadmap() {
 
   return (
     <section id="how-it-works" className="py-24 relative bg-background overflow-hidden">
-      {/* Background Image with Parallax and Progressive Opacity */}
-      <div className="absolute inset-0 overflow-hidden">
+      {/* Background Image - Only shown in dark mode for performance */}
+      <div className="absolute inset-0 overflow-hidden hidden dark:block">
         <motion.div
           style={{
             opacity: backgroundOpacity,
@@ -190,19 +190,19 @@ export function HowItWorksRoadmap() {
           className="absolute inset-0 w-full h-full"
         >
           <div
-            className="w-full h-full bg-contain bg-center bg-no-repeat dark:[filter:blur(0.5px)_brightness(0.4)_contrast(1.2)] [filter:blur(1px)_brightness(1.2)_contrast(0.8)_opacity(0.08)]"
+            className="w-full h-full bg-contain bg-center bg-no-repeat [filter:blur(0.5px)_brightness(0.4)_contrast(1.2)]"
             style={{
               backgroundImage: "url('/quantum_chip.png')",
             }}
           />
         </motion.div>
 
-        {/* Gradient Mask Overlay - Theme Aware - Much Lighter in Light Mode */}
-        <div className="absolute inset-0 z-10 bg-gradient-to-b from-background via-transparent to-background dark:from-black/95 dark:via-black/10 dark:to-black/95" />
+        {/* Gradient Mask Overlay - Dark mode only */}
+        <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/95 via-black/10 to-black/95" />
 
-        {/* Additional color overlay for theme consistency - Very Subtle in Light Mode */}
+        {/* Additional color overlay for theme consistency - Dark mode only */}
         <div
-          className="absolute inset-0 z-20 opacity-10 dark:opacity-40"
+          className="absolute inset-0 z-20 opacity-40"
           style={{
             background: `
               radial-gradient(circle at top left, rgba(14,165,233,0.1) 0%, transparent 40%),
@@ -258,13 +258,13 @@ export function HowItWorksRoadmap() {
         </div>
 
         <motion.div
-          className="text-center mt-16 md:mt-24"
+          className="text-center mt-16 md:mt-13"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
           viewport={{ once: true }}
         >
-          <p className="text-xl text-foreground/80 dark:text-gray-300 mb-8 dark:drop-shadow-md">Ready to experience the Future of Content Creation?</p>
+          <p className="text-xl text-foreground/80 dark:text-gray-300 mb-5 dark:drop-shadow-md">Ready to experience the Future of Content Creation?</p>
           <Button
             asChild
             size="lg"

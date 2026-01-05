@@ -199,7 +199,7 @@ const Pricing = () => {
               Powerful AI Tools,
               <span className="text-cosmic block mt-2">Simple Pricing</span>
             </h1>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-300 dark:text-gray-300 [html.light_&]:text-gray-700 max-w-3xl mx-auto">
               One credit system for all your needs. From marketing automation to creative media generation.
             </p>
           </div>
@@ -222,7 +222,7 @@ const Pricing = () => {
                       </div>
                     </div>
                     <h3 className="text-3xl font-bold text-white mb-2">Content Generation</h3>
-                    <p className="text-purple-300 font-medium">For Marketing Automation</p>
+                    <p className="text-purple-300 dark:text-purple-300 [html.light_&]:text-purple-700 font-medium">For Marketing Automation</p>
                   </div>
 
                   <p className="text-gray-300 mb-8 leading-relaxed text-base">
@@ -275,7 +275,7 @@ const Pricing = () => {
                       </div>
                     </div>
                     <h3 className="text-3xl font-bold text-white mb-2">Media Studio</h3>
-                    <p className="text-cyan-300 font-medium">For Individual Creators</p>
+                    <p className="text-cyan-300 dark:text-cyan-300 [html.light_&]:text-cyan-700 font-medium">For Individual Creators</p>
                   </div>
 
                   <p className="text-gray-300 mb-8 leading-relaxed text-base">
@@ -319,7 +319,7 @@ const Pricing = () => {
               <h2 className="text-3xl font-bold text-white mb-3">
                 One Credit System, Endless Possibilities
               </h2>
-              <p className="text-gray-300">
+              <p className="text-gray-300 dark:text-gray-300 [html.light_&]:text-gray-700">
                 Simple, transparent pricing for all your content needs
               </p>
             </div>
@@ -379,7 +379,7 @@ const Pricing = () => {
                       </div>
                     </div>
                     <p className="text-gray-400 light:text-gray-600 text-sm">
-                      AI-generated images, graphics
+                      Based on Quality and complexity, starting at 2 credits
                     </p>
                   </CardContent>
                 </Card>
@@ -511,7 +511,7 @@ const Pricing = () => {
                             <CardFooter className="pt-0 pb-6 px-6 relative z-10">
                               <Button
                                 variant={plan.buttonVariant}
-                                className={`w-full h-11 text-sm font-semibold cosmic-button bg-gradient-to-r ${style.border} hover:shadow-lg hover:shadow-${style.glow} transition-all duration-300 ${plan.popular ? 'ring-2 ring-amber-400/50' : ''}`}
+                                className={`w-full h-11 text-sm font-semibold cosmic-button bg-gradient-to-r ${style.border} hover:shadow-lg hover:shadow-${style.glow} transition-all duration-300 ${plan.popular ? 'ring-2 ring-amber-400/50' : ''} text-white dark:text-white [html.light_&]:text-gray-900`}
                                 onClick={() => plan.priceId && handleUpgrade(plan.priceId, plan.name)}
                                 disabled={!plan.priceId}
                               >
