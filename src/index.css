@@ -104,7 +104,7 @@
 
   /* Light Mode Body Background */
   .light body {
-    background: linear-gradient(135deg, #FAFBFC 0%, #F0F4FF 50%, #E8F0FE 100%);
+    background: linear-gradient(135deg, #FFFFFF 0%, #F0F4FF 50%, #FFFFFF 100%);
   }
 
   /* COSMIC CARD SYSTEM - High specificity overrides */
@@ -2176,6 +2176,56 @@
       transform: translate(-50%, -50%) scale(1.2);
       opacity: 0.8;
     }
+  }
+
+  /* Rotating light rays */
+  .magic-rays {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100px;
+    height: 100px;
+    animation: rotate-rays 8s linear infinite;
+  }
+
+  .magic-ray {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2px;
+    height: 40px;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgba(91, 95, 238, 0.4),
+      transparent
+    );
+    transform-origin: center top;
+  }
+
+  @keyframes rotate-rays {
+    0% {
+      transform: translate(-50%, -50%) rotate(0deg);
+    }
+    100% {
+      transform: translate(-50%, -50%) rotate(360deg);
+    }
+  }
+
+  /* Enhanced gradient animation for text */
+  @keyframes gradient-x {
+    0%, 100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  .animate-gradient-x {
+    background-size: 200% auto;
+    animation: gradient-x 3s ease infinite;
   }
 
   /* Success Checkmark Animation */

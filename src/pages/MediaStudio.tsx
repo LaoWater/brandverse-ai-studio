@@ -491,6 +491,18 @@ const MediaStudioContent = () => {
                   {/* Animated glow background */}
                   <div className="magic-glow-bg w-32 h-32" />
 
+                  {/* Rotating light rays */}
+                  <div className="magic-rays">
+                    <div className="magic-ray" style={{ transform: 'rotate(0deg)' }} />
+                    <div className="magic-ray" style={{ transform: 'rotate(45deg)' }} />
+                    <div className="magic-ray" style={{ transform: 'rotate(90deg)' }} />
+                    <div className="magic-ray" style={{ transform: 'rotate(135deg)' }} />
+                    <div className="magic-ray" style={{ transform: 'rotate(180deg)' }} />
+                    <div className="magic-ray" style={{ transform: 'rotate(225deg)' }} />
+                    <div className="magic-ray" style={{ transform: 'rotate(270deg)' }} />
+                    <div className="magic-ray" style={{ transform: 'rotate(315deg)' }} />
+                  </div>
+
                   {/* Expanding rings */}
                   <div className="magic-ring" />
                   <div className="magic-ring" />
@@ -501,8 +513,11 @@ const MediaStudioContent = () => {
                     <Loader className="w-20 h-20 text-primary magic-spinner-ring" />
                   </div>
 
-                  {/* Pulsing center sparkle */}
-                  <Sparkles className="w-10 h-10 text-white absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 magic-core-sparkle z-20" />
+                  {/* Pulsing center core - custom animated element */}
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 magic-core-sparkle z-20">
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-white via-accent to-primary"
+                         style={{ boxShadow: '0 0 20px rgba(255, 255, 255, 0.8), 0 0 40px rgba(0, 212, 255, 0.5)' }} />
+                  </div>
 
                   {/* Orbiting energy particles */}
                   <div className="absolute top-1/2 left-1/2 w-3 h-3 bg-gradient-to-r from-primary to-accent rounded-full magic-particle" />

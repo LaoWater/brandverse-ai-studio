@@ -1,5 +1,5 @@
 import Navigation from "@/components/Navigation";
-import { Check, Star, Zap, Crown, Bell } from "lucide-react";
+import { Check, Star, Zap, Crown, Bell, Sparkles, Video, MessageSquare, Users, Wand2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -91,7 +91,6 @@ const Pricing = () => {
     }
   };
 
-  /* COMMENTED OUT - PRICING PLANS FOR LATER
   const plans = [
     {
       name: "Free",
@@ -104,7 +103,7 @@ const Pricing = () => {
       features: [
         { text: "10 credits daily (resets automatically)", tooltip: "Get 10 fresh credits every day" },
         { text: "Max 3 brand profiles", tooltip: "Store up to 3 different brand personalities" },
-        { text: "Access to latest AI models", tooltip: "Use our most advanced content generation models" },
+        { text: "Content Generation + Media Studio", tooltip: "Access to all our AI tools" },
         { text: "Posts management tools", tooltip: "Organize and manage your generated content" },
         { text: "Export to major platforms", tooltip: "Direct publishing to social media" }
       ],
@@ -187,100 +186,237 @@ const Pricing = () => {
       productId: "prod_SXNRQ7G1zjUMC3"
     }
   ];
-  */
 
   return (
     <div className="min-h-screen bg-cosmic-gradient">
       <Navigation />
-      
+
       <main className="pt-20 pb-16">
         <div className="container mx-auto px-6">
           {/* Hero Section */}
-          <div className="text-center mb-16">
+          <div className="text-center mb-12">
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-              Simple, Credit-Based
-              <span className="text-cosmic block mt-2">Pricing</span>
+              Powerful AI Tools,
+              <span className="text-cosmic block mt-2">Simple Pricing</span>
             </h1>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
-              Pay for what you use with our flexible credit system. 
-              {/* <br></br>Text posts cost 1 credit, images cost 2 credits, and videos are charged individually. */}
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+              One credit system for all your needs. From marketing automation to creative media generation.
             </p>
           </div>
 
-          {/* Launch Soon Section */}
-          <div className="max-w-4xl mx-auto mb-16">
-            <Card className="cosmic-card relative overflow-hidden">
-              {/* Animated background gradient */}
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-teal-500/10 animate-pulse"></div>
-              
-              <CardContent className="relative z-10 text-center py-16 px-8">
-                <div className="mb-8">
-                  <div className="inline-flex items-center space-x-2 mb-6">
-                    <Badge className="bg-cosmic/20 text-cosmic border-cosmic/40 px-4 py-2 text-lg font-semibold animate-pulse">
-                      Coming Soon
-                    </Badge>
-                  </div>
-                  
-                  <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
-                    Launching Soon
-                  </h2>
-                  
-                  <p className="text-xl text-gray-300 mb-4 leading-relaxed">
-                    For now we invite you to test our system for free.
-                  </p>
-                  
-                  <p className="text-lg text-gray-400 mb-8">
-                    Your feedback is welcomed.
-                  </p>
-                </div>
+          {/* Product Categories Section */}
+          <div className="grid md:grid-cols-2 gap-8 mb-20 max-w-6xl mx-auto">
+            {/* Content Generation Card */}
+            <div className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl blur opacity-30 group-hover:opacity-60 transition duration-500"></div>
+              <Card className="relative cosmic-card overflow-hidden border-2 border-purple-500/20 hover:border-purple-500/40 transition-all duration-500">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-purple-500/20 to-transparent rounded-full blur-3xl -z-0"></div>
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-pink-500/10 to-transparent rounded-full blur-2xl -z-0"></div>
 
-                {/* Notification Signup */}
-                <div className="max-w-md mx-auto">
+                <CardContent className="relative z-10 p-10">
                   <div className="mb-6">
-                    <h3 className="text-2xl font-bold text-white mb-2 flex items-center justify-center space-x-2">
-                      <Bell className="w-6 h-6 text-cosmic" />
-                      <span className="text-white">
-                        Get Notified
-                      </span>
-                    </h3>
-                    <p className="text-gray-300">
-                      Create an account to start enjoying many of our features for free and get notified once we launch our plans
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <Button 
-                      onClick={handleSignupRedirect}
-                      className="w-full cosmic-button text-lg py-3 relative group overflow-hidden"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-cosmic to-accent opacity-0 group-hover:opacity-20 transition-opacity"></div>
-                      <div className="relative flex items-center justify-center space-x-2">
-                        <span>Create Free Account</span>
+                    <div className="relative w-20 h-20 mb-4">
+                      <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl opacity-20 blur-xl"></div>
+                      <div className="relative w-full h-full bg-gradient-to-br from-purple-500/30 to-pink-500/30 rounded-2xl border border-purple-400/30 flex items-center justify-center backdrop-blur-sm">
+                        <MessageSquare className="w-9 h-9 text-purple-300" strokeWidth={1.5} />
                       </div>
-                    </Button>
+                    </div>
+                    <h3 className="text-3xl font-bold text-white mb-2">Content Generation</h3>
+                    <p className="text-purple-300 font-medium">For Marketing Automation</p>
                   </div>
-                </div>
 
-                {/* Feature Preview */}
-                <div className="mt-12 grid md:grid-cols-3 gap-6 text-sm">
-                  <div className="flex items-center justify-center space-x-2 text-gray-300">
-                    <Check className="w-4 h-4 text-cosmic" />
-                    <span>Flexible Credit System</span>
+                  <p className="text-gray-300 mb-8 leading-relaxed text-base">
+                    Perfect for businesses and agencies looking to automate their content marketing across multiple platforms.
+                  </p>
+
+                  <div className="space-y-4">
+                    <div className="flex items-start space-x-3">
+                      <div className="mt-0.5 w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                      </div>
+                      <span className="text-gray-200">AI-powered social media posts</span>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="mt-0.5 w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                      </div>
+                      <span className="text-gray-200">Brand voice consistency</span>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="mt-0.5 w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                      </div>
+                      <span className="text-gray-200">Multi-platform publishing</span>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="mt-0.5 w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                      </div>
+                      <span className="text-gray-200">Campaign management</span>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-center space-x-2 text-gray-300">
-                    <Check className="w-4 h-4 text-cosmic" />
-                    <span>Multiple Pricing Tiers</span>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Media Studio Card */}
+            <div className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-3xl blur opacity-30 group-hover:opacity-60 transition duration-500"></div>
+              <Card className="relative cosmic-card overflow-hidden border-2 border-cyan-500/20 hover:border-cyan-500/40 transition-all duration-500">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-cyan-500/20 to-transparent rounded-full blur-3xl -z-0"></div>
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-blue-500/10 to-transparent rounded-full blur-2xl -z-0"></div>
+
+                <CardContent className="relative z-10 p-10">
+                  <div className="mb-6">
+                    <div className="relative w-20 h-20 mb-4">
+                      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-2xl opacity-20 blur-xl"></div>
+                      <div className="relative w-full h-full bg-gradient-to-br from-cyan-500/30 to-blue-500/30 rounded-2xl border border-cyan-400/30 flex items-center justify-center backdrop-blur-sm">
+                        <Video className="w-9 h-9 text-cyan-300" strokeWidth={1.5} />
+                      </div>
+                    </div>
+                    <h3 className="text-3xl font-bold text-white mb-2">Media Studio</h3>
+                    <p className="text-cyan-300 font-medium">For Individual Creators</p>
                   </div>
-                  <div className="flex items-center justify-center space-x-2 text-gray-300">
-                    <Check className="w-4 h-4 text-cosmic" />
-                    <span>Pay-as-you-go Options</span>
+
+                  <p className="text-gray-300 mb-8 leading-relaxed text-base">
+                    Ideal for content creators who need professional-quality images and videos without the complexity.
+                  </p>
+
+                  <div className="space-y-4">
+                    <div className="flex items-start space-x-3">
+                      <div className="mt-0.5 w-5 h-5 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center flex-shrink-0">
+                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                      </div>
+                      <span className="text-gray-200">AI image generation</span>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="mt-0.5 w-5 h-5 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center flex-shrink-0">
+                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                      </div>
+                      <span className="text-gray-200">AI video creation</span>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="mt-0.5 w-5 h-5 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center flex-shrink-0">
+                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                      </div>
+                      <span className="text-gray-200">Professional editing tools</span>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="mt-0.5 w-5 h-5 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center flex-shrink-0">
+                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                      </div>
+                      <span className="text-gray-200">Export in multiple formats</span>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
-          {/* COMMENTED OUT - BILLING TOGGLE AND PRICING CARDS
+          {/* Credit System Explanation */}
+          <div className="max-w-6xl mx-auto mb-20">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                One Credit System, Endless Possibilities
+              </h2>
+              <p className="text-gray-300 text-lg">
+                Simple, transparent pricing for all your content needs
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8">
+              {/* Text Content */}
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 rounded-3xl blur-lg opacity-25 group-hover:opacity-50 transition duration-500"></div>
+                <Card className="relative cosmic-card overflow-hidden border border-violet-500/20">
+                  <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-transparent"></div>
+                  <CardContent className="relative p-8 text-center">
+                    <div className="relative w-24 h-24 mx-auto mb-6">
+                      <div className="absolute inset-0 bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 rounded-full animate-pulse opacity-20"></div>
+                      <div className="absolute inset-2 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-full"></div>
+                      <div className="absolute inset-3 bg-[#0f0f1a] rounded-full flex items-center justify-center">
+                        <MessageSquare className="w-10 h-10 text-violet-400" strokeWidth={1.5} />
+                      </div>
+                      <div className="absolute -top-1 -right-1 w-8 h-8 bg-gradient-to-br from-violet-400 to-fuchsia-400 rounded-full flex items-center justify-center shadow-lg shadow-violet-500/50">
+                        <span className="text-white text-xs font-bold">1</span>
+                      </div>
+                    </div>
+                    <h3 className="text-2xl font-bold text-white mb-3">Text Content</h3>
+                    <div className="mb-4">
+                      <div className="inline-flex items-baseline space-x-1">
+                        <span className="text-5xl font-bold bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">1</span>
+                        <span className="text-xl text-gray-400">Credit</span>
+                      </div>
+                    </div>
+                    <p className="text-gray-400 leading-relaxed">
+                      Social posts, captions, blog content
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Image Generation */}
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-600 rounded-3xl blur-lg opacity-25 group-hover:opacity-50 transition duration-500"></div>
+                <Card className="relative cosmic-card overflow-hidden border border-cyan-500/20">
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-transparent"></div>
+                  <CardContent className="relative p-8 text-center">
+                    <div className="relative w-24 h-24 mx-auto mb-6">
+                      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 via-blue-500 to-indigo-500 rounded-full animate-pulse opacity-20"></div>
+                      <div className="absolute inset-2 bg-gradient-to-br from-cyan-600 to-indigo-600 rounded-full"></div>
+                      <div className="absolute inset-3 bg-[#0f0f1a] rounded-full flex items-center justify-center">
+                        <Wand2 className="w-10 h-10 text-cyan-400" strokeWidth={1.5} />
+                      </div>
+                      <div className="absolute -top-1 -right-1 w-8 h-8 bg-gradient-to-br from-cyan-400 to-indigo-400 rounded-full flex items-center justify-center shadow-lg shadow-cyan-500/50">
+                        <span className="text-white text-xs font-bold">2</span>
+                      </div>
+                    </div>
+                    <h3 className="text-2xl font-bold text-white mb-3">Image Generation</h3>
+                    <div className="mb-4">
+                      <div className="inline-flex items-baseline space-x-1">
+                        <span className="text-5xl font-bold bg-gradient-to-r from-cyan-400 to-indigo-400 bg-clip-text text-transparent">2</span>
+                        <span className="text-xl text-gray-400">Credits</span>
+                      </div>
+                    </div>
+                    <p className="text-gray-400 leading-relaxed">
+                      AI-generated images, graphics
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Video Generation */}
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600 rounded-3xl blur-lg opacity-25 group-hover:opacity-50 transition duration-500"></div>
+                <Card className="relative cosmic-card overflow-hidden border border-emerald-500/20">
+                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent"></div>
+                  <CardContent className="relative p-8 text-center">
+                    <div className="relative w-24 h-24 mx-auto mb-6">
+                      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 rounded-full animate-pulse opacity-20"></div>
+                      <div className="absolute inset-2 bg-gradient-to-br from-emerald-600 to-cyan-600 rounded-full"></div>
+                      <div className="absolute inset-3 bg-[#0f0f1a] rounded-full flex items-center justify-center">
+                        <Video className="w-10 h-10 text-emerald-400" strokeWidth={1.5} />
+                      </div>
+                      <div className="absolute -top-1 -right-1 w-8 h-8 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/50">
+                        <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
+                      </div>
+                    </div>
+                    <h3 className="text-2xl font-bold text-white mb-3">Video Generation</h3>
+                    <div className="mb-4">
+                      <div className="inline-flex items-baseline space-x-1">
+                        <span className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Variable</span>
+                      </div>
+                    </div>
+                    <p className="text-gray-400 leading-relaxed">
+                      Based on length and complexity
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
+
+          {/* Billing Toggle and Pricing Cards */}
           <div className="flex justify-center mb-12">
             <Tabs defaultValue="monthly" className="w-auto">
               <TabsList className="cosmic-card">
@@ -288,211 +424,286 @@ const Pricing = () => {
                 <TabsTrigger value="credits" className="text-white">Credit Packs</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="monthly" className="mt-8">
-                <div className="grid md:grid-cols-3 gap-8">
+              <TabsContent value="monthly" className="mt-12">
+                <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
                   <TooltipProvider>
-                    {plans.map((plan, index) => (
-                      <Card 
-                        key={index} 
-                        className={`cosmic-card relative transition-all duration-300 hover:scale-105 ${
-                          plan.popular 
-                            ? 'ring-2 ring-accent/50 shadow-2xl shadow-accent/20' 
-                            : 'hover:ring-1 hover:ring-primary/30'
-                        }`}
-                      >
-                        {plan.popular && (
-                          <div className="absolute -top-0 left-1/2 transform -translate-x-1/2">
-                            <Badge className="bg-accent text-black px-4 py-2 font-semibold">
-                              <Star className="w-4 h-4 mr-1" />
-                              {plan.badge}
-                            </Badge>
-                          </div>
-                        )}
-                        
-                        <CardHeader className="text-center pb-4">
-                          <div className="flex items-center justify-center space-x-2 mb-4">
-                            {plan.name === "Free"}
-                            {plan.name === "Standard" && <Star className="w-6 h-6 text-accent" />}
-                            {plan.name === "Pro" && <Crown className="w-6 h-6 text-accent" />}
-                            <CardTitle className="text-2xl font-bold text-white">{plan.name}</CardTitle>
-                          </div>
-                          <div className="mb-2">
-                            <span className="text-4xl font-bold text-white">{plan.price}</span>
-                            <span className="text-gray-400 ml-2">{plan.period}</span>
-                          </div>
-                          <div className="mb-4">
-                            <Badge className="bg-accent/20 text-accent border-accent/30 font-semibold">
-                              {plan.credits}
-                            </Badge>
-                            {plan.dailyLimit && (
-                              <div className="text-xs text-gray-400 mt-1">{plan.dailyLimit}</div>
-                            )}
-                          </div>
-                          <CardDescription className="text-gray-300">{plan.description}</CardDescription>
-                        </CardHeader>
+                    {plans.map((plan, index) => {
+                      const gradients = [
+                        { border: 'from-slate-500 to-gray-600', card: 'slate-500/20', glow: 'slate-500/10', icon: 'slate-400', accent: 'from-slate-400 to-gray-400' },
+                        { border: 'from-amber-500 to-orange-600', card: 'amber-500/20', glow: 'amber-500/20', icon: 'amber-400', accent: 'from-amber-400 to-orange-400' },
+                        { border: 'from-purple-600 to-pink-600', card: 'purple-500/20', glow: 'purple-500/20', icon: 'purple-400', accent: 'from-purple-400 to-pink-400' }
+                      ];
+                      const style = gradients[index];
 
-                        <CardContent className="space-y-4">
-                          {plan.features.map((feature, featureIndex) => (
-                            <div key={featureIndex} className="flex items-center space-x-3">
-                              <Check className="w-5 h-5 text-accent flex-shrink-0" />
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="text-gray-300 text-sm cursor-help hover:text-white transition-colors">
-                                    {typeof feature === 'string' ? feature : feature.text}
-                                  </span>
-                                </TooltipTrigger>
-                                {typeof feature === 'object' && feature.tooltip && (
-                                  <TooltipContent>
-                                    <p>{feature.tooltip}</p>
-                                  </TooltipContent>
-                                )}
-                              </Tooltip>
+                      return (
+                        <div key={index} className="relative group">
+                          {plan.popular && (
+                            <div className="absolute -top-5 left-1/2 transform -translate-x-1/2 z-20">
+                              <div className="relative">
+                                <div className={`absolute inset-0 bg-gradient-to-r ${style.border} blur-md opacity-60`}></div>
+                                <Badge className="relative bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 px-5 py-2 font-bold shadow-xl">
+                                  <Star className="w-4 h-4 mr-1.5" fill="currentColor" />
+                                  {plan.badge}
+                                </Badge>
+                              </div>
                             </div>
-                          ))}
-                        </CardContent>
+                          )}
 
-                        <CardFooter>
-                          <Button 
-                            variant={plan.buttonVariant}
-                            className={`w-full cosmic-button ${plan.popular ? 'animate-pulse-glow' : ''}`}
-                            onClick={() => plan.priceId && handleUpgrade(plan.priceId, plan.name)}
-                            disabled={!plan.priceId}
-                          >
-                            {plan.buttonText}
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))}
+                          <div className={`absolute -inset-0.5 bg-gradient-to-r ${style.border} rounded-3xl blur ${plan.popular ? 'opacity-50' : 'opacity-25'} group-hover:opacity-60 transition duration-500`}></div>
+
+                          <Card className={`relative cosmic-card overflow-hidden border-2 border-${style.card} hover:border-${style.card.replace('/20', '/40')} transition-all duration-500 h-full flex flex-col`}>
+                            <div className={`absolute top-0 right-0 w-72 h-72 bg-gradient-to-br from-${style.glow} to-transparent rounded-full blur-3xl`}></div>
+                            <div className={`absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-${style.glow} to-transparent rounded-full blur-2xl`}></div>
+
+                            <CardHeader className="text-center pb-6 relative z-10">
+                              <div className="mb-6">
+                                {plan.name === "Standard" && <Star className={`w-12 h-12 text-${style.icon} mx-auto mb-3`} />}
+                                {plan.name === "Pro" && <Crown className={`w-12 h-12 text-${style.icon} mx-auto mb-3`} />}
+                                {plan.name === "Free" && <Sparkles className={`w-12 h-12 text-${style.icon} mx-auto mb-3`} />}
+                                <CardTitle className="text-3xl font-bold text-white">{plan.name}</CardTitle>
+                              </div>
+
+                              <div className="mb-6">
+                                <div className="flex items-baseline justify-center mb-2">
+                                  <span className={`text-6xl font-bold bg-gradient-to-r ${style.accent} bg-clip-text text-transparent`}>{plan.price.replace('$', '')}</span>
+                                  {plan.price !== "$0" && <span className="text-2xl text-gray-400 ml-2">$</span>}
+                                </div>
+                                <span className="text-gray-400 text-sm uppercase tracking-wider">{plan.period}</span>
+                              </div>
+
+                              <div className="space-y-2">
+                                <div className={`inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r ${style.border} bg-opacity-10 border border-${style.card}`}>
+                                  <Zap className="w-4 h-4 mr-2 text-white" />
+                                  <span className="text-white font-semibold text-sm">{plan.credits}</span>
+                                </div>
+                                {plan.dailyLimit && (
+                                  <div className="text-xs text-gray-400">{plan.dailyLimit}</div>
+                                )}
+                              </div>
+
+                              <CardDescription className="text-gray-300 mt-4 px-4">{plan.description}</CardDescription>
+                            </CardHeader>
+
+                            <CardContent className="space-y-3 px-8 pb-8 flex-grow relative z-10">
+                              {plan.features.map((feature, featureIndex) => (
+                                <Tooltip key={featureIndex}>
+                                  <TooltipTrigger asChild>
+                                    <div className="flex items-start space-x-3 cursor-help group/item">
+                                      <div className={`mt-0.5 w-5 h-5 rounded-full bg-gradient-to-br ${style.border} flex items-center justify-center flex-shrink-0`}>
+                                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                                      </div>
+                                      <span className="text-gray-300 text-sm group-hover/item:text-white transition-colors leading-relaxed">
+                                        {typeof feature === 'string' ? feature : feature.text}
+                                      </span>
+                                    </div>
+                                  </TooltipTrigger>
+                                  {typeof feature === 'object' && feature.tooltip && (
+                                    <TooltipContent className="max-w-xs">
+                                      <p>{feature.tooltip}</p>
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
+                              ))}
+                            </CardContent>
+
+                            <CardFooter className="pt-0 pb-8 px-8 relative z-10">
+                              <Button
+                                variant={plan.buttonVariant}
+                                className={`w-full h-12 text-base font-semibold cosmic-button bg-gradient-to-r ${style.border} hover:shadow-lg hover:shadow-${style.glow} transition-all duration-300 ${plan.popular ? 'ring-2 ring-amber-400/50' : ''}`}
+                                onClick={() => plan.priceId && handleUpgrade(plan.priceId, plan.name)}
+                                disabled={!plan.priceId}
+                              >
+                                {plan.buttonText}
+                              </Button>
+                            </CardFooter>
+                          </Card>
+                        </div>
+                      );
+                    })}
                   </TooltipProvider>
                 </div>
               </TabsContent>
               
-              <TabsContent value="credits" className="mt-8">
-                <div className="max-w-4xl mx-auto">
-                  <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold text-white mb-4">Pay-As-You-Go Credit Packs</h2>
-                    <p className="text-gray-300">Perfect for occasional users or to top up your monthly allowance</p>
+              <TabsContent value="credits" className="mt-12">
+                <div className="max-w-5xl mx-auto">
+                  <div className="text-center mb-12">
+                    <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Pay-As-You-Go Credit Packs</h2>
+                    <p className="text-gray-300 text-lg">Perfect for occasional users or to top up your monthly allowance</p>
                   </div>
-                  
-                  <div className="grid md:grid-cols-3 gap-6">
-                    {creditPacks.map((pack, index) => (
-                      <Card 
-                        key={index}
-                        className={`cosmic-card text-center transition-all duration-300 hover:scale-105 ${
-                          pack.popular 
-                            ? 'ring-2 ring-accent/50 shadow-2xl shadow-accent/20' 
-                            : 'hover:ring-1 hover:ring-primary/30'
-                        }`}
-                      >
-                        {pack.popular && (
-                          <div className="absolute -top-0 left-1/2 transform -translate-x-1/2">
-                            <Badge className="bg-accent text-black px-4 py-2 font-semibold">
-                              Best Value
-                            </Badge>
-                          </div>
-                        )}
-                        
-                        <CardHeader>
-                          <div className="mb-4">
-                            <div className="text-3xl font-bold text-white mb-2">{pack.credits}</div>
-                            <div className="text-gray-400">Credits</div>
-                          </div>
-                          <div className="mb-4">
-                            <span className="text-4xl font-bold text-white">{pack.price}</span>
-                          </div>
-                          <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                            {pack.value}
-                          </Badge>
-                          {pack.savings && (
-                            <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 mt-2">
-                              {pack.savings}
-                            </Badge>
+
+                  <div className="grid md:grid-cols-3 gap-8">
+                    {creditPacks.map((pack, index) => {
+                      const packGradients = [
+                        { border: 'from-blue-500 to-cyan-500', glow: 'blue-500/20', badge: 'from-blue-400 to-cyan-400' },
+                        { border: 'from-emerald-500 to-teal-500', glow: 'emerald-500/30', badge: 'from-emerald-400 to-teal-400' },
+                        { border: 'from-violet-500 to-purple-500', glow: 'violet-500/20', badge: 'from-violet-400 to-purple-400' }
+                      ];
+                      const packStyle = packGradients[index];
+
+                      return (
+                        <div key={index} className="relative group">
+                          {pack.popular && (
+                            <div className="absolute -top-5 left-1/2 transform -translate-x-1/2 z-20">
+                              <div className="relative">
+                                <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 blur-md opacity-60"></div>
+                                <Badge className="relative bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-0 px-5 py-2 font-bold shadow-xl">
+                                  <Sparkles className="w-4 h-4 mr-1.5" />
+                                  Best Value
+                                </Badge>
+                              </div>
+                            </div>
                           )}
-                        </CardHeader>
-                        
-                        <CardContent className="space-y-3">
-                          <div className="flex items-center justify-center space-x-3">
-                            <Check className="w-5 h-5 text-accent" />
-                            <span className="text-gray-300 text-sm">Never expires</span>
-                          </div>
-                          <div className="flex items-center justify-center space-x-3">
-                            <Check className="w-5 h-5 text-accent" />
-                            <span className="text-gray-300 text-sm">All premium features</span>
-                          </div>
-                          <div className="flex items-center justify-center space-x-3">
-                            <Check className="w-5 h-5 text-accent" />
-                            <span className="text-gray-300 text-sm">Instant activation</span>
-                          </div>
-                        </CardContent>
-                        
-                        <CardFooter>
-                          <Button 
-                            className={`w-full cosmic-button ${pack.popular ? 'animate-pulse-glow' : ''}`}
-                            onClick={() => handleCreditPurchase(pack.productId, pack.credits)}
-                          >
-                            Buy {pack.credits} Credits
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))}
+
+                          <div className={`absolute -inset-0.5 bg-gradient-to-r ${packStyle.border} rounded-3xl blur ${pack.popular ? 'opacity-50' : 'opacity-25'} group-hover:opacity-60 transition duration-500`}></div>
+
+                          <Card className="relative cosmic-card overflow-hidden border-2 border-white/10 hover:border-white/20 transition-all duration-500 h-full flex flex-col">
+                            <div className={`absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-${packStyle.glow} to-transparent rounded-full blur-3xl`}></div>
+
+                            <CardHeader className="text-center pt-10 pb-6 relative z-10">
+                              <div className="mb-6">
+                                <div className={`text-7xl font-bold bg-gradient-to-r ${packStyle.badge} bg-clip-text text-transparent mb-2`}>
+                                  {pack.credits}
+                                </div>
+                                <div className="text-gray-400 text-lg uppercase tracking-wide">Credits</div>
+                              </div>
+
+                              <div className="mb-6">
+                                <span className="text-5xl font-bold text-white">{pack.price}</span>
+                              </div>
+
+                              <div className="space-y-2">
+                                <div className={`inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r ${packStyle.border} bg-opacity-10 border border-white/10`}>
+                                  <span className="text-white font-semibold">{pack.value}</span>
+                                </div>
+                                {pack.savings && (
+                                  <div>
+                                    <Badge className="bg-gradient-to-r from-yellow-500/20 to-amber-500/20 text-yellow-400 border-yellow-500/30 px-4 py-1">
+                                      {pack.savings}
+                                    </Badge>
+                                  </div>
+                                )}
+                              </div>
+                            </CardHeader>
+
+                            <CardContent className="space-y-4 px-8 pb-8 flex-grow relative z-10">
+                              <div className="flex items-center justify-center space-x-3">
+                                <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${packStyle.border} flex items-center justify-center`}>
+                                  <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                                </div>
+                                <span className="text-gray-300">Never expires</span>
+                              </div>
+                              <div className="flex items-center justify-center space-x-3">
+                                <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${packStyle.border} flex items-center justify-center`}>
+                                  <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                                </div>
+                                <span className="text-gray-300">All premium features</span>
+                              </div>
+                              <div className="flex items-center justify-center space-x-3">
+                                <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${packStyle.border} flex items-center justify-center`}>
+                                  <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                                </div>
+                                <span className="text-gray-300">Instant activation</span>
+                              </div>
+                            </CardContent>
+
+                            <CardFooter className="pt-0 pb-8 px-8 relative z-10">
+                              <Button
+                                className={`w-full h-12 text-base font-semibold cosmic-button bg-gradient-to-r ${packStyle.border} hover:shadow-lg hover:shadow-${packStyle.glow} transition-all duration-300 ${pack.popular ? 'ring-2 ring-emerald-400/50' : ''}`}
+                                onClick={() => handleCreditPurchase(pack.productId, pack.credits)}
+                              >
+                                Buy {pack.credits} Credits
+                              </Button>
+                            </CardFooter>
+                          </Card>
+                        </div>
+                      );
+                    })}
                   </div>
-                  
-                  <div className="mt-8 text-center">
-                    <p className="text-gray-400 text-sm">
-                      💡 <strong>Credit Usage:</strong> Text posts = 1 credit • Images/Videos = 3 credits each
-                    </p>
+
+                  <div className="mt-12 text-center">
+                    <div className="inline-flex items-center space-x-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-white/10">
+                      <Sparkles className="w-5 h-5 text-blue-400" />
+                      <p className="text-gray-300">
+                        <strong className="text-white">Credit Usage:</strong> Text = 1 credit • Images = 2 credits • Videos = Variable
+                      </p>
+                    </div>
                   </div>
                 </div>
               </TabsContent>
             </Tabs>
           </div>
-          */}
 
           {/* FAQ Section */}
-          <div className="text-center">
+          <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-white mb-12">Frequently Asked Questions</h2>
-            <div className="grid md:grid-cols-2 gap-10 max-w-5xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
               <Card className="cosmic-card text-left">
                 <CardHeader>
                   <CardTitle className="text-xl font-semibold text-white">How do credits work?</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-300 leading-relaxed">
-                    Credits are consumed when generating content: 1 credit for text posts, 2 credits for images. 
-                    Free users get 10 credits daily that reset automatically.
+                    Credits are a unified currency for all features. Text content costs 1 credit, images cost 2 credits,
+                    and videos have variable pricing. Use credits across both Content Generation and Media Studio.
                   </p>
                 </CardContent>
               </Card>
-              
+
+              <Card className="cosmic-card text-left">
+                <CardHeader>
+                  <CardTitle className="text-xl font-semibold text-white">Can I use credits for both features?</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-300 leading-relaxed">
+                    Yes! Your credits work across all our tools - Content Generation for marketing automation and
+                    Media Studio for image and video creation. One account, one credit pool, endless possibilities.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="cosmic-card text-left">
+                <CardHeader>
+                  <CardTitle className="text-xl font-semibold text-white">What AI models do you use?</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-300 leading-relaxed">
+                    We use curated, task-specific AI models that are regularly updated to ensure stability and quality.
+                  </p>
+                </CardContent>
+              </Card>
+
               <Card className="cosmic-card text-left">
                 <CardHeader>
                   <CardTitle className="text-xl font-semibold text-white">Do unused credits expire?</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-300 leading-relaxed">
-                    Monthly plan credits reset each billing cycle. Pay-as-you-go credit packs never expire and can be used anytime.
+                    Monthly plan credits reset each billing cycle. Pay-as-you-go credit packs never expire and
+                    can be used anytime across all features.
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card className="cosmic-card text-left">
                 <CardHeader>
-                  <CardTitle className="text-xl font-semibold text-white">Can I upgrade my plan anytime?</CardTitle>
+                  <CardTitle className="text-xl font-semibold text-white">Is there a free tier?</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-300 leading-relaxed">
-                    Yes! You can upgrade, downgrade, or cancel your subscription at any time. Changes take effect immediately.
+                    Yes! Free users get daily credits that reset automatically. This allows you to test both
+                    Content Generation and Media Studio features before committing to a paid plan.
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card className="cosmic-card text-left">
                 <CardHeader>
-                  <CardTitle className="text-xl font-semibold text-white">What happens if I run out of credits?</CardTitle>
+                  <CardTitle className="text-xl font-semibold text-white">Who should use Content Generation vs Media Studio?</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-300 leading-relaxed">
-                    You can purchase credit packs anytime or upgrade to a higher plan. Free users automatically get 10 new credits each day.
+                    Content Generation is perfect for businesses and marketers needing automated social media posts.
+                    Media Studio is ideal for creators needing AI-generated images and videos. Most users benefit from both!
                   </p>
                 </CardContent>
               </Card>

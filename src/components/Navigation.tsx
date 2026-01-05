@@ -2,14 +2,22 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ChevronDown, User, Settings, LogOut, CreditCard, Sparkles } from "lucide-react";
+import { Menu, X, ChevronDown, User, Settings, LogOut, CreditCard, Sparkles, Building2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -19,10 +27,12 @@ import CreatorsMultiverseLogo from "@/components/CreatorsMultiverseLogo";
 import CreditsDisplay from "@/components/CreditsDisplay";
 import CreditsBar from "@/components/CreditsBar";
 import ThemeToggle from "@/components/ThemeToggle";
+import { CompanySelector } from "@/components/CompanySelector";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isHomeMenuOpen, setIsHomeMenuOpen] = useState(false);
+  const [isCompanySelectorOpen, setIsCompanySelectorOpen] = useState(false);
   const { user, signOut } = useAuth();
   const { selectedCompany } = useCompany();
   const { isAdmin } = useAdmin();
@@ -192,26 +202,44 @@ const Navigation = () => {
                   <DropdownMenuContent align="end" className="w-64 bg-card border-primary/20 p-0">
                     {/* Credits Bar - First item */}
                     <CreditsBar />
-                    
-                    <DropdownMenuItem 
+
+                    {/* Current Company - Clickable to change */}
+                    {selectedCompany && (
+                      <>
+                        <DropdownMenuItem
+                          onClick={() => setIsCompanySelectorOpen(true)}
+                          className="text-white hover:bg-white/10 cursor-pointer"
+                        >
+                          <Building2 className="w-4 h-4 mr-2" />
+                          <div className="flex flex-col items-start flex-1 min-w-0">
+                            <span className="text-xs text-gray-400">Current Company</span>
+                            <span className="truncate text-sm font-medium">{selectedCompany.name}</span>
+                          </div>
+                          <ChevronDown className="w-3 h-3 ml-2 opacity-50" />
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator className="bg-primary/20" />
+                      </>
+                    )}
+
+                    <DropdownMenuItem
                       onClick={() => navigate('/my-plan')}
                       className="text-white hover:bg-white/10 cursor-pointer"
                     >
                       <CreditCard className="w-4 h-4 mr-2" />
                       My Plan
                     </DropdownMenuItem>
-                    
-                    <DropdownMenuItem 
+
+                    <DropdownMenuItem
                       onClick={() => navigate('/settings')}
                       className="text-white hover:bg-white/10 cursor-pointer"
                     >
                       <Settings className="w-4 h-4 mr-2" />
                       Settings
                     </DropdownMenuItem>
-                    
+
                     <DropdownMenuSeparator className="bg-primary/20" />
-                    
-                    <DropdownMenuItem 
+
+                    <DropdownMenuItem
                       onClick={handleSignOut}
                       className="text-red-400 hover:bg-red-500/10 cursor-pointer"
                     >
@@ -334,9 +362,26 @@ const Navigation = () => {
                       </p>
                     )}
                   </div>
-                  
+
                   <div className="flex flex-col space-y-2">
-                    <button 
+                    {/* Current Company - Mobile */}
+                    {selectedCompany && (
+                      <button
+                        onClick={() => {
+                          setIsCompanySelectorOpen(true);
+                          setIsOpen(false);
+                        }}
+                        className="flex items-center px-4 py-2 text-white hover:bg-white/10 rounded-md transition-colors w-full text-left"
+                      >
+                        <Building2 className="w-4 h-4 mr-2" />
+                        <div className="flex flex-col items-start flex-1">
+                          <span className="text-xs text-gray-400">Current Company</span>
+                          <span className="text-sm font-medium">{selectedCompany.name}</span>
+                        </div>
+                      </button>
+                    )}
+
+                    <button
                       onClick={() => {
                         navigate('/my-plan');
                         setIsOpen(false);
@@ -346,8 +391,8 @@ const Navigation = () => {
                       <CreditCard className="w-4 h-4 mr-2" />
                       My Plan
                     </button>
-                    
-                    <button 
+
+                    <button
                       onClick={() => {
                         navigate('/settings');
                         setIsOpen(false);
@@ -357,8 +402,8 @@ const Navigation = () => {
                       <Settings className="w-4 h-4 mr-2" />
                       Settings
                     </button>
-                    
-                    <button 
+
+                    <button
                       onClick={() => {
                         handleSignOut();
                         setIsOpen(false);
@@ -388,6 +433,21 @@ const Navigation = () => {
           </div>
         )}
       </div>
+
+      {/* Company Selector Dialog */}
+      <Dialog open={isCompanySelectorOpen} onOpenChange={setIsCompanySelectorOpen}>
+        <DialogContent className="bg-card/95 backdrop-blur-sm border-primary/30">
+          <DialogHeader>
+            <DialogTitle className="text-white">Select Company</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Choose which company you want to work on
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <CompanySelector />
+          </div>
+        </DialogContent>
+      </Dialog>
     </nav>
   );
 };

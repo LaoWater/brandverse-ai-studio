@@ -20,9 +20,10 @@ import MediaPreviewModal from './MediaPreviewModal';
 
 interface MediaLibraryProps {
   onCreateNew: () => void;
+  isStudioContext?: boolean; // Determines if this is Studio (show all by default) or Post library (show current company only)
 }
 
-const MediaLibrary = ({ onCreateNew }: MediaLibraryProps) => {
+const MediaLibrary = ({ onCreateNew, isStudioContext = true }: MediaLibraryProps) => {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
@@ -36,11 +37,15 @@ const MediaLibrary = ({ onCreateNew }: MediaLibraryProps) => {
   });
   const [selectedMedia, setSelectedMedia] = useState<MediaFile | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [showAllCompanies, setShowAllCompanies] = useState(isStudioContext); // Default to true for Studio, false for Post
+
+  // Determine which company ID to use for fetching
+  const companyIdToFetch = (isStudioContext && showAllCompanies) ? null : selectedCompany?.id;
 
   // Fetch media library
   const { data: allMedia = [], isLoading } = useQuery({
-    queryKey: ['mediaLibrary', user?.id, selectedCompany?.id, filters],
-    queryFn: () => getUserMediaLibrary(user!.id, selectedCompany?.id, filters),
+    queryKey: ['mediaLibrary', user?.id, companyIdToFetch, filters, showAllCompanies],
+    queryFn: () => getUserMediaLibrary(user!.id, companyIdToFetch, filters),
     enabled: !!user?.id,
   });
 
@@ -178,38 +183,50 @@ const MediaLibrary = ({ onCreateNew }: MediaLibraryProps) => {
 
   return (
     <div className="space-y-6 media-library-scroll">
-      {/* Tabs */}
+      {/* Tabs and Company Filter Toggle */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
-        <TabsList className="bg-background/50 border border-primary/20 p-1">
-          <TabsTrigger
-            value="all"
-            className="data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300"
-          >
-            <Grid3x3 className="w-4 h-4 mr-2" />
-            All ({counts.all})
-          </TabsTrigger>
-          <TabsTrigger
-            value="images"
-            className="data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300"
-          >
-            <Image className="w-4 h-4 mr-2" />
-            Images ({counts.images})
-          </TabsTrigger>
-          <TabsTrigger
-            value="videos"
-            className="data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300"
-          >
-            <Video className="w-4 h-4 mr-2" />
-            Videos ({counts.videos})
-          </TabsTrigger>
-          <TabsTrigger
-            value="favorites"
-            className="data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300"
-          >
-            <Heart className="w-4 h-4 mr-2" />
-            Favorites ({counts.favorites})
-          </TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <TabsList className="bg-background/50 border border-primary/20 p-1">
+            <TabsTrigger
+              value="all"
+              className="data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300"
+            >
+              <Grid3x3 className="w-4 h-4 mr-2" />
+              All ({counts.all})
+            </TabsTrigger>
+            <TabsTrigger
+              value="images"
+              className="data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300"
+            >
+              <Image className="w-4 h-4 mr-2" />
+              Images ({counts.images})
+            </TabsTrigger>
+            <TabsTrigger
+              value="videos"
+              className="data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300"
+            >
+              <Video className="w-4 h-4 mr-2" />
+              Videos ({counts.videos})
+            </TabsTrigger>
+            <TabsTrigger
+              value="favorites"
+              className="data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300"
+            >
+              <Heart className="w-4 h-4 mr-2" />
+              Favorites ({counts.favorites})
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Company Filter Toggle - Only show in Studio context */}
+          {isStudioContext && (
+            <button
+              onClick={() => setShowAllCompanies(!showAllCompanies)}
+              className="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 border border-primary/30 hover:border-primary/50 bg-background/50 hover:bg-background/70 text-white"
+            >
+              {showAllCompanies ? 'Show Current Company Only' : 'Show All Companies'}
+            </button>
+          )}
+        </div>
 
         {/* Filters */}
         <MediaFiltersComponent

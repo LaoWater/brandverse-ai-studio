@@ -328,7 +328,9 @@ export const getUserMediaLibrary = async (
       .eq('user_id', userId);
 
     // Filter by company if specified
-    if (companyId) {
+    // If companyId is explicitly null, fetch all companies for the user
+    // If companyId is undefined or a string, filter by that company
+    if (companyId !== null && companyId !== undefined) {
       query = query.eq('company_id', companyId);
     }
 

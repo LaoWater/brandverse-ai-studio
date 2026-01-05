@@ -650,8 +650,8 @@ const PostManager = () => {
           </Tabs>
             </>
           ) : (
-            /* Studio Library View */
-            <MediaLibrary onCreateNew={() => setViewMode('posts')} />
+            /* Studio Library View - Same behavior as Media Studio: show all companies by default with toggle */
+            <MediaLibrary onCreateNew={() => setViewMode('posts')} isStudioContext={true} />
           )}
         </div>
       </div>

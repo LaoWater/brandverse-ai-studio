@@ -720,18 +720,6 @@ const Settings = () => {
                         />
                       </div>
                     ))}
-
-                    <div className="flex items-center justify-between p-4 cosmic-card border-0 rounded-lg">
-                      <div className="space-y-1">
-                        <div className="text-white font-medium">Automatic Billing</div>
-                        <div className="text-gray-400 text-sm">Automatically renew subscriptions and billing</div>
-                      </div>
-                      
-                      <Switch
-                        checked={preferences.automaticBilling}
-                        onCheckedChange={handleAutomaticBillingToggle}
-                      />
-                    </div>
                   </div>
 
                   <Button 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Heart,
@@ -40,9 +40,46 @@ const MediaCard = ({
 }: MediaCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [isInView, setIsInView] = useState(false);
 
   const isVideo = media.file_type === 'video';
-  const displayUrl = isVideo ? media.thumbnail_url || media.public_url : media.public_url;
+
+  // Intersection Observer to only play videos that are in viewport
+  useEffect(() => {
+    if (!isVideo || !cardRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          setIsInView(entry.isIntersecting);
+
+          if (videoRef.current) {
+            if (entry.isIntersecting) {
+              // Play video when in view
+              videoRef.current.play().catch(() => {
+                // Ignore autoplay errors
+              });
+            } else {
+              // Pause video when out of view to save resources
+              videoRef.current.pause();
+            }
+          }
+        });
+      },
+      {
+        threshold: 0.25, // Trigger when 25% of the card is visible
+        rootMargin: '50px', // Start loading slightly before entering viewport
+      }
+    );
+
+    observer.observe(cardRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [isVideo]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -68,6 +105,7 @@ const MediaCard = ({
 
   return (
     <motion.div
+      ref={cardRef}
       layout
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -91,17 +129,34 @@ const MediaCard = ({
           <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-background via-primary/10 to-background" />
         )}
 
-        {/* Media preview */}
-        <img
-          src={displayUrl}
-          alt={media.custom_title || media.prompt.slice(0, 50)}
-          onLoad={() => setImageLoaded(true)}
-          className={cn(
-            'w-full h-full object-cover transition-all duration-500',
-            imageLoaded ? 'opacity-100' : 'opacity-0',
-            'group-hover:scale-110'
-          )}
-        />
+        {/* Media preview - Always show video for video files, image for image files */}
+        {isVideo ? (
+          <video
+            ref={videoRef}
+            src={media.public_url}
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            className={cn(
+              'w-full h-full object-cover transition-all duration-500',
+              imageLoaded ? 'opacity-100' : 'opacity-0',
+              'group-hover:scale-105'
+            )}
+            onLoadedData={() => setImageLoaded(true)}
+          />
+        ) : (
+          <img
+            src={media.public_url}
+            alt={media.custom_title || media.prompt.slice(0, 50)}
+            onLoad={() => setImageLoaded(true)}
+            className={cn(
+              'w-full h-full object-cover transition-all duration-500',
+              imageLoaded ? 'opacity-100' : 'opacity-0',
+              'group-hover:scale-110'
+            )}
+          />
+        )}
 
         {/* Hover overlay */}
         <motion.div

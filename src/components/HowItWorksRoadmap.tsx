@@ -87,7 +87,7 @@ interface RoadmapStepProps {
 const RoadmapStep: React.FC<RoadmapStepProps> = ({ step, index, totalSteps, scrollYProgress }) => {
   const IconComponent = getIcon(step.icon);
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: false, amount: 0.3 });
+  const isInView = useInView(ref, { once: true, amount: 0.3 });
 
   const stepStart = index / totalSteps;
   const stepEnd = (index + 1) / totalSteps;
@@ -95,7 +95,7 @@ const RoadmapStep: React.FC<RoadmapStepProps> = ({ step, index, totalSteps, scro
   const nodeScale = useTransform(
     scrollYProgress,
     [stepStart - 0.08, stepStart, stepEnd - 0.05, stepEnd + 0.03],
-    [1, 1.5, 1.5, 1]
+    [1, 1.3, 1.3, 1]
   );
   const nodeOpacity = useTransform(
     scrollYProgress,
@@ -104,12 +104,12 @@ const RoadmapStep: React.FC<RoadmapStepProps> = ({ step, index, totalSteps, scro
   );
 
   const cardVariants = {
-    hidden: { opacity: 0, x: index % 2 === 0 ? -100 : 100, scale: 0.95 },
+    hidden: { opacity: 0, x: index % 2 === 0 ? -50 : 50, scale: 0.98 },
     visible: {
       opacity: 1,
       x: 0,
       scale: 1,
-      transition: { duration: 0.6, ease: easeOut }
+      transition: { duration: 0.5, ease: easeOut }
     },
   };
 
@@ -172,10 +172,10 @@ export function HowItWorksRoadmap() {
   const lineHeight = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
   const lineOpacity = useTransform(scrollYProgress, [0, 0.05, 0.95, 1], [0, 1, 1, 0]);
 
-  // Background image animations
+  // Background image animations - simplified for better performance
   const backgroundOpacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0.1, 0.3, 0.3, 0.1]);
-  const backgroundY = useTransform(scrollYProgress, [0, 1], ["-20%", "20%"]);
-  const backgroundScale = useTransform(scrollYProgress, [0, 0.5, 1], [1.1, 1, 1.1]);
+  const backgroundY = useTransform(scrollYProgress, [0, 1], ["-10%", "10%"]);
+  const backgroundScale = useTransform(scrollYProgress, [0, 0.5, 1], [1.05, 1, 1.05]);
 
   return (
     <section id="how-it-works" className="py-24 relative bg-background overflow-hidden">

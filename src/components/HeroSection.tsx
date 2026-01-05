@@ -306,7 +306,7 @@ const HeroSection = () => {
                 className="rounded-2xl shadow-2xl w-full h-full"
               />
               <div className="absolute top-4 right-4 bg-background/80 backdrop-blur-sm rounded-lg p-3">
-                <div className="flex items-center gap-2 text-sm text-white">
+                <div className="flex items-center gap-2 text-sm !text-white">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                   Your Message Spreading
                 </div>
