@@ -1,5 +1,5 @@
 import Navigation from "@/components/Navigation";
-import { Check, Star, Zap, Crown, Bell, Sparkles, Video, MessageSquare, Users, Wand2 } from "lucide-react";
+import { Check, Star, Zap, Crown, Bell, Sparkles, Video, MessageSquare, Users, Wand2, Gift } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -374,12 +374,11 @@ const Pricing = () => {
                     <h3 className="text-xl font-bold text-white light:text-gray-900 mb-2">Image Generation</h3>
                     <div className="mb-3">
                       <div className="inline-flex items-baseline space-x-1">
-                        <span className="text-4xl font-bold text-cyan-600 dark:bg-gradient-to-r dark:from-cyan-400 dark:to-indigo-400 dark:bg-clip-text dark:text-transparent">2</span>
-                        <span className="text-base text-gray-400 light:text-gray-600">Credits</span>
+                        <span className="text-4xl font-bold text-cyan-600 dark:bg-gradient-to-r dark:from-cyan-400 dark:to-indigo-400 dark:bg-clip-text dark:text-transparent">Variable</span>
                       </div>
                     </div>
                     <p className="text-gray-400 light:text-gray-600 text-sm">
-                      Based on Quality and complexity, starting at 2 credits
+                      Starting at 2 credits, based on Quality and complexity.
                     </p>
                   </CardContent>
                 </Card>
@@ -429,7 +428,7 @@ const Pricing = () => {
                   <TooltipProvider>
                     {plans.map((plan, index) => {
                       const gradients = [
-                        { border: 'from-slate-500 to-gray-600', card: 'slate-500/20', glow: 'slate-500/10', icon: 'slate-400', accent: 'from-slate-400 to-gray-400' },
+                        { border: 'from-blue-500 to-indigo-600', card: 'blue-500/20', glow: 'blue-500/15', icon: 'blue-500', accent: 'from-blue-400 to-indigo-400' },
                         { border: 'from-amber-500 to-orange-600', card: 'amber-500/20', glow: 'amber-500/20', icon: 'amber-400', accent: 'from-amber-400 to-orange-400' },
                         { border: 'from-purple-600 to-pink-600', card: 'purple-500/20', glow: 'purple-500/20', icon: 'purple-400', accent: 'from-purple-400 to-pink-400' }
                       ];
@@ -459,7 +458,7 @@ const Pricing = () => {
                               <div className="mb-4">
                                 {plan.name === "Standard" && <Star className={`w-10 h-10 text-${style.icon} mx-auto mb-2`} />}
                                 {plan.name === "Pro" && <Crown className={`w-10 h-10 text-${style.icon} mx-auto mb-2`} />}
-                                {plan.name === "Free" && <Sparkles className={`w-10 h-10 text-${style.icon} mx-auto mb-2`} />}
+                                {plan.name === "Free" && <Gift className={`w-10 h-10 text-${style.icon} mx-auto mb-2`} />}
                                 <CardTitle className="text-2xl font-bold text-white light:text-gray-900">{plan.name}</CardTitle>
                               </div>
 

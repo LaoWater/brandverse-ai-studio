@@ -102,13 +102,9 @@
     transition: background 0.3s ease, color 0.3s ease;
   }
 
-  /* Light Mode Body Background - using same pattern as dark mode with light overlay */
+  /* Light Mode Body Background */
   .light body {
-    background-color: #FFFFFF;
-    background-image:
-      linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 244, 255, 0.85) 50%, rgba(255, 255, 255, 0.95) 100%),
-      linear-gradient(135deg, #FAFBFC 0%, #F0F4FF 50%, #E8F0FE 100%);
-    background-blend-mode: overlay;
+    background: linear-gradient(135deg, #FFFFFF 0%, #F0F4FF 50%, #FFFFFF 100%);
   }
 
   /* COSMIC CARD SYSTEM - High specificity overrides */
@@ -259,51 +255,9 @@
   /* LIGHT MODE COSMIC SYSTEM */
   /* ============================================ */
 
-  /* EXCEPTION: Pages with bg-cosmic-gradient keep dark mode styling even in light mode */
-  .light .bg-cosmic-gradient {
-    background: linear-gradient(135deg, #0A0A0F 0%, #1A1A2E 50%, #16213E 100%) !important;
-  }
-
-  .light .bg-cosmic-gradient .cosmic-card,
-  .light .bg-cosmic-gradient .cosmic-card.cosmic-card {
-    background: linear-gradient(135deg, rgba(91, 95, 238, 0.08) 0%, rgba(0, 212, 255, 0.03) 100%) !important;
-    border: 1px solid rgba(91, 95, 238, 0.25) !important;
-    backdrop-filter: blur(12px) !important;
-  }
-
-  .light .bg-cosmic-gradient .text-white,
-  .light .bg-cosmic-gradient h1,
-  .light .bg-cosmic-gradient h2,
-  .light .bg-cosmic-gradient h3,
-  .light .bg-cosmic-gradient p {
-    color: white !important;
-  }
-
-  .light .bg-cosmic-gradient .text-gray-300,
-  .light .bg-cosmic-gradient .text-gray-200,
-  .light .bg-cosmic-gradient .text-gray-400 {
-    color: rgb(209 213 219) !important;
-  }
-
-  .light .bg-cosmic-gradient .cosmic-button {
-    background: linear-gradient(135deg, #5B5FEE 0%, #00D4FF 100%) !important;
-    color: white !important;
-  }
-
-  /* OVERRIDE: Force navigation to light mode even on bg-cosmic-gradient pages */
-  .light .bg-cosmic-gradient nav,
-  .light .bg-cosmic-gradient nav * {
-    color: inherit !important;
-  }
-
-  .light .bg-cosmic-gradient nav {
-    background: rgba(255, 255, 255, 0.8) !important;
-    border-bottom: 1px solid rgba(91, 95, 238, 0.15) !important;
-  }
-
-  /* Light Mode Cosmic Cards - for non-cosmic-gradient pages */
-  .light .cosmic-card:not(.bg-cosmic-gradient .cosmic-card),
-  .light .cosmic-card.cosmic-card:not(.bg-cosmic-gradient .cosmic-card) {
+  /* Light Mode Cosmic Cards */
+  .light .cosmic-card,
+  .light .cosmic-card.cosmic-card {
     background: rgba(255, 255, 255, 0.85) !important;
     border: 1px solid rgba(91, 95, 238, 0.15) !important;
     backdrop-filter: blur(12px) !important;
@@ -312,15 +266,15 @@
       0 0 30px rgba(0, 212, 255, 0.05) !important;
   }
 
-  .light .cosmic-card:not(.bg-cosmic-gradient .cosmic-card) .cosmic-card-header h3,
-  .light .cosmic-card:not(.bg-cosmic-gradient .cosmic-card) > div:first-child h3,
-  .light .cosmic-card:not(.bg-cosmic-gradient .cosmic-card) > header h3 {
+  .light .cosmic-card .cosmic-card-header h3,
+  .light .cosmic-card > div:first-child h3,
+  .light .cosmic-card > header h3 {
     color: rgb(15 15 23) !important;
   }
 
-  .light .cosmic-card:not(.bg-cosmic-gradient .cosmic-card) .cosmic-card-header p,
-  .light .cosmic-card:not(.bg-cosmic-gradient .cosmic-card) > div:first-child p,
-  .light .cosmic-card:not(.bg-cosmic-gradient .cosmic-card) > header p {
+  .light .cosmic-card .cosmic-card-header p,
+  .light .cosmic-card > div:first-child p,
+  .light .cosmic-card > header p {
     color: rgb(75 85 99) !important;
   }
 
@@ -2907,19 +2861,6 @@
   /* GLOBAL: Convert all text-white to dark in light mode */
   .light .text-white:not(.cosmic-button):not(.cosmic-button *):not(.moon-icon) {
     color: rgb(15 15 23) !important;
-  }
-
-  /* EXCEPTION: Keep white text in bg-cosmic-gradient pages (Pricing, Features, etc.) */
-  .light .bg-cosmic-gradient .text-white,
-  .light .bg-cosmic-gradient h1,
-  .light .bg-cosmic-gradient h2,
-  .light .bg-cosmic-gradient h3,
-  .light .bg-cosmic-gradient h4,
-  .light .bg-cosmic-gradient h5,
-  .light .bg-cosmic-gradient p,
-  .light .bg-cosmic-gradient span,
-  .light .bg-cosmic-gradient div {
-    color: white !important;
   }
 
   /* EXCEPTION: Keep white text ONLY in HeroSection colored backgrounds */
