@@ -92,15 +92,16 @@ const RoadmapStep: React.FC<RoadmapStepProps> = ({ step, index, totalSteps, scro
   const stepStart = index / totalSteps;
   const stepEnd = (index + 1) / totalSteps;
 
+  // Simplified animations for better Mac performance
   const nodeScale = useTransform(
     scrollYProgress,
     [stepStart - 0.08, stepStart, stepEnd - 0.05, stepEnd + 0.03],
-    [1, 1.3, 1.3, 1]
+    [1, 1.1, 1.1, 1]
   );
   const nodeOpacity = useTransform(
     scrollYProgress,
     [stepStart - 0.04, stepStart, stepEnd - 0.025, stepEnd + 0.015],
-    [0.5, 1, 1, 0.5]
+    [0.7, 1, 1, 0.7]
   );
 
   const cardVariants = {
@@ -172,10 +173,11 @@ export function HowItWorksRoadmap() {
   const lineHeight = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
   const lineOpacity = useTransform(scrollYProgress, [0, 0.05, 0.95, 1], [0, 1, 1, 0]);
 
-  // Background image animations - simplified for better performance
-  const backgroundOpacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0.1, 0.3, 0.3, 0.1]);
-  const backgroundY = useTransform(scrollYProgress, [0, 1], ["-10%", "10%"]);
-  const backgroundScale = useTransform(scrollYProgress, [0, 0.5, 1], [1.05, 1, 1.05]);
+  // Background image animations - disabled for Mac performance
+  const backgroundOpacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0.2, 0.2, 0.2, 0.2]);
+  // Disabled parallax for performance
+  // const backgroundY = useTransform(scrollYProgress, [0, 1], ["-10%", "10%"]);
+  // const backgroundScale = useTransform(scrollYProgress, [0, 0.5, 1], [1.05, 1, 1.05]);
 
   return (
     <section id="how-it-works" className="py-24 relative bg-background overflow-hidden">
@@ -184,8 +186,6 @@ export function HowItWorksRoadmap() {
         <motion.div
           style={{
             opacity: backgroundOpacity,
-            y: backgroundY,
-            scale: backgroundScale,
           }}
           className="absolute inset-0 w-full h-full"
         >

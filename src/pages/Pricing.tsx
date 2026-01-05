@@ -314,41 +314,41 @@ const Pricing = () => {
           </div>
 
           {/* Credit System Explanation */}
-          <div className="max-w-6xl mx-auto mb-20">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+          <div className="max-w-5xl mx-auto mb-16">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-white mb-3">
                 One Credit System, Endless Possibilities
               </h2>
-              <p className="text-gray-300 text-lg">
+              <p className="text-gray-300">
                 Simple, transparent pricing for all your content needs
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-3 gap-6">
               {/* Text Content */}
               <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 rounded-3xl blur-lg opacity-25 group-hover:opacity-50 transition duration-500"></div>
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
                 <Card className="relative cosmic-card overflow-hidden border border-violet-500/20">
                   <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-transparent"></div>
-                  <CardContent className="relative p-8 text-center">
-                    <div className="relative w-24 h-24 mx-auto mb-6">
+                  <CardContent className="relative p-6 text-center">
+                    <div className="relative w-16 h-16 mx-auto mb-4">
                       <div className="absolute inset-0 bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 rounded-full animate-pulse opacity-20"></div>
-                      <div className="absolute inset-2 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-full"></div>
-                      <div className="absolute inset-3 bg-[#0f0f1a] rounded-full flex items-center justify-center">
-                        <MessageSquare className="w-10 h-10 text-violet-400" strokeWidth={1.5} />
+                      <div className="absolute inset-1.5 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-full"></div>
+                      <div className="absolute inset-2.5 bg-[#0f0f1a] light:bg-white rounded-full flex items-center justify-center">
+                        <MessageSquare className="w-7 h-7 text-violet-400" strokeWidth={1.5} />
                       </div>
-                      <div className="absolute -top-1 -right-1 w-8 h-8 bg-gradient-to-br from-violet-400 to-fuchsia-400 rounded-full flex items-center justify-center shadow-lg shadow-violet-500/50">
-                        <span className="text-white text-xs font-bold">1</span>
+                      <div className="absolute -top-0.5 -right-0.5 w-6 h-6 bg-gradient-to-br from-violet-400 to-fuchsia-400 rounded-full flex items-center justify-center shadow-lg shadow-violet-500/50">
+                        <span className="text-white text-[10px] font-bold">1</span>
                       </div>
                     </div>
-                    <h3 className="text-2xl font-bold text-white mb-3">Text Content</h3>
-                    <div className="mb-4">
+                    <h3 className="text-xl font-bold text-white light:text-gray-900 mb-2">Text Content</h3>
+                    <div className="mb-3">
                       <div className="inline-flex items-baseline space-x-1">
-                        <span className="text-5xl font-bold bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">1</span>
-                        <span className="text-xl text-gray-400">Credit</span>
+                        <span className="text-4xl font-bold text-violet-500 dark:bg-gradient-to-r dark:from-violet-400 dark:to-fuchsia-400 dark:bg-clip-text dark:text-transparent">1</span>
+                        <span className="text-base text-gray-400 light:text-gray-600">Credit</span>
                       </div>
                     </div>
-                    <p className="text-gray-400 leading-relaxed">
+                    <p className="text-gray-400 light:text-gray-600 text-sm">
                       Social posts, captions, blog content
                     </p>
                   </CardContent>
@@ -357,28 +357,28 @@ const Pricing = () => {
 
               {/* Image Generation */}
               <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-600 rounded-3xl blur-lg opacity-25 group-hover:opacity-50 transition duration-500"></div>
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
                 <Card className="relative cosmic-card overflow-hidden border border-cyan-500/20">
                   <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-transparent"></div>
-                  <CardContent className="relative p-8 text-center">
-                    <div className="relative w-24 h-24 mx-auto mb-6">
+                  <CardContent className="relative p-6 text-center">
+                    <div className="relative w-16 h-16 mx-auto mb-4">
                       <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 via-blue-500 to-indigo-500 rounded-full animate-pulse opacity-20"></div>
-                      <div className="absolute inset-2 bg-gradient-to-br from-cyan-600 to-indigo-600 rounded-full"></div>
-                      <div className="absolute inset-3 bg-[#0f0f1a] rounded-full flex items-center justify-center">
-                        <Wand2 className="w-10 h-10 text-cyan-400" strokeWidth={1.5} />
+                      <div className="absolute inset-1.5 bg-gradient-to-br from-cyan-600 to-indigo-600 rounded-full"></div>
+                      <div className="absolute inset-2.5 bg-[#0f0f1a] light:bg-white rounded-full flex items-center justify-center">
+                        <Wand2 className="w-7 h-7 text-cyan-400" strokeWidth={1.5} />
                       </div>
-                      <div className="absolute -top-1 -right-1 w-8 h-8 bg-gradient-to-br from-cyan-400 to-indigo-400 rounded-full flex items-center justify-center shadow-lg shadow-cyan-500/50">
-                        <span className="text-white text-xs font-bold">2</span>
+                      <div className="absolute -top-0.5 -right-0.5 w-6 h-6 bg-gradient-to-br from-cyan-400 to-indigo-400 rounded-full flex items-center justify-center shadow-lg shadow-cyan-500/50">
+                        <span className="text-white text-[10px] font-bold">2</span>
                       </div>
                     </div>
-                    <h3 className="text-2xl font-bold text-white mb-3">Image Generation</h3>
-                    <div className="mb-4">
+                    <h3 className="text-xl font-bold text-white light:text-gray-900 mb-2">Image Generation</h3>
+                    <div className="mb-3">
                       <div className="inline-flex items-baseline space-x-1">
-                        <span className="text-5xl font-bold bg-gradient-to-r from-cyan-400 to-indigo-400 bg-clip-text text-transparent">2</span>
-                        <span className="text-xl text-gray-400">Credits</span>
+                        <span className="text-4xl font-bold text-cyan-600 dark:bg-gradient-to-r dark:from-cyan-400 dark:to-indigo-400 dark:bg-clip-text dark:text-transparent">2</span>
+                        <span className="text-base text-gray-400 light:text-gray-600">Credits</span>
                       </div>
                     </div>
-                    <p className="text-gray-400 leading-relaxed">
+                    <p className="text-gray-400 light:text-gray-600 text-sm">
                       AI-generated images, graphics
                     </p>
                   </CardContent>
@@ -387,27 +387,27 @@ const Pricing = () => {
 
               {/* Video Generation */}
               <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600 rounded-3xl blur-lg opacity-25 group-hover:opacity-50 transition duration-500"></div>
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
                 <Card className="relative cosmic-card overflow-hidden border border-emerald-500/20">
                   <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent"></div>
-                  <CardContent className="relative p-8 text-center">
-                    <div className="relative w-24 h-24 mx-auto mb-6">
+                  <CardContent className="relative p-6 text-center">
+                    <div className="relative w-16 h-16 mx-auto mb-4">
                       <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 rounded-full animate-pulse opacity-20"></div>
-                      <div className="absolute inset-2 bg-gradient-to-br from-emerald-600 to-cyan-600 rounded-full"></div>
-                      <div className="absolute inset-3 bg-[#0f0f1a] rounded-full flex items-center justify-center">
-                        <Video className="w-10 h-10 text-emerald-400" strokeWidth={1.5} />
+                      <div className="absolute inset-1.5 bg-gradient-to-br from-emerald-600 to-cyan-600 rounded-full"></div>
+                      <div className="absolute inset-2.5 bg-[#0f0f1a] light:bg-white rounded-full flex items-center justify-center">
+                        <Video className="w-7 h-7 text-emerald-400" strokeWidth={1.5} />
                       </div>
-                      <div className="absolute -top-1 -right-1 w-8 h-8 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/50">
-                        <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
+                      <div className="absolute -top-0.5 -right-0.5 w-6 h-6 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/50">
+                        <Zap className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
                       </div>
                     </div>
-                    <h3 className="text-2xl font-bold text-white mb-3">Video Generation</h3>
-                    <div className="mb-4">
+                    <h3 className="text-xl font-bold text-white light:text-gray-900 mb-2">Video Generation</h3>
+                    <div className="mb-3">
                       <div className="inline-flex items-baseline space-x-1">
-                        <span className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Variable</span>
+                        <span className="text-3xl font-bold text-emerald-600 dark:bg-gradient-to-r dark:from-emerald-400 dark:to-cyan-400 dark:bg-clip-text dark:text-transparent">Variable</span>
                       </div>
                     </div>
-                    <p className="text-gray-400 leading-relaxed">
+                    <p className="text-gray-400 light:text-gray-600 text-sm">
                       Based on length and complexity
                     </p>
                   </CardContent>
@@ -455,44 +455,46 @@ const Pricing = () => {
                             <div className={`absolute top-0 right-0 w-72 h-72 bg-gradient-to-br from-${style.glow} to-transparent rounded-full blur-3xl`}></div>
                             <div className={`absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-${style.glow} to-transparent rounded-full blur-2xl`}></div>
 
-                            <CardHeader className="text-center pb-6 relative z-10">
-                              <div className="mb-6">
-                                {plan.name === "Standard" && <Star className={`w-12 h-12 text-${style.icon} mx-auto mb-3`} />}
-                                {plan.name === "Pro" && <Crown className={`w-12 h-12 text-${style.icon} mx-auto mb-3`} />}
-                                {plan.name === "Free" && <Sparkles className={`w-12 h-12 text-${style.icon} mx-auto mb-3`} />}
-                                <CardTitle className="text-3xl font-bold text-white">{plan.name}</CardTitle>
+                            <CardHeader className="text-center pb-4 relative z-10">
+                              <div className="mb-4">
+                                {plan.name === "Standard" && <Star className={`w-10 h-10 text-${style.icon} mx-auto mb-2`} />}
+                                {plan.name === "Pro" && <Crown className={`w-10 h-10 text-${style.icon} mx-auto mb-2`} />}
+                                {plan.name === "Free" && <Sparkles className={`w-10 h-10 text-${style.icon} mx-auto mb-2`} />}
+                                <CardTitle className="text-2xl font-bold text-white light:text-gray-900">{plan.name}</CardTitle>
                               </div>
 
-                              <div className="mb-6">
-                                <div className="flex items-baseline justify-center mb-2">
-                                  <span className={`text-6xl font-bold bg-gradient-to-r ${style.accent} bg-clip-text text-transparent`}>{plan.price.replace('$', '')}</span>
-                                  {plan.price !== "$0" && <span className="text-2xl text-gray-400 ml-2">$</span>}
+                              <div className="mb-4">
+                                <div className="flex items-baseline justify-center mb-1">
+                                  {index === 0 && <span className="text-5xl font-bold text-slate-500 dark:bg-gradient-to-r dark:from-slate-400 dark:to-gray-400 dark:bg-clip-text dark:text-transparent">{plan.price.replace('$', '')}</span>}
+                                  {index === 1 && <span className="text-5xl font-bold text-amber-600 dark:bg-gradient-to-r dark:from-amber-400 dark:to-orange-400 dark:bg-clip-text dark:text-transparent">{plan.price.replace('$', '')}</span>}
+                                  {index === 2 && <span className="text-5xl font-bold text-purple-600 dark:bg-gradient-to-r dark:from-purple-400 dark:to-pink-400 dark:bg-clip-text dark:text-transparent">{plan.price.replace('$', '')}</span>}
+                                  {plan.price !== "$0" && <span className="text-xl text-gray-400 ml-1.5">$</span>}
                                 </div>
-                                <span className="text-gray-400 text-sm uppercase tracking-wider">{plan.period}</span>
+                                <span className="text-gray-400 light:text-gray-600 text-xs uppercase tracking-wider">{plan.period}</span>
                               </div>
 
-                              <div className="space-y-2">
-                                <div className={`inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r ${style.border} bg-opacity-10 border border-${style.card}`}>
-                                  <Zap className="w-4 h-4 mr-2 text-white" />
-                                  <span className="text-white font-semibold text-sm">{plan.credits}</span>
+                              <div className="space-y-1.5 mb-3">
+                                <div className={`inline-flex items-center px-3 py-1.5 rounded-full bg-gradient-to-r ${style.border} bg-opacity-10 border border-${style.card}`}>
+                                  <Zap className="w-3.5 h-3.5 mr-1.5 text-white light:text-gray-700" />
+                                  <span className="text-white light:text-gray-800 font-semibold text-xs">{plan.credits}</span>
                                 </div>
                                 {plan.dailyLimit && (
-                                  <div className="text-xs text-gray-400">{plan.dailyLimit}</div>
+                                  <div className="text-[11px] text-gray-400 light:text-gray-600">{plan.dailyLimit}</div>
                                 )}
                               </div>
 
-                              <CardDescription className="text-gray-300 mt-4 px-4">{plan.description}</CardDescription>
+                              <CardDescription className="text-gray-300 light:text-gray-600 text-sm px-3">{plan.description}</CardDescription>
                             </CardHeader>
 
-                            <CardContent className="space-y-3 px-8 pb-8 flex-grow relative z-10">
+                            <CardContent className="space-y-2.5 px-6 pb-6 flex-grow relative z-10">
                               {plan.features.map((feature, featureIndex) => (
                                 <Tooltip key={featureIndex}>
                                   <TooltipTrigger asChild>
-                                    <div className="flex items-start space-x-3 cursor-help group/item">
-                                      <div className={`mt-0.5 w-5 h-5 rounded-full bg-gradient-to-br ${style.border} flex items-center justify-center flex-shrink-0`}>
-                                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                                    <div className="flex items-start space-x-2.5 cursor-help group/item">
+                                      <div className={`mt-0.5 w-4 h-4 rounded-full bg-gradient-to-br ${style.border} flex items-center justify-center flex-shrink-0`}>
+                                        <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
                                       </div>
-                                      <span className="text-gray-300 text-sm group-hover/item:text-white transition-colors leading-relaxed">
+                                      <span className="text-gray-300 light:text-gray-600 text-xs group-hover/item:text-white light:group-hover/item:text-gray-900 transition-colors leading-relaxed">
                                         {typeof feature === 'string' ? feature : feature.text}
                                       </span>
                                     </div>
@@ -506,10 +508,10 @@ const Pricing = () => {
                               ))}
                             </CardContent>
 
-                            <CardFooter className="pt-0 pb-8 px-8 relative z-10">
+                            <CardFooter className="pt-0 pb-6 px-6 relative z-10">
                               <Button
                                 variant={plan.buttonVariant}
-                                className={`w-full h-12 text-base font-semibold cosmic-button bg-gradient-to-r ${style.border} hover:shadow-lg hover:shadow-${style.glow} transition-all duration-300 ${plan.popular ? 'ring-2 ring-amber-400/50' : ''}`}
+                                className={`w-full h-11 text-sm font-semibold cosmic-button bg-gradient-to-r ${style.border} hover:shadow-lg hover:shadow-${style.glow} transition-all duration-300 ${plan.popular ? 'ring-2 ring-amber-400/50' : ''}`}
                                 onClick={() => plan.priceId && handleUpgrade(plan.priceId, plan.name)}
                                 disabled={!plan.priceId}
                               >
@@ -526,12 +528,12 @@ const Pricing = () => {
               
               <TabsContent value="credits" className="mt-12">
                 <div className="max-w-5xl mx-auto">
-                  <div className="text-center mb-12">
-                    <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Pay-As-You-Go Credit Packs</h2>
-                    <p className="text-gray-300 text-lg">Perfect for occasional users or to top up your monthly allowance</p>
+                  <div className="text-center mb-8">
+                    <h2 className="text-3xl font-bold text-white light:text-gray-900 mb-3">Pay-As-You-Go Credit Packs</h2>
+                    <p className="text-gray-300 light:text-gray-600">Perfect for occasional users or to top up your monthly allowance</p>
                   </div>
 
-                  <div className="grid md:grid-cols-3 gap-8">
+                  <div className="grid md:grid-cols-3 gap-6">
                     {creditPacks.map((pack, index) => {
                       const packGradients = [
                         { border: 'from-blue-500 to-cyan-500', glow: 'blue-500/20', badge: 'from-blue-400 to-cyan-400' },
@@ -557,27 +559,27 @@ const Pricing = () => {
                           <div className={`absolute -inset-0.5 bg-gradient-to-r ${packStyle.border} rounded-3xl blur ${pack.popular ? 'opacity-50' : 'opacity-25'} group-hover:opacity-60 transition duration-500`}></div>
 
                           <Card className="relative cosmic-card overflow-hidden border-2 border-white/10 hover:border-white/20 transition-all duration-500 h-full flex flex-col">
-                            <div className={`absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-${packStyle.glow} to-transparent rounded-full blur-3xl`}></div>
+                            <div className={`absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-${packStyle.glow} to-transparent rounded-full blur-3xl`}></div>
 
-                            <CardHeader className="text-center pt-10 pb-6 relative z-10">
-                              <div className="mb-6">
-                                <div className={`text-7xl font-bold bg-gradient-to-r ${packStyle.badge} bg-clip-text text-transparent mb-2`}>
-                                  {pack.credits}
-                                </div>
-                                <div className="text-gray-400 text-lg uppercase tracking-wide">Credits</div>
+                            <CardHeader className="text-center pt-6 pb-4 relative z-10">
+                              <div className="mb-4">
+                                {index === 0 && <div className="text-5xl font-bold text-blue-600 dark:bg-gradient-to-r dark:from-blue-400 dark:to-cyan-400 dark:bg-clip-text dark:text-transparent mb-1">{pack.credits}</div>}
+                                {index === 1 && <div className="text-5xl font-bold text-emerald-600 dark:bg-gradient-to-r dark:from-emerald-400 dark:to-teal-400 dark:bg-clip-text dark:text-transparent mb-1">{pack.credits}</div>}
+                                {index === 2 && <div className="text-5xl font-bold text-violet-600 dark:bg-gradient-to-r dark:from-violet-400 dark:to-purple-400 dark:bg-clip-text dark:text-transparent mb-1">{pack.credits}</div>}
+                                <div className="text-gray-400 light:text-gray-600 text-sm uppercase tracking-wide">Credits</div>
                               </div>
 
-                              <div className="mb-6">
-                                <span className="text-5xl font-bold text-white">{pack.price}</span>
+                              <div className="mb-4">
+                                <span className="text-4xl font-bold text-white light:text-gray-900">{pack.price}</span>
                               </div>
 
-                              <div className="space-y-2">
-                                <div className={`inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r ${packStyle.border} bg-opacity-10 border border-white/10`}>
-                                  <span className="text-white font-semibold">{pack.value}</span>
+                              <div className="space-y-1.5">
+                                <div className={`inline-flex items-center px-3 py-1.5 rounded-full bg-gradient-to-r ${packStyle.border} bg-opacity-10 border border-white/10`}>
+                                  <span className="text-white light:text-gray-700 font-semibold text-xs">{pack.value}</span>
                                 </div>
                                 {pack.savings && (
                                   <div>
-                                    <Badge className="bg-gradient-to-r from-yellow-500/20 to-amber-500/20 text-yellow-400 border-yellow-500/30 px-4 py-1">
+                                    <Badge className="bg-gradient-to-r from-yellow-500/20 to-amber-500/20 text-yellow-500 light:text-yellow-600 border-yellow-500/30 px-3 py-0.5 text-xs">
                                       {pack.savings}
                                     </Badge>
                                   </div>
@@ -585,30 +587,30 @@ const Pricing = () => {
                               </div>
                             </CardHeader>
 
-                            <CardContent className="space-y-4 px-8 pb-8 flex-grow relative z-10">
-                              <div className="flex items-center justify-center space-x-3">
-                                <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${packStyle.border} flex items-center justify-center`}>
-                                  <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                            <CardContent className="space-y-3 px-6 pb-6 flex-grow relative z-10">
+                              <div className="flex items-center justify-center space-x-2.5">
+                                <div className={`w-4 h-4 rounded-full bg-gradient-to-br ${packStyle.border} flex items-center justify-center`}>
+                                  <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
                                 </div>
-                                <span className="text-gray-300">Never expires</span>
+                                <span className="text-gray-300 light:text-gray-600 text-xs">Never expires</span>
                               </div>
-                              <div className="flex items-center justify-center space-x-3">
-                                <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${packStyle.border} flex items-center justify-center`}>
-                                  <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                              <div className="flex items-center justify-center space-x-2.5">
+                                <div className={`w-4 h-4 rounded-full bg-gradient-to-br ${packStyle.border} flex items-center justify-center`}>
+                                  <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
                                 </div>
-                                <span className="text-gray-300">All premium features</span>
+                                <span className="text-gray-300 light:text-gray-600 text-xs">All premium features</span>
                               </div>
-                              <div className="flex items-center justify-center space-x-3">
-                                <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${packStyle.border} flex items-center justify-center`}>
-                                  <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                              <div className="flex items-center justify-center space-x-2.5">
+                                <div className={`w-4 h-4 rounded-full bg-gradient-to-br ${packStyle.border} flex items-center justify-center`}>
+                                  <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
                                 </div>
-                                <span className="text-gray-300">Instant activation</span>
+                                <span className="text-gray-300 light:text-gray-600 text-xs">Instant activation</span>
                               </div>
                             </CardContent>
 
-                            <CardFooter className="pt-0 pb-8 px-8 relative z-10">
+                            <CardFooter className="pt-0 pb-6 px-6 relative z-10">
                               <Button
-                                className={`w-full h-12 text-base font-semibold cosmic-button bg-gradient-to-r ${packStyle.border} hover:shadow-lg hover:shadow-${packStyle.glow} transition-all duration-300 ${pack.popular ? 'ring-2 ring-emerald-400/50' : ''}`}
+                                className={`w-full h-11 text-sm font-semibold cosmic-button bg-gradient-to-r ${packStyle.border} hover:shadow-lg hover:shadow-${packStyle.glow} transition-all duration-300 ${pack.popular ? 'ring-2 ring-emerald-400/50' : ''}`}
                                 onClick={() => handleCreditPurchase(pack.productId, pack.credits)}
                               >
                                 Buy {pack.credits} Credits
@@ -620,11 +622,11 @@ const Pricing = () => {
                     })}
                   </div>
 
-                  <div className="mt-12 text-center">
-                    <div className="inline-flex items-center space-x-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-white/10">
-                      <Sparkles className="w-5 h-5 text-blue-400" />
-                      <p className="text-gray-300">
-                        <strong className="text-white">Credit Usage:</strong> Text = 1 credit • Images = 2 credits • Videos = Variable
+                  <div className="mt-8 text-center">
+                    <div className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-white/10">
+                      <Sparkles className="w-4 h-4 text-blue-400" />
+                      <p className="text-gray-300 light:text-gray-600 text-sm">
+                        <strong className="text-white light:text-gray-900">Credit Usage:</strong> Text = 1 credit • Images = 2 credits • Videos = Variable
                       </p>
                     </div>
                   </div>
