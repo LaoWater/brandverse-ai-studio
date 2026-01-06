@@ -47,10 +47,11 @@ const FormatControls = () => {
       ];
     }
     if (model === 'gpt-image-1.5') {
-      // GPT-Image-1.5 supports different sizes and quality
+      // GPT-Image-1.5 supports 3 quality levels: low, medium, high
       return [
-        { value: '1K', label: 'Standard', description: 'Standard Quality - 3 credits' },
-        { value: '2K', label: 'HD', description: 'Ultra Quality - 5 credits' },
+        { value: '1K', label: 'Low Quality', description: 'Fast & affordable - 1 credit' },
+        { value: '2K', label: 'Medium Quality', description: 'Balanced quality - 4 credits' },
+        { value: '4K', label: 'High Quality', description: 'Best quality - 14 credits' },
       ];
     }
     // Gemini 2.5 Flash doesn't have quality settings (always 1K)
@@ -70,7 +71,9 @@ const FormatControls = () => {
       return imageSize === '2K' ? 4 : 3;
     }
     if (selectedImageModel === 'gpt-image-1.5') {
-      return imageSize === '2K' ? 5 : 3;
+      // GPT-Image-1.5 pricing: low=$0.009, medium=$0.034, high=$0.133 (1024x1024)
+      // Mapped to credits: low=1, medium=4, high=14
+      return imageSize === '4K' ? 14 : imageSize === '2K' ? 4 : 1;
     }
     return 3;
   };

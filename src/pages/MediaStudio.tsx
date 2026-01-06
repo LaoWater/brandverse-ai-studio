@@ -50,6 +50,9 @@ const MediaStudioContent = () => {
     negativePrompt,
     enhancePrompt,
     referenceImages,
+    videoDuration,
+    videoFps,
+    generateAudio,
     firstFrameImage,
     lastFrameImage,
     inputVideoImage,
@@ -74,7 +77,8 @@ const MediaStudioContent = () => {
     mediaType === 'image' ? selectedImageModel : selectedVideoModel,
     imageSize,
     numberOfImages,
-    mediaType
+    mediaType,
+    videoDuration
   );
 
   // Generation mutation
@@ -160,8 +164,9 @@ const MediaStudioContent = () => {
           referenceImageUrls: mediaType === 'image' ? referenceImageUrls : undefined,
           // Video-specific
           videoMode: mediaType === 'video' ? videoGenerationMode : undefined,
-          videoDuration: mediaType === 'video' ? 8 : undefined,
-          videoFps: mediaType === 'video' ? 24 : undefined,
+          videoDuration: mediaType === 'video' ? videoDuration : undefined,
+          videoFps: mediaType === 'video' ? videoFps : undefined,
+          generateAudio: mediaType === 'video' ? generateAudio : undefined,
           inputImageUrl: mediaType === 'video' ? inputImageUrl : undefined,
           firstFrameUrl: mediaType === 'video' ? firstFrameUrl : undefined,
           lastFrameUrl: mediaType === 'video' ? lastFrameUrl : undefined,

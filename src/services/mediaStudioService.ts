@@ -65,8 +65,9 @@ export interface GenerationConfig {
 
   // Video-specific
   videoMode?: 'text-to-video' | 'image-to-video' | 'keyframe-to-video';
-  videoDuration?: 8;           // Veo 3.1 supports 8-second clips
+  videoDuration?: 4 | 6 | 8;   // Veo 3.1 supports 4, 6, or 8 seconds (8s only with reference images)
   videoFps?: 24 | 30;          // 24fps or 30fps
+  generateAudio?: boolean;     // Generate audio with video (default: true)
   inputImageUrl?: string;      // For image-to-video mode
   firstFrameUrl?: string;      // For keyframe-to-video mode
   lastFrameUrl?: string;       // For keyframe-to-video mode
@@ -114,8 +115,9 @@ export interface VideoGenerationAPIPayload {
   model: 'veo-3.1-generate-001' | 'veo-3.1-fast-generate-001';
   mode: 'text-to-video' | 'image-to-video' | 'keyframe-to-video';
   aspect_ratio: '16:9' | '9:16' | '1:1';
-  duration: 8;                      // Fixed at 8 seconds for Veo 3.1
+  duration: 4 | 6 | 8;              // Veo 3.1 supports 4, 6, or 8 seconds (8s only with reference images)
   fps?: 24 | 30;                    // 24fps or 30fps (default: 24)
+  generate_audio?: boolean;         // Generate audio with video (default: true)
   input_image_url?: string;         // For image-to-video mode
   first_frame_url?: string;         // For keyframe-to-video mode
   last_frame_url?: string;          // For keyframe-to-video mode
@@ -190,12 +192,15 @@ export const prepareVideoAPIPayload = (config: GenerationConfig): VideoGeneratio
     model: config.model as 'veo-3.1-generate-001' | 'veo-3.1-fast-generate-001',
     mode: config.videoMode,
     aspect_ratio: config.aspectRatio as '16:9' | '9:16' | '1:1',
-    duration: 8, // Fixed for Veo 3.1
+    duration: config.videoDuration || 8, // Default to 8 seconds
   };
 
   if (config.videoFps) {
     payload.fps = config.videoFps;
   }
+
+  // Add audio generation flag - always send it (defaults to true if not specified)
+  payload.generate_audio = config.generateAudio ?? true;
 
   // Add mode-specific image URLs
   if (config.videoMode === 'image-to-video' && config.inputImageUrl) {

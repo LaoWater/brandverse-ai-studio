@@ -466,13 +466,15 @@ async function generateWithGPT(request: MediaGenerationRequest): Promise<string>
   const apiKey = Deno.env.get("OPENAI_API_KEY");
   if (!apiKey) throw new Error("OPENAI_API_KEY not configured");
 
+  // Get reference URL from either new or old field (backwards compatibility)
+  const referenceUrl = request.reference_image_urls?.[0] || request.reference_image_url;
+
   logStep("Generating with GPT-Image-1.5", {
     prompt: request.prompt.substring(0, 50),
     size: request.image_size,
-    hasReference: !!request.reference_image_url
+    hasReference: !!referenceUrl,
+    referenceUrl: referenceUrl ? referenceUrl.substring(0, 80) : 'none'
   });
-
-  const dimensions = getImageDimensions(request.aspect_ratio, request.image_size);
 
   // Determine size parameter for OpenAI
   let sizeParam = "1024x1024";
@@ -487,27 +489,119 @@ async function generateWithGPT(request: MediaGenerationRequest): Promise<string>
     }
   }
 
+  // Map image_size to GPT-Image-1.5 quality levels
+  // 1K = low, 2K = medium, 4K = high
+  let quality = "low";
+  if (request.image_size === '2K') {
+    quality = "medium";
+  } else if (request.image_size === '4K') {
+    quality = "high";
+  }
+
+  // For reference images, use the /v1/images/edits endpoint with multipart/form-data
+  if (referenceUrl) {
+    const endpoint = "https://api.openai.com/v1/images/edits";
+
+    logStep("Using edits endpoint with reference image", { referenceUrl: referenceUrl.substring(0, 80) });
+
+    // Fetch reference image as base64
+    const { data: imageData, mimeType } = await fetchReferenceImageAsBase64(referenceUrl);
+
+    // Convert base64 to blob for form data
+    const binaryData = Uint8Array.from(atob(imageData), c => c.charCodeAt(0));
+    const blob = new Blob([binaryData], { type: mimeType });
+
+    // Build multipart form data for edits endpoint
+    const formData = new FormData();
+    formData.append('model', 'gpt-image-1.5');
+    formData.append('prompt', request.prompt);
+    formData.append('image', blob, 'reference.png'); // Singular 'image', not 'image[]'
+    formData.append('n', String(request.number_of_images || 1));
+    formData.append('size', sizeParam);
+    formData.append('input_fidelity', 'high'); // High fidelity for better reference adherence
+    formData.append('quality', quality); // low, medium, high
+    formData.append('output_format', 'png');
+
+    logStep("Reference image added to GPT-Image-1.5 edits request", {
+      quality: quality,
+      size: sizeParam,
+      input_fidelity: 'high',
+      endpoint: endpoint
+    });
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        // Don't set Content-Type - let FormData set it with boundary
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      logStep("OpenAI API Error", { status: response.status, error });
+      throw new Error(`OpenAI API error: ${error}`);
+    }
+
+    const data = await response.json();
+
+    // Log the full response for debugging
+    logStep("OpenAI response received", {
+      hasData: !!data.data,
+      dataLength: data.data?.length,
+      firstItem: data.data?.[0] ? Object.keys(data.data[0]) : [],
+      fullResponse: JSON.stringify(data).substring(0, 200)
+    });
+
+    // GPT-Image-1.5 can return either URL or base64 data
+    const firstResult = data.data?.[0];
+    if (!firstResult) {
+      throw new Error("No image data in OpenAI response");
+    }
+
+    // Check if we got base64 data directly
+    if (firstResult.b64_json) {
+      logStep("Received base64 image data directly");
+      return `data:image/png;base64,${firstResult.b64_json}`;
+    }
+
+    // Otherwise, fetch from URL
+    const imageUrl = firstResult.url;
+    if (!imageUrl) {
+      logStep("Full OpenAI response for debugging", { response: JSON.stringify(data, null, 2) });
+      throw new Error("No image URL or base64 data in OpenAI response");
+    }
+
+    logStep("Fetching image from URL", { url: imageUrl.substring(0, 50) });
+
+    // Fetch the image and convert to base64 data URL
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+      throw new Error(`Failed to fetch generated image: ${imageResponse.status}`);
+    }
+
+    const imageBlob = await imageResponse.blob();
+    const arrayBuffer = await imageBlob.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
+    const base64 = base64Encode(bytes);
+
+    return `data:image/png;base64,${base64}`;
+  }
+
+  // For generations without reference images, use JSON format
+  const endpoint = "https://api.openai.com/v1/images/generations";
   const payload: any = {
     model: "gpt-image-1.5",
     prompt: request.prompt,
     n: request.number_of_images || 1,
     size: sizeParam,
-    response_format: "b64_json", // Get base64 instead of URL for storage control
-    ...(request.image_size === '2K' && { quality: "hd" }),
+    quality: quality, // GPT-Image-1.5 supports: low, medium, high
+    output_format: "png",
   };
 
-  // Add reference images if provided (GPT-Image-1.5 supports multiple images)
-  if (request.reference_image_url) {
-    const { data, mimeType } = await fetchReferenceImageAsBase64(request.reference_image_url);
-    payload.reference_images = [{
-      image: `data:${mimeType};base64,${data}`,
-      // Optional: specify how to use the reference (style, composition, etc.)
-      // weight: 0.8 // 0-1, how much to adhere to reference
-    }];
-    logStep("Reference image added to GPT-Image-1.5 request");
-  }
-
-  const response = await fetch("https://api.openai.com/v1/images/generations", {
+  // For generations without reference images
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
@@ -524,11 +618,47 @@ async function generateWithGPT(request: MediaGenerationRequest): Promise<string>
 
   const data = await response.json();
 
-  // Extract image from response
-  const imageBase64 = data.data?.[0]?.b64_json;
-  if (!imageBase64) throw new Error("No image data in OpenAI response");
+  // Log the full response for debugging
+  logStep("OpenAI response received", {
+    hasData: !!data.data,
+    dataLength: data.data?.length,
+    firstItem: data.data?.[0] ? Object.keys(data.data[0]) : [],
+    fullResponse: JSON.stringify(data).substring(0, 200)
+  });
 
-  return `data:image/png;base64,${imageBase64}`;
+  // GPT-Image-1.5 can return either URL or base64 data
+  const firstResult = data.data?.[0];
+  if (!firstResult) {
+    throw new Error("No image data in OpenAI response");
+  }
+
+  // Check if we got base64 data directly
+  if (firstResult.b64_json) {
+    logStep("Received base64 image data directly");
+    return `data:image/png;base64,${firstResult.b64_json}`;
+  }
+
+  // Otherwise, fetch from URL
+  const imageUrl = firstResult.url;
+  if (!imageUrl) {
+    logStep("Full OpenAI response for debugging", { response: JSON.stringify(data, null, 2) });
+    throw new Error("No image URL or base64 data in OpenAI response");
+  }
+
+  logStep("Fetching image from URL", { url: imageUrl.substring(0, 50) });
+
+  // Fetch the image and convert to base64 data URL
+  const imageResponse = await fetch(imageUrl);
+  if (!imageResponse.ok) {
+    throw new Error(`Failed to fetch generated image: ${imageResponse.status}`);
+  }
+
+  const imageBlob = await imageResponse.blob();
+  const arrayBuffer = await imageBlob.arrayBuffer();
+  const bytes = new Uint8Array(arrayBuffer);
+  const base64 = base64Encode(bytes);
+
+  return `data:image/png;base64,${base64}`;
 }
 
 // Upload image to Supabase Storage

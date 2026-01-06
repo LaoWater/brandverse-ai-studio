@@ -16,3 +16,21 @@
 # Node.js dependencies:
 node_modules/
 server/
+/supabase/
+dist/
+build/
+
+.claude/
+.playwright-mcp/
+database/
+
+
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

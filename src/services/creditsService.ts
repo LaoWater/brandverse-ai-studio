@@ -78,16 +78,17 @@ export const calculateMediaStudioCredits = (
   model: string,
   imageSize: '1K' | '2K' | '4K' = '1K',
   numberOfImages: number = 1,
-  mediaType: 'image' | 'video' = 'image'
+  mediaType: 'image' | 'video' = 'image',
+  videoDuration: 4 | 6 | 8 = 8
 ): number => {
   // Handle video generation costs
+  // Pricing: Standard ($0.40/s), Fast ($0.15/s) - audio is default/included
   if (mediaType === 'video') {
-    if (model === 'veo-3.1-fast-generate-001') {
-      return 10; // Fast model: cheaper, faster iterations
-    } else if (model === 'veo-3.1-generate-001') {
-      return 15; // Standard model: higher quality production videos
-    }
-    return 15; // Default video cost
+    const isFast = model === 'veo-3.1-fast-generate-001';
+    const pricePerSecond = isFast ? 0.15 : 0.40;
+    const totalCost = pricePerSecond * videoDuration;
+    // Convert to credits (assuming 1 credit = $0.01)
+    return Math.ceil(totalCost * 100);
   }
 
   // Handle image generation costs
@@ -107,7 +108,14 @@ export const calculateMediaStudioCredits = (
   } else if (model === 'imagen-4.0-generate-001') {
     creditsPerImage = imageSize === '2K' ? 4 : 3; // Imagen 4: 1K=3, 2K=4
   } else if (model === 'gpt-image-1.5') {
-    creditsPerImage = imageSize === '2K' ? 5 : 3; // GPT: Standard=3, HD=5
+    // GPT-Image-1.5 pricing: low=$0.009 (1 credit), medium=$0.034 (4 credits), high=$0.133 (14 credits)
+    if (imageSize === '4K') {
+      creditsPerImage = 14; // High quality
+    } else if (imageSize === '2K') {
+      creditsPerImage = 4;  // Medium quality
+    } else {
+      creditsPerImage = 1;  // Low quality
+    }
   }
 
   return creditsPerImage * numberOfImages;

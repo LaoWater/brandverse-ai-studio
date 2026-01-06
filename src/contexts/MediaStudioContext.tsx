@@ -58,8 +58,9 @@ export interface MediaStudioState {
   enhancePrompt: boolean;        // For Imagen 4 - LLM-based prompt rewriting (enabled by default)
 
   // Video-specific settings
-  videoDuration: 8;              // Veo 3.1 supports 8-second clips
+  videoDuration: 4 | 6 | 8;      // Veo 3.1 supports 4, 6, or 8 seconds (8s only with reference images)
   videoFps: 24 | 30;             // 24fps or 30fps
+  generateAudio: boolean;        // Generate audio with video (default: true)
   firstFrameImage: File | null;  // For keyframe-to-video mode
   firstFramePreview: string | null;
   lastFrameImage: File | null;   // For keyframe-to-video mode
@@ -89,8 +90,9 @@ interface MediaStudioContextType extends MediaStudioState {
   // Video model setters
   setSelectedVideoModel: (model: VideoModel) => void;
   setVideoGenerationMode: (mode: VideoGenerationMode) => void;
-  setVideoDuration: (duration: 8) => void;
+  setVideoDuration: (duration: 4 | 6 | 8) => void;
   setVideoFps: (fps: 24 | 30) => void;
+  setGenerateAudio: (generate: boolean) => void;
   setFirstFrameImage: (file: File | null) => void;
   setLastFrameImage: (file: File | null) => void;
   setInputVideoImage: (file: File | null) => void;
@@ -152,6 +154,7 @@ const initialState: MediaStudioState = {
   // Video-specific settings
   videoDuration: 8,
   videoFps: 24,
+  generateAudio: true, // Default to true (generate audio)
   firstFrameImage: null,
   firstFramePreview: null,
   lastFrameImage: null,
@@ -271,12 +274,16 @@ export const MediaStudioProvider: React.FC<{ children: ReactNode }> = ({ childre
     setState(prev => ({ ...prev, videoGenerationMode: mode }));
   };
 
-  const setVideoDuration = (duration: 8) => {
+  const setVideoDuration = (duration: 4 | 6 | 8) => {
     setState(prev => ({ ...prev, videoDuration: duration }));
   };
 
   const setVideoFps = (fps: 24 | 30) => {
     setState(prev => ({ ...prev, videoFps: fps }));
+  };
+
+  const setGenerateAudio = (generate: boolean) => {
+    setState(prev => ({ ...prev, generateAudio: generate }));
   };
 
   const setFirstFrameImage = (file: File | null) => {
@@ -413,6 +420,7 @@ export const MediaStudioProvider: React.FC<{ children: ReactNode }> = ({ childre
     setVideoGenerationMode,
     setVideoDuration,
     setVideoFps,
+    setGenerateAudio,
     setFirstFrameImage,
     setLastFrameImage,
     setInputVideoImage,

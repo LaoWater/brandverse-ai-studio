@@ -3,19 +3,19 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { encode as base64Encode } from "https://deno.land/std@0.190.0/encoding/base64.ts";
 
- * The flow is: GCS Download (Stream) -> Uint8Array -> Supabase Storage Upload (Binary).
- * Only re-introduce Base64 if absolutely necessary for a text-only transport layer,
- * and be aware of the severe performance penalty.
- */
+//  * The flow is: GCS Download (Stream) -> Uint8Array -> Supabase Storage Upload (Binary).
+//  * Only re-introduce Base64 if absolutely necessary for a text-only transport layer,
+//  * and be aware of the severe performance penalty.
+//  */
 
- * ARCHITECTURE TODO:
- * Currently, we perform a "Double Hop" (GCS -> Edge -> Supabase).
- * This is viable for files < 20MB.
- * For production scaling or larger files:
- * 1. Store only the GCS URI in the database.
- * 2. Serve videos directly from GCS to the frontend using "Signed URLs".
- * 3. This avoids Edge Function memory limits and double-bandwidth costs.
- */
+//  * ARCHITECTURE TODO:
+//  * Currently, we perform a "Double Hop" (GCS -> Edge -> Supabase).
+//  * This is viable for files < 20MB.
+//  * For production scaling or larger files:
+//  * 1. Store only the GCS URI in the database.
+//  * 2. Serve videos directly from GCS to the frontend using "Signed URLs".
+//  * 3. This avoids Edge Function memory limits and double-bandwidth costs.
+//  */
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -33,8 +33,9 @@ interface VideoGenerationRequest {
   model: 'veo-3.1-generate-001' | 'veo-3.1-fast-generate-001';
   mode: 'text-to-video' | 'image-to-video' | 'keyframe-to-video';
   aspect_ratio: '16:9' | '9:16' | '1:1';
-  duration: 8; // Veo 3.1 supports 8-second clips
+  duration: 4 | 6 | 8; // Veo 3.1 supports 4, 6, or 8 seconds (8s only with reference images)
   fps?: 24 | 30; // 24fps or 30fps (default: 24)
+  generate_audio?: boolean; // Required for Veo 3 models - generate audio (default: true)
 
   // For image-to-video mode
   input_image_url?: string;
@@ -196,12 +197,24 @@ async function generateVideoWithVeo(request: VideoGenerationRequest): Promise<Bl
   const location = "us-central1";
   const gcsBucket = Deno.env.get("GCS_BUCKET_NAME") || "creatorsm-media-bucket";
 
+  // Validate constraints: reference images only support 8s duration
+  const hasReferenceImage = request.mode === 'image-to-video' || request.mode === 'keyframe-to-video';
+  if (hasReferenceImage && request.duration !== 8) {
+    logStep("Duration constraint violation", {
+      mode: request.mode,
+      duration: request.duration,
+      message: "Reference images only support 8s duration"
+    });
+    throw new Error("When using reference images (image-to-video or keyframe-to-video), duration must be 8 seconds");
+  }
+
   logStep("Generating with Veo", {
     model: request.model,
     mode: request.mode,
     prompt: request.prompt.substring(0, 50),
     aspectRatio: request.aspect_ratio,
     duration: request.duration,
+    generateAudio: request.generate_audio ?? true,
     projectId,
     location
   });
@@ -225,6 +238,7 @@ async function generateVideoWithVeo(request: VideoGenerationRequest): Promise<Bl
     durationSeconds: request.duration,
     aspectRatio: request.aspect_ratio,
     personGeneration: "allow_adult",
+    generateAudio: request.generate_audio ?? true, // Default to true if not specified
   };
 
   switch (request.mode) {
@@ -291,7 +305,8 @@ async function generateVideoWithVeo(request: VideoGenerationRequest): Promise<Bl
     endpoint,
     mode: request.mode,
     outputPath,
-    hasInstances: instances.length > 0
+    hasInstances: instances.length > 0,
+    parameters: parameters // Log full parameters to debug
   });
 
   const response = await fetch(endpoint, {
@@ -519,7 +534,8 @@ serve(async (req) => {
       model: request.model,
       mode: request.mode,
       aspectRatio: request.aspect_ratio,
-      duration: request.duration
+      duration: request.duration,
+      generate_audio: request.generate_audio
     });
 
     // Generate video
