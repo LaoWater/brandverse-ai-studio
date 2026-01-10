@@ -104,7 +104,7 @@ const Navigation = () => {
     { name: "Content Generator", href: "/content-generator" },
     { name: "Media Studio", href: "/media-studio" },
     { name: "Library", href: "/post-manager" },
-    { name: "Settings", href: "/settings" },
+    { name: "SEO Agent", href: "/seo-agent" },
   ];
 
   return (

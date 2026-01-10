@@ -55,25 +55,25 @@ const HeroSection = () => {
             <div className="relative">
               <h1 className="text-5xl md:text-6xl font-bold leading-tight">
                 <span className="text-cosmic font-serif flex items-center justify-center gap-3">
-                  <Zap className="w-12 h-12 md:w-16 md:h-16 text-accent animate-pulse" />
-                  Transform Ideas
+                  <Rocket className="w-12 h-12 md:w-16 md:h-16 text-accent animate-pulse" />
+                  Launch Your Startup
                 </span>
                 <br />
-                <span className="text-white">Into Viral Content</span>
+                <span className="text-white">Into The Spotlight</span>
                 <br />
-                <span className="text-accent">At Light Speed</span>
+                <span className="text-accent">Everywhere That Matters</span>
               </h1>
             </div>
-            
+
             <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              Watch your brilliant ideas accelerate from concept to viral content in seconds. 
-              Our AI captures your creative essence and propels it across X, Instagram, 
-              LinkedIn, and Facebook.
+              You built something great. Now make sure the world sees it.
+              AI-powered content, SEO optimization, and multi-platform distribution —
+              all in one place for founders who refuse to stay invisible.
             </p>
 
             {/* Visual concept representation - 3D Holographic Cards */}
             <div className="flex justify-center items-center space-x-12 my-16">
-              {/* Your Ideas Card */}
+              {/* Your Product Card */}
               <div className="group relative">
                 <div className="relative transform hover:scale-105 transition-all duration-500 hover:-rotate-2">
                   {/* Animated gradient glow border */}
@@ -88,13 +88,13 @@ const HeroSection = () => {
 
                       {/* Icon container - boosted vibrant colors */}
                       <div className="icon-gradient-container relative bg-gradient-to-br from-sky-600 to-indigo-700 rounded-2xl p-4 shadow-2xl transform hover:rotate-12 hover:scale-110 transition-all duration-300">
-                        <Lightbulb className="w-9 h-9 text-white drop-shadow-2xl" />
+                        <Rocket className="w-9 h-9 text-white drop-shadow-2xl" />
                       </div>
                     </div>
 
                     {/* Label with solid color fallback */}
                     <p className="text-sm font-bold text-center bg-gradient-to-r from-sky-600 to-indigo-600 dark:from-sky-400 dark:to-indigo-400 bg-clip-text text-transparent">
-                      Your Ideas
+                      Your Product
                     </p>
                   </div>
                 </div>
@@ -107,7 +107,7 @@ const HeroSection = () => {
                 <div className="w-12 h-1.5 bg-gradient-to-r from-accent to-transparent animate-pulse rounded-full shadow-lg shadow-accent/50" style={{ animationDelay: '0.3s' }}></div>
               </div>
 
-              {/* Instant Impact Card */}
+              {/* Global Visibility Card */}
               <div className="group relative">
                 <div className="relative transform hover:scale-105 transition-all duration-500 hover:rotate-2">
                   {/* Animated gradient glow border */}
@@ -122,30 +122,30 @@ const HeroSection = () => {
 
                       {/* Icon container - vibrant in light mode with hardcoded colors */}
                       <div className="icon-gradient-container relative bg-gradient-to-br from-[#5B5FEE] to-[#00D4FF] rounded-2xl p-4 shadow-2xl transform hover:-rotate-12 hover:scale-110 transition-all duration-300">
-                        <Target className="w-9 h-9 text-white drop-shadow-2xl" />
+                        <Globe className="w-9 h-9 text-white drop-shadow-2xl" />
                       </div>
                     </div>
 
                     {/* Label - solid color for light mode */}
                     <p className="text-sm font-bold text-center text-[#5B5FEE]/90 dark:bg-gradient-to-r dark:from-[#5B5FEE] dark:to-[#00D4FF] dark:bg-clip-text dark:text-transparent">
-                      Instant Impact
+                      Global Visibility
                     </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* === UPDATED SECTION: Social Platform Indicators === */}
-            <div className="flex justify-center items-center space-x-6 pt-12 opacity-80">
-              <div className="text-sm text-gray-400">Publishing to:</div>
+            {/* === UPDATED SECTION: Multi-Platform Visibility === */}
+            <div className="flex flex-col items-center space-y-4 pt-12">
+              <div className="text-sm text-gray-400">Be visible where decisions happen:</div>
               <div className="flex items-center justify-center space-x-4">
                 {socialPlatforms.map((platform) => (
                   <div
                     key={platform.name}
                     title={platform.name}
                     className={`
-                      w-10 h-10 rounded-full flex items-center justify-center 
-                      transition-all duration-300 ease-in-out 
+                      w-10 h-10 rounded-full flex items-center justify-center
+                      transition-all duration-300 ease-in-out
                       hover:scale-110 cursor-pointer
                       ${platform.style}
                     `}
@@ -154,6 +154,9 @@ const HeroSection = () => {
                   </div>
                 ))}
               </div>
+              <p className="text-xs text-gray-500 max-w-md text-center">
+                73% of buying decisions happen outside Google. We help you reach customers on TikTok, YouTube, Reddit, and beyond.
+              </p>
             </div>
             {/* === END UPDATED SECTION === */}
 
@@ -169,7 +172,7 @@ const HeroSection = () => {
               See It In <span className="text-cosmic font-serif">Action</span>
             </h2>
             <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-              Watch how our AI transforms your ideas into compelling content across all platforms
+              Watch how founders use our platform to launch their products into the spotlight
             </p>
           </div>
           
@@ -190,32 +193,32 @@ const HeroSection = () => {
         </div>
       </section>
 
-      {/* Creative Workspace Section */}
+      {/* Founder's Launch Hub Section */}
       <section className="py-24 relative">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div className="space-y-8">
               <h2 className="text-4xl md:text-5xl font-bold text-white">
-                Your Creative <span className="text-cosmic font-serif">Command Center</span>
+                Your Launch <span className="text-cosmic font-serif">Command Center</span>
               </h2>
               <p className="text-xl text-gray-300 leading-relaxed">
-                Transform any workspace into a content creation powerhouse. Our AI works wherever inspiration strikes - 
-                from your home office to your favorite café.
+                Built for founders who move fast. Create content, analyze SEO opportunities,
+                and distribute across platforms — all from one dashboard designed for startup velocity.
               </p>
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Clock className="w-5 h-5 text-accent" />
-                    <span className="text-white font-semibold">Save Hours Daily</span>
+                    <span className="text-white font-semibold">Launch Faster</span>
                   </div>
-                  <p className="text-gray-400 text-sm">Automate content creation across all platforms</p>
+                  <p className="text-gray-400 text-sm">From idea to multi-platform presence in hours, not weeks</p>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <TrendingUp className="w-5 h-5 text-accent" />
-                    <span className="text-white font-semibold">Viral Potential</span>
+                    <span className="text-white font-semibold">SEO Everywhere</span>
                   </div>
-                  <p className="text-gray-400 text-sm">AI-optimized content for maximum engagement</p>
+                  <p className="text-gray-400 text-sm">Optimize for Google, TikTok, YouTube, Reddit & more</p>
                 </div>
               </div>
             </div>
@@ -233,13 +236,13 @@ const HeroSection = () => {
         </div>
       </section>
 
-      {/* Collaboration Section */}
+      {/* Solo Founder & Small Team Section */}
       <section className="py-24 relative bg-gradient-to-b from-background/50 to-background">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div className="relative order-2 lg:order-1">
-              <img 
-                src="https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=800&q=80" 
+              <img
+                src="https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=800&q=80"
                 alt="Modern workspace with multiple devices"
                 className="rounded-2xl shadow-2xl w-full"
               />
@@ -249,24 +252,24 @@ const HeroSection = () => {
             </div>
             <div className="space-y-8 order-1 lg:order-2">
               <h2 className="text-4xl md:text-5xl font-bold text-white">
-                Built for <span className="text-cosmic font-serif">Modern Teams</span>
+                Built for <span className="text-cosmic font-serif">Startup Speed</span>
               </h2>
               <p className="text-xl text-gray-300 leading-relaxed">
-                Whether you're a solo creator or part of a marketing team, our platform scales with your needs. 
-                Collaborate seamlessly and maintain brand consistency across all channels.
+                Solo or small team, bootstrapped or funded — get enterprise-level marketing power
+                without the enterprise price tag or complexity.
               </p>
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-accent rounded-full"></div>
-                  <span className="text-white">Multi-platform publishing</span>
+                  <span className="text-white">No recurring subscriptions — pay for what you use</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  <span className="text-white">Brand voice consistency</span>
+                  <span className="text-white">AI learns your product's unique value proposition</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-accent rounded-full"></div>
-                  <span className="text-white">Performance analytics</span>
+                  <span className="text-white">One dashboard for all your visibility needs</span>
                 </div>
               </div>
             </div>
@@ -277,38 +280,38 @@ const HeroSection = () => {
       {/* Reviews Section - NEW */}
       <ReviewsSection />
 
-      {/* Productivity Section */}
+      {/* Focus on Product Section */}
       <section className="py-24 relative">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div className="space-y-8">
               <h2 className="text-4xl md:text-5xl font-bold text-white">
-                Unleash Your <span className="text-cosmic font-serif">Productivity</span>
+                Focus on <span className="text-cosmic font-serif">Building</span>
               </h2>
               <p className="text-xl text-gray-300 leading-relaxed">
-                Focus on what you do best - creating amazing ideas. Let our AI handle the heavy lifting of 
-                content adaptation, scheduling, and optimization across all your social platforms.
+                You have a product to perfect and customers to serve. Let our AI handle the visibility game —
+                content creation, SEO analysis, and multi-platform distribution on autopilot.
               </p>
-              <Button 
-                asChild 
-                size="lg" 
+              <Button
+                asChild
+                size="lg"
                 className="bg-accent hover:bg-accent/90 text-black px-8 py-4 text-lg font-semibold"
               >
                 <Link to="/brand-setup">
-                  Start Your Journey <ArrowRight className="ml-2 w-5 h-5" />
+                  Launch Your Product <ArrowRight className="ml-2 w-5 h-5" />
                 </Link>
               </Button>
             </div>
             <div className="relative">
-              <img 
-                src="/unleash_your_productivity.jpg" 
-                alt="Professional working on content creation"
+              <img
+                src="/unleash_your_productivity.jpg"
+                alt="Founder working on their startup"
                 className="rounded-2xl shadow-2xl w-full h-full"
               />
               <div className="absolute top-4 right-4 bg-background/80 backdrop-blur-sm rounded-lg p-3">
                 <div className="flex items-center gap-2 text-sm" style={{ color: '#ffffff' }}>
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  Your Message Spreading
+                  Your Product Getting Discovered
                 </div>
               </div>
             </div>
@@ -321,20 +324,20 @@ const HeroSection = () => {
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-4xl mx-auto space-y-8">
             <h2 className="text-4xl md:text-5xl font-bold text-white">
-              Ready to Join the <span className="text-cosmic font-serif">Multiverse?</span>
+              Ready to <span className="text-cosmic font-serif">Launch?</span>
             </h2>
             <p className="text-xl text-gray-300 leading-relaxed">
-              Transform your content creation process today and watch your ideas reach millions.
+              Your product deserves to be seen. Let's make sure it is — everywhere that matters.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8">
-              <Button 
-                asChild 
-                size="lg" 
+              <Button
+                asChild
+                size="lg"
                 className="bg-primary hover:bg-primary/90 text-white px-8 py-6 text-lg font-semibold glow-effect animate-pulse-glow"
               >
-                <Link to="/content-generator">
+                <Link to="/brand-setup">
                   <Rocket className="mr-2 w-5 h-5" />
-                  Start Creating Magic
+                  Start Your Launch
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Link>
               </Button>

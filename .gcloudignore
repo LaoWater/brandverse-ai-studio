@@ -15,10 +15,9 @@
 
 # Node.js dependencies:
 node_modules/
-server/
 /supabase/
-dist/
-build/
+# Note: dist/ is NEEDED for deployment - it contains the built app
+# Note: server.js is NEEDED - it's the entrypoint defined in app.yaml
 
 .claude/
 .playwright-mcp/

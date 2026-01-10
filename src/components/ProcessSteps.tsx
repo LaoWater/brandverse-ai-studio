@@ -6,20 +6,20 @@ const ProcessSteps = () => {
   const steps = [
     {
       icon: Settings,
-      title: "Set Up Your Brand",
-      description: "Upload your logo, define your brand voice, and select your target platforms. Our AI learns your unique style.",
+      title: "Define Your Product",
+      description: "Tell us about your startup, your unique value proposition, and who your ideal customers are. Our AI learns your story.",
       color: "from-primary to-primary/70"
     },
     {
       icon: Image,
-      title: "Generate Content",
-      description: "Enter a topic and watch our AI create platform-specific content with captions, visuals, and hashtags.",
+      title: "Create & Optimize",
+      description: "Generate platform-optimized content and get SEO insights for Google, TikTok, YouTube, Reddit, and more.",
       color: "from-accent to-accent/70"
     },
     {
       icon: Calendar,
-      title: "Schedule & Publish",
-      description: "Review your content calendar, make edits, and schedule posts across all your connected platforms.",
+      title: "Launch & Grow",
+      description: "Distribute your message everywhere that matters. Track visibility and iterate based on real engagement data.",
       color: "from-primary to-accent"
     }
   ];

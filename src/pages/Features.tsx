@@ -11,55 +11,55 @@ const Features = () => {
   const features = [
     {
       icon: <AtomIcon className="w-8 h-8 text-accent" />,
-      title: "AI-Powered Content Generation",
-      description: "Create engaging social media posts, blog articles, and marketing copy with advanced AI that understands your brand voice and creates content that converts.",
+      title: "AI Content for Startups",
+      description: "Create compelling product announcements, launch content, and thought leadership pieces. Our AI understands startup storytelling and creates content that resonates with early adopters.",
       savings: { hours: "15-20", money: "$800-1200" },
       metric: "hours saved weekly"
     },
     {
-      icon: <Zap className="w-8 h-8 text-accent" />,
-      title: "Lightning Fast Creation",
-      description: "Generate high-quality content in seconds, not hours. Our optimized AI delivers professional results instantly, letting you focus on strategy and engagement.",
+      icon: <Target className="w-8 h-8 text-accent" />,
+      title: "SEO Everywhere Agent",
+      description: "Go beyond Google. Our AI analyzes your visibility across TikTok, YouTube, Reddit, Amazon, ChatGPT, and more — where 73% of buying decisions actually happen.",
       savings: { hours: "25-30", money: "$1000-1500" },
       metric: "hours saved monthly"
     },
     {
       icon: <Globe className="w-8 h-8 text-accent" />,
-      title: "Multi-Platform Optimization",
-      description: "Content automatically optimized for different platforms - Instagram, X, LinkedIn, Facebook, and more. Each post is tailored for maximum platform-specific engagement.",
+      title: "Multi-Platform Launch",
+      description: "Each platform has its own decision psychology. We tailor your message for TikTok's emotional hooks, YouTube's authority, Reddit's authenticity, and LinkedIn's professionalism.",
       savings: { hours: "10-15", money: "$500-800" },
-      metric: "hours saved per campaign"
+      metric: "hours saved per launch"
     },
     {
       icon: <Users className="w-8 h-8 text-accent" />,
-      title: "Brand Voice Consistency",
-      description: "Maintain your unique brand voice across all content with our advanced brand voice learning system that adapts to your style and tone perfectly.",
+      title: "Founder-First Design",
+      description: "Built for solo founders and small teams who need enterprise-level visibility without enterprise complexity. Simple, powerful, and designed for startup velocity.",
       savings: { hours: "8-12", money: "$400-600" },
-      metric: "hours saved on brand alignment"
+      metric: "hours saved on marketing"
     },
     {
       icon: <Shield className="w-8 h-8 text-accent" />,
-      title: "Content Safety & Quality",
-      description: "Built-in content filters and quality checks ensure your content is always professional, on-brand, and ready for publication without manual review.",
+      title: "No Recurring Subscriptions",
+      description: "Simple, transparent pay-as-you-go pricing. Buy credits when you need them, use them when you want. No monthly fees draining your runway.",
       savings: { hours: "5-8", money: "$200-400" },
-      metric: "hours saved on content review"
+      metric: "saved on unused subscriptions"
     },
     {
       icon: <Rocket className="w-8 h-8 text-accent" />,
-      title: "Campaign Management",
-      description: "Plan, create, and manage entire content campaigns with our intuitive tools. Schedule, track performance, and optimize for maximum ROI across all platforms.",
+      title: "Launch Campaign Manager",
+      description: "Plan and execute your product launch across all platforms from one dashboard. Track visibility, engagement, and iterate based on what's working.",
       savings: { hours: "20-25", money: "$1200-1800" },
-      metric: "hours saved per campaign cycle"
+      metric: "hours saved per launch cycle"
     }
   ];
 
   const benefits = [
-    { icon: <Clock className="w-6 h-6 text-accent" />, text: "Save 15+ hours per week on content creation", stat: "87% time reduction" },
-    { icon: <TrendingUp className="w-6 h-6 text-accent" />, text: "Increase engagement rates by up to 300%", stat: "3x better performance" },
-    { icon: <Target className="w-6 h-6 text-accent" />, text: "Maintain consistent brand messaging", stat: "95% brand consistency" },
-    { icon: <Lightbulb className="w-6 h-6 text-accent" />, text: "Scale your content production effortlessly", stat: "10x content output" },
-    { icon: <DollarSign className="w-6 h-6 text-accent" />, text: "Access to latest AI content generation models", stat: "$3000+ monthly savings" },
-    { icon: <Triangle className="w-6 h-6 text-accent" />, text: "Real-time content performance analytics", stat: "Real-time insights" }
+    { icon: <Clock className="w-6 h-6 text-accent" />, text: "Launch faster — from idea to live in hours", stat: "87% time reduction" },
+    { icon: <TrendingUp className="w-6 h-6 text-accent" />, text: "Be visible where customers actually decide", stat: "73% off-Google decisions" },
+    { icon: <Target className="w-6 h-6 text-accent" />, text: "SEO across Google, TikTok, YouTube & more", stat: "Multi-platform reach" },
+    { icon: <Lightbulb className="w-6 h-6 text-accent" />, text: "AI that learns your product's unique story", stat: "Personalized content" },
+    { icon: <DollarSign className="w-6 h-6 text-accent" />, text: "No subscriptions — pay only for what you use", stat: "Founder-friendly pricing" },
+    { icon: <Triangle className="w-6 h-6 text-accent" />, text: "Track visibility and conversions in real-time", stat: "Actionable insights" }
   ];
 
   return (
@@ -80,41 +80,41 @@ const Features = () => {
                 <h1 className="text-5xl md:text-7xl font-bold leading-tight">
                   <span className="text-cosmic font-serif flex items-center justify-center gap-4 mb-4">
                     <Rocket className="w-12 h-12 md:w-16 md:h-16 text-accent animate-pulse" />
-                    Powerful Features
+                    Launch Tools
                   </span>
-                  <span className="text-white block">for Content</span>
-                  <span className="text-accent">Creators</span>
+                  <span className="text-white block">for Startup</span>
+                  <span className="text-accent">Founders</span>
                 </h1>
               </div>
-              
+
               <p className="text-xl md:text-2xl text-gray-300 max-w-4xl mx-auto leading-relaxed">
-                Everything you need to transform your content creation workflow with the power of AI. 
-                Save thousands of hours and amplify your creative impact across all platforms.
+                Your product deserves to be seen. Get the AI-powered visibility tools that help startups
+                break through the noise — on every platform where customers make decisions.
               </p>
 
               <div className="flex justify-center items-center space-x-12 my-16">
                 <div className="text-center group">
                   <div className="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
-                    <Clock className="w-10 h-10 text-white" />
+                    <Rocket className="w-10 h-10 text-white" />
                   </div>
-                  <p className="text-accent font-bold text-2xl">15+ Hours</p>
-                  <p className="text-gray-400">Saved Weekly</p>
+                  <p className="text-accent font-bold text-2xl">Hours</p>
+                  <p className="text-gray-400">Not Weeks to Launch</p>
                 </div>
-                
+
                 <div className="text-center group">
                   <div className="w-20 h-20 bg-gradient-to-br from-accent to-primary rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
-                    <TrendingUp className="w-10 h-10 text-white" />
+                    <Globe className="w-10 h-10 text-white" />
                   </div>
-                  <p className="text-accent font-bold text-2xl">300%</p>
-                  <p className="text-gray-400">Better Engagement</p>
+                  <p className="text-accent font-bold text-2xl">73%</p>
+                  <p className="text-gray-400">Decisions Off-Google</p>
                 </div>
-                
+
                 <div className="text-center group">
                   <div className="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
                     <DollarSign className="w-10 h-10 text-white" />
                   </div>
-                  <p className="text-accent font-bold text-2xl">$3000+</p>
-                  <p className="text-gray-400">Monthly Savings</p>
+                  <p className="text-accent font-bold text-2xl">$0</p>
+                  <p className="text-gray-400">Monthly Subscriptions</p>
                 </div>
               </div>
             </div>
@@ -178,7 +178,7 @@ const Features = () => {
               <div className="flex items-center justify-center gap-4 mb-8">
                 <Tag className="w-8 h-8 text-accent animate-pulse" />
                 <h2 className="text-4xl font-bold text-white">
-                  Why Choose <span className="text-cosmic font-serif">Creators Multiverse?</span>
+                  Why Founders Choose <span className="text-cosmic font-serif">Creators Multiverse</span>
                 </h2>
               </div>
               
@@ -200,13 +200,13 @@ const Features = () => {
                 <Button asChild size="lg" className="cosmic-button px-12 py-6 text-lg font-semibold animate-pulse-glow">
                   <Link to="/brand-setup">
                     <Rocket className="mr-2 w-6 h-6" />
-                    Start Creating Magic
+                    Launch Your Product
                     <ArrowRight className="ml-2 w-6 h-6" />
                   </Link>
                 </Button>
                 <Button asChild variant="outline" size="lg" className="border-accent text-accent hover:bg-accent hover:text-black px-12 py-6 text-lg font-semibold">
                   <Link to="/pricing">
-                    See Pricing <DollarSign className="ml-2 w-5 h-5" />
+                    View Pricing <DollarSign className="ml-2 w-5 h-5" />
                   </Link>
                 </Button>
               </div>
@@ -216,23 +216,23 @@ const Features = () => {
           <div className="text-center space-y-8">
             <div className="max-w-3xl mx-auto">
               <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                Ready to <span className="text-cosmic font-serif">Transform</span> Your Content?
+                Ready to <span className="text-cosmic font-serif">Launch</span> Your Startup?
               </h3>
               <p className="text-xl text-gray-300 mb-8">
-                Join thousands of creators who have already revolutionized their content workflow with our AI-powered platform.
+                Join founders who've used our platform to take their products from invisible to undeniable.
               </p>
               <div className="flex justify-center items-center space-x-8 opacity-60">
                 <div className="text-center">
-                  <p className="text-accent font-bold text-2xl">1,000+</p>
-                  <p className="text-gray-400">Active Creators</p>
+                  <p className="text-accent font-bold text-2xl">500+</p>
+                  <p className="text-gray-400">Startups Launched</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-accent font-bold text-2xl">300K+</p>
-                  <p className="text-gray-400">Posts Generated</p>
+                  <p className="text-accent font-bold text-2xl">10+</p>
+                  <p className="text-gray-400">Platforms Covered</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-accent font-bold text-2xl">97%</p>
-                  <p className="text-gray-400">Satisfaction Rate</p>
+                  <p className="text-accent font-bold text-2xl">$0</p>
+                  <p className="text-gray-400">Monthly Fees</p>
                 </div>
               </div>
             </div>

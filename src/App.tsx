@@ -18,6 +18,7 @@ import CampaignPreview from "./pages/CampaignPreview";
 import PostManager from "./pages/PostManager";
 import MediaStudio from "./pages/MediaStudio";
 import Settings from "./pages/Settings";
+import SeoAgent from "./pages/SeoAgent";
 import MyPlan from "./pages/MyPlan";
 import Features from "./pages/Features";
 import Pricing from "./pages/Pricing";
@@ -159,7 +160,11 @@ const App = () => (
                     </ProtectedRoute>
                   }
                 />
-                <Route 
+                <Route
+                  path="/seo-agent"
+                  element={<SeoAgent />}
+                />
+                <Route
                   path="/my-plan" 
                   element={
                     <ProtectedRoute>

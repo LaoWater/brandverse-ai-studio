@@ -1,12 +1,12 @@
 // src/components/HowItWorksRoadmap.tsx
 import { useRef } from 'react';
 import { motion, useScroll, useTransform, useInView, easeOut } from 'framer-motion';
-import { ArrowRight, Pen, Sparkles, Brain, Bot, Users, CalendarClock, Target, Share2, TrendingUp, Zap, Rocket, Wand2 } from 'lucide-react';
+import { ArrowRight, Pen, Sparkles, Brain, Bot, Users, CalendarClock, Target, Share2, TrendingUp, Zap, Rocket, Wand2, Globe } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const iconMap = {
-  Pen, Sparkles, Brain, Bot, Users, CalendarClock, Target, Share2, TrendingUp, Zap, Rocket, Wand2,
+  Pen, Sparkles, Brain, Bot, Users, CalendarClock, Target, Share2, TrendingUp, Zap, Rocket, Wand2, Globe,
 };
 type IconName = keyof typeof iconMap;
 
@@ -17,13 +17,13 @@ const getIcon = (iconName: IconName) => {
 const steps = [ // Ensure icon names are valid IconName types
   {
     stepNumber: 1,
-    icon: "Pen" as IconName,
-    title: "Create & Define Your Voice",
-    description: "Securely link your social media accounts. Tell our AI about your brand's unique personality, mission, target audience, and style.",
+    icon: "Rocket" as IconName,
+    title: "Define Your Startup",
+    description: "Tell us about your product, your unique value proposition, and who your ideal customers are. Our AI learns what makes your startup special and how to communicate it.",
     details: [
-      "Integrate with platforms like X, Instagram, LinkedIn, Facebook, TikTok.",
-      "Define brand tone: witty, formal, inspirational, etc.",
-      "Specify content pillars and 'no-go' topics.",
+      "Describe your product, mission, and target audience.",
+      "Connect platforms: X, Instagram, LinkedIn, TikTok, YouTube, and more.",
+      "Define your brand voice and messaging pillars.",
     ],
     bgColor: "bg-sky-500/10",
     borderColor: "border-sky-500",
@@ -33,12 +33,12 @@ const steps = [ // Ensure icon names are valid IconName types
   {
     stepNumber: 2,
     icon: "Wand2" as IconName,
-    title: "AI Crafts & You Refine",
-    description: "Our intelligent system analyzes your input and generates a diverse range of tailored content suggestions. From witty tweets to engaging Instagram captions and insightful LinkedIn posts, all adapted for each platform.",
+    title: "Create Platform-Optimized Content",
+    description: "Our AI generates content tailored for each platform's unique decision-making psychology — emotional hooks for TikTok, authority pieces for YouTube, authentic takes for Reddit, and professional insights for LinkedIn.",
     details: [
-      "Content adaptation for various formats (text, image, video ideas).",
-      "Review, edit, and approve AI-generated drafts with an intuitive editor.",
-      "Manage, Edit, Own generated posts with full Copyrights.",
+      "Platform-specific content that resonates with each audience.",
+      "SEO optimization for Google, AI assistants, and social platforms.",
+      "Visual content suggestions with AI image generation.",
     ],
     bgColor: "bg-purple-500/10",
     borderColor: "border-purple-500",
@@ -47,13 +47,13 @@ const steps = [ // Ensure icon names are valid IconName types
   },
   {
     stepNumber: 3,
-    icon: "TrendingUp" as IconName,
-    title: "Schedule, Amplify & Optimize",
-    description: "Automate your posting schedule across all connected platforms. Our AI continuously monitors performance, providing insights to optimize your strategy and maximize engagement, reach, and impact.",
+    icon: "Target" as IconName,
+    title: "SEO Everywhere",
+    description: "73% of buying decisions happen outside Google. Our SEO Agent analyzes your visibility across the entire decision landscape — not just search rankings, but TikTok discoverability, YouTube authority, Reddit mentions, and AI assistant recommendations.",
     details: [
-      "Smart scheduling for peak engagement times.",
-      "Cross-platform campaign coordination.",
-      "Performance analytics and actionable optimization tips.",
+      "Multi-platform visibility analysis and optimization.",
+      "Competitor presence mapping across decision platforms.",
+      "Actionable insights to improve your discoverability everywhere.",
     ],
     bgColor: "bg-emerald-500/10",
     borderColor: "border-emerald-500",
@@ -62,13 +62,13 @@ const steps = [ // Ensure icon names are valid IconName types
   },
   {
     stepNumber: 4,
-    icon: "Brain" as IconName,
-    title: "Grow Together",
-    description: "The more you collaborate with our AI, the more it learns. It studies post history, analyzes performance, and continually adapts to better synchronize with your company's evolving presence and audience preferences, creating a virtuous cycle of improvement.",
+    icon: "TrendingUp" as IconName,
+    title: "Launch, Learn & Iterate",
+    description: "Distribute your content across all platforms, track what resonates, and let our AI continuously learn from your results. The more you use it, the better it understands your market and refines your launch strategy.",
     details: [
-      "AI dynamically refines its understanding based on your interactions and content performance.",
-      "Personalized evolution: the system grows more attuned to your brand and audience over time.",
-      "Receive smarter, more relevant suggestions as the AI's knowledge deepens.",
+      "Smart scheduling for peak engagement across time zones.",
+      "Performance analytics that connect content to actual conversions.",
+      "AI that evolves with your startup's growth journey.",
     ],
     bgColor: "bg-sky-500/10",
     borderColor: "border-sky-500",
@@ -232,7 +232,7 @@ export function HowItWorksRoadmap() {
             transition={{ duration: 0.6, delay: 0.2 }}
             viewport={{ once: true }}
           >
-            Four simple steps to transform your content creation workflow, amplify your brand's voice, and continuously refine your strategy in a virtuous cycle of growth.
+            Four steps to take your startup from invisible to undeniable — across every platform where your customers make decisions.
           </motion.p>
         </div>
 
@@ -264,14 +264,14 @@ export function HowItWorksRoadmap() {
           transition={{ duration: 0.6, delay: 0.3 }}
           viewport={{ once: true }}
         >
-          <p className="text-xl text-foreground/80 dark:text-gray-300 mb-5 dark:drop-shadow-md">Ready to experience the Future of Content Creation?</p>
+          <p className="text-xl text-foreground/80 dark:text-gray-300 mb-5 dark:drop-shadow-md">Ready to launch your product into the spotlight?</p>
           <Button
             asChild
             size="lg"
             className="bg-accent hover:bg-accent/90 text-black px-8 py-4 text-lg font-semibold shadow-xl dark:shadow-2xl hover:shadow-accent/20 transition-all duration-300 hover:scale-105"
           >
             <a href="/brand-setup">
-              Start Your Journey <ArrowRight className="ml-2 w-5 h-5" />
+              Start Your Launch <ArrowRight className="ml-2 w-5 h-5" />
             </a>
           </Button>
         </motion.div>
