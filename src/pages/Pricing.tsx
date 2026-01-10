@@ -201,11 +201,11 @@ const Pricing = () => {
               </div>
 
               <h1 className="text-5xl md:text-6xl font-bold leading-tight">
-                <span className="text-white">Simple, Honest</span>
+                <span className="dark:text-white text-gray-900">Simple, Honest</span>
                 <span className="text-cosmic font-serif block mt-2">Pricing for Startups</span>
               </h1>
 
-              <p className="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
+              <p className="text-xl dark:text-gray-300 text-gray-600 max-w-2xl mx-auto leading-relaxed">
                 Pay for what you use. No monthly fees eating into your runway.
                 Buy credits, launch your product, scale when you're ready.
               </p>
@@ -222,10 +222,10 @@ const Pricing = () => {
             <Card className="cosmic-card border-accent/20 overflow-hidden">
               <CardContent className="p-8">
                 <div className="text-center mb-8">
-                  <h2 className="text-2xl font-bold text-white mb-2">
+                  <h2 className="text-2xl font-bold dark:text-white text-gray-900 mb-2">
                     Built for <span className="text-cosmic font-serif">Startup Economics</span>
                   </h2>
-                  <p className="text-gray-400">We understand cash flow. That's why we do things differently.</p>
+                  <p className="dark:text-gray-400 text-gray-600">We understand cash flow. That's why we do things differently.</p>
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-8">
@@ -234,8 +234,8 @@ const Pricing = () => {
                       <div className="w-14 h-14 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto mb-4">
                         {point.icon}
                       </div>
-                      <h3 className="text-white font-semibold text-lg mb-2">{point.title}</h3>
-                      <p className="text-gray-400 text-sm leading-relaxed">{point.description}</p>
+                      <h3 className="dark:text-white text-gray-900 font-semibold text-lg mb-2">{point.title}</h3>
+                      <p className="dark:text-gray-400 text-gray-600 text-sm leading-relaxed">{point.description}</p>
                     </div>
                   ))}
                 </div>
@@ -256,22 +256,22 @@ const Pricing = () => {
                 <CardContent className="p-8 text-center">
                   <div className="flex items-center justify-center gap-3 mb-4">
                     <Gift className="w-8 h-8 text-accent" />
-                    <h3 className="text-2xl font-bold text-white">Start Free</h3>
+                    <h3 className="text-2xl font-bold dark:text-white text-gray-900">Start Free</h3>
                   </div>
-                  <p className="text-gray-300 mb-6">
+                  <p className="dark:text-gray-300 text-gray-600 mb-6">
                     Get <span className="text-accent font-semibold">10 free credits daily</span> to explore everything.
                     No credit card required. Just sign up and start creating.
                   </p>
                   <div className="flex flex-wrap justify-center gap-4 mb-6">
-                    <div className="flex items-center gap-2 text-sm text-gray-400">
+                    <div className="flex items-center gap-2 text-sm dark:text-gray-400 text-gray-600">
                       <Check className="w-4 h-4 text-accent" />
                       All AI models
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-400">
+                    <div className="flex items-center gap-2 text-sm dark:text-gray-400 text-gray-600">
                       <Check className="w-4 h-4 text-accent" />
                       Content + Media Studio
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-400">
+                    <div className="flex items-center gap-2 text-sm dark:text-gray-400 text-gray-600">
                       <Check className="w-4 h-4 text-accent" />
                       3 brand profiles
                     </div>
@@ -294,13 +294,13 @@ const Pricing = () => {
             className="mb-20"
           >
             <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              <h2 className="text-3xl md:text-4xl font-bold dark:text-white text-gray-900 mb-4">
                 Choose Your <span className="text-cosmic font-serif">Launch Tier</span>
               </h2>
-              <p className="text-gray-300 text-lg max-w-2xl mx-auto">
+              <p className="dark:text-gray-300 text-gray-600 text-lg max-w-2xl mx-auto">
                 One-time purchase. More credits = more features unlocked. Never expires.
               </p>
-              <div className="flex items-center justify-center gap-6 mt-6 text-sm text-gray-400">
+              <div className="flex items-center justify-center gap-6 mt-6 text-sm dark:text-gray-400 text-gray-500">
                 <div className="flex items-center gap-2">
                   <Search className="w-4 h-4 text-accent" />
                   <span>SEO Agent included</span>
@@ -334,7 +334,7 @@ const Pricing = () => {
 
                     <div className={`absolute -inset-0.5 bg-gradient-to-r ${pack.gradient} rounded-3xl blur ${pack.popular ? 'opacity-50' : 'opacity-25'} group-hover:opacity-60 transition duration-500`}></div>
 
-                    <Card className="relative cosmic-card overflow-hidden border-2 border-white/10 hover:border-white/20 transition-all duration-500 h-full flex flex-col">
+                    <Card className="relative cosmic-card overflow-hidden border-2 dark:border-white/10 border-gray-200 dark:hover:border-white/20 hover:border-gray-300 transition-all duration-500 h-full flex flex-col">
                       <div className={`absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-${pack.glowColor}/20 to-transparent rounded-full blur-3xl`}></div>
 
                       <CardHeader className="text-center pt-8 pb-4 relative z-10">
@@ -342,23 +342,23 @@ const Pricing = () => {
                           {pack.icon}
                         </div>
 
-                        <CardTitle className="text-xl font-bold text-white mb-1">{pack.name}</CardTitle>
-                        <CardDescription className="text-gray-400">{pack.description}</CardDescription>
+                        <CardTitle className="text-xl font-bold dark:text-white text-gray-900 mb-1">{pack.name}</CardTitle>
+                        <CardDescription className="dark:text-gray-400 text-gray-600">{pack.description}</CardDescription>
 
                         <div className="mt-6 mb-2">
                           <div className={`text-5xl font-bold bg-gradient-to-r ${pack.gradient} bg-clip-text text-transparent`}>
                             {pack.credits.toLocaleString()}
                           </div>
-                          <div className="text-gray-400 text-sm uppercase tracking-wide mt-1">Credits</div>
+                          <div className="dark:text-gray-400 text-gray-500 text-sm uppercase tracking-wide mt-1">Credits</div>
                         </div>
 
                         <div className="flex items-center justify-center gap-3">
-                          <span className="text-3xl font-bold text-white">{pack.price}</span>
-                          <span className="text-gray-400">({pack.pricePerCredit}/credit)</span>
+                          <span className="text-3xl font-bold dark:text-white text-gray-900">{pack.price}</span>
+                          <span className="dark:text-gray-400 text-gray-500">({pack.pricePerCredit}/credit)</span>
                         </div>
 
                         {pack.savings && (
-                          <Badge className="mt-3 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 text-yellow-400 border-yellow-500/30">
+                          <Badge className="mt-3 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 dark:text-yellow-400 text-yellow-600 border-yellow-500/30">
                             {pack.savings}
                           </Badge>
                         )}
@@ -375,19 +375,19 @@ const Pricing = () => {
                         <div className="space-y-2.5">
                           {pack.features.map((feature, featureIndex) => (
                             <div key={featureIndex} className="flex items-center gap-3">
-                              <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${pack.gradient}/20 flex items-center justify-center flex-shrink-0 text-white/80`}>
+                              <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${pack.gradient} flex items-center justify-center flex-shrink-0 text-white`}>
                                 {feature.icon}
                               </div>
-                              <span className="text-gray-300 text-sm">{feature.text}</span>
+                              <span className="dark:text-gray-300 text-gray-700 text-sm">{feature.text}</span>
                             </div>
                           ))}
                         </div>
 
                         {/* Queue Priority Indicator */}
-                        <div className="mt-4 pt-4 border-t border-white/10">
+                        <div className="mt-4 pt-4 border-t dark:border-white/10 border-gray-200">
                           <div className="flex items-center gap-2">
-                            <Zap className={`w-4 h-4 bg-gradient-to-r ${pack.gradient} bg-clip-text`} style={{ color: pack.popular ? '#10b981' : pack.name === 'Scale' ? '#8b5cf6' : '#0ea5e9' }} />
-                            <span className="text-xs text-gray-400">{pack.limits}</span>
+                            <Zap className="w-4 h-4" style={{ color: pack.popular ? '#10b981' : pack.name === 'Scale' ? '#8b5cf6' : '#0ea5e9' }} />
+                            <span className="text-xs dark:text-gray-400 text-gray-500">{pack.limits}</span>
                           </div>
                         </div>
                       </CardContent>
@@ -416,10 +416,10 @@ const Pricing = () => {
             className="mb-20"
           >
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-white mb-4">
+              <h2 className="text-3xl font-bold dark:text-white text-gray-900 mb-4">
                 How <span className="text-cosmic font-serif">Credits</span> Work
               </h2>
-              <p className="text-gray-300">One credit system for all your launch needs</p>
+              <p className="dark:text-gray-300 text-gray-600">One credit system for all your launch needs</p>
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
@@ -429,21 +429,21 @@ const Pricing = () => {
                     <div className="relative w-16 h-16 mx-auto mb-4">
                       <div className={`absolute inset-0 bg-gradient-to-br ${item.gradient} rounded-full animate-pulse opacity-20`}></div>
                       <div className={`absolute inset-1.5 bg-gradient-to-br ${item.gradient} rounded-full`}></div>
-                      <div className="absolute inset-2.5 bg-[#0f0f1a] rounded-full flex items-center justify-center">
+                      <div className="absolute inset-2.5 dark:bg-[#0f0f1a] bg-white rounded-full flex items-center justify-center">
                         {item.icon}
                       </div>
                       <div className={`absolute -top-1 -right-1 w-7 h-7 bg-gradient-to-br ${item.gradient} rounded-full flex items-center justify-center shadow-lg`}>
                         <span className="text-white text-xs font-bold">{item.cost}</span>
                       </div>
                     </div>
-                    <h3 className="text-lg font-bold text-white mb-2">{item.type}</h3>
+                    <h3 className="text-lg font-bold dark:text-white text-gray-900 mb-2">{item.type}</h3>
                     <div className="mb-3">
                       <span className={`text-2xl font-bold bg-gradient-to-r ${item.gradient} bg-clip-text text-transparent`}>
                         {item.cost}
                       </span>
-                      <span className="text-gray-400 text-sm ml-1">credit{item.cost !== "1" ? "s" : ""}</span>
+                      <span className="dark:text-gray-400 text-gray-500 text-sm ml-1">credit{item.cost !== "1" ? "s" : ""}</span>
                     </div>
-                    <p className="text-gray-400 text-sm">{item.examples}</p>
+                    <p className="dark:text-gray-400 text-gray-600 text-sm">{item.examples}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -458,7 +458,7 @@ const Pricing = () => {
             className="mb-16"
           >
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-white mb-4">
+              <h2 className="text-3xl font-bold dark:text-white text-gray-900 mb-4">
                 Frequently Asked <span className="text-cosmic font-serif">Questions</span>
               </h2>
             </div>
@@ -466,10 +466,10 @@ const Pricing = () => {
             <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
               <Card className="cosmic-card border-0">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-semibold text-white">Why no subscriptions?</CardTitle>
+                  <CardTitle className="text-lg font-semibold dark:text-white text-gray-900">Why no subscriptions?</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-400 text-sm leading-relaxed">
+                  <p className="dark:text-gray-400 text-gray-600 text-sm leading-relaxed">
                     Subscriptions create pressure to use what you've paid for, even when the timing isn't right.
                     As a startup, your needs fluctuate. Our model lets you invest in marketing when it makes sense for your business, not when a billing cycle demands it.
                   </p>
@@ -478,10 +478,10 @@ const Pricing = () => {
 
               <Card className="cosmic-card border-0">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-semibold text-white">Do credits really never expire?</CardTitle>
+                  <CardTitle className="text-lg font-semibold dark:text-white text-gray-900">Do credits really never expire?</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-400 text-sm leading-relaxed">
+                  <p className="dark:text-gray-400 text-gray-600 text-sm leading-relaxed">
                     Yes, really. Buy credits today, use them in 6 months when you're ready to launch.
                     We believe in earning your continued business through value, not lock-in.
                   </p>
@@ -490,10 +490,10 @@ const Pricing = () => {
 
               <Card className="cosmic-card border-0">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-semibold text-white">What can I create with credits?</CardTitle>
+                  <CardTitle className="text-lg font-semibold dark:text-white text-gray-900">What can I create with credits?</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-400 text-sm leading-relaxed">
+                  <p className="dark:text-gray-400 text-gray-600 text-sm leading-relaxed">
                     Everything! Social posts for all platforms, AI-generated images, short videos, blog content,
                     product descriptions, and more. One credit pool, all features unlocked.
                   </p>
@@ -502,10 +502,10 @@ const Pricing = () => {
 
               <Card className="cosmic-card border-0">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-semibold text-white">What about the free tier?</CardTitle>
+                  <CardTitle className="text-lg font-semibold dark:text-white text-gray-900">What about the free tier?</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-400 text-sm leading-relaxed">
+                  <p className="dark:text-gray-400 text-gray-600 text-sm leading-relaxed">
                     Free users get 10 credits daily that reset automatically. It's enough to explore all features,
                     create content for a soft launch, or maintain a minimal presence. Upgrade only when you're ready to scale.
                   </p>
@@ -514,10 +514,10 @@ const Pricing = () => {
 
               <Card className="cosmic-card border-0">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-semibold text-white">Can I buy more credits anytime?</CardTitle>
+                  <CardTitle className="text-lg font-semibold dark:text-white text-gray-900">Can I buy more credits anytime?</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-400 text-sm leading-relaxed">
+                  <p className="dark:text-gray-400 text-gray-600 text-sm leading-relaxed">
                     Absolutely. Buy any credit pack at any time. They stack with your existing credits.
                     Running a big launch campaign? Buy a larger pack. Maintenance mode? The free tier has you covered.
                   </p>
@@ -526,10 +526,10 @@ const Pricing = () => {
 
               <Card className="cosmic-card border-0">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-semibold text-white">What AI models do you use?</CardTitle>
+                  <CardTitle className="text-lg font-semibold dark:text-white text-gray-900">What AI models do you use?</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-400 text-sm leading-relaxed">
+                  <p className="dark:text-gray-400 text-gray-600 text-sm leading-relaxed">
                     We use the latest AI models optimized for each task — GPT-4 for content, DALL-E and Stable Diffusion for images,
                     and cutting-edge video generation. You get enterprise-quality AI at startup-friendly prices.
                   </p>
@@ -538,10 +538,10 @@ const Pricing = () => {
 
               <Card className="cosmic-card border-0">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-semibold text-white">What is the SEO Agent?</CardTitle>
+                  <CardTitle className="text-lg font-semibold dark:text-white text-gray-900">What is the SEO Agent?</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-400 text-sm leading-relaxed">
+                  <p className="dark:text-gray-400 text-gray-600 text-sm leading-relaxed">
                     Our SEO Agent analyzes your visibility across Google, TikTok, YouTube, Reddit, Amazon, and AI assistants —
                     where 73% of buying decisions happen. Higher tier packs unlock more scans and deeper competitor analysis.
                   </p>
@@ -550,10 +550,10 @@ const Pricing = () => {
 
               <Card className="cosmic-card border-0">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-semibold text-white">What are the queue priorities?</CardTitle>
+                  <CardTitle className="text-lg font-semibold dark:text-white text-gray-900">What are the queue priorities?</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-400 text-sm leading-relaxed">
+                  <p className="dark:text-gray-400 text-gray-600 text-sm leading-relaxed">
                     Higher tier packs get faster generation speeds. Scale pack users get VIP priority with near-instant generations,
                     while Launch pack users get priority queue access. All tiers have access to the same AI models.
                   </p>
@@ -571,10 +571,10 @@ const Pricing = () => {
           >
             <Card className="cosmic-card border-accent/20 max-w-3xl mx-auto overflow-hidden">
               <CardContent className="p-10">
-                <h3 className="text-3xl font-bold text-white mb-4">
+                <h3 className="text-3xl font-bold dark:text-white text-gray-900 mb-4">
                   Ready to <span className="text-cosmic font-serif">Launch?</span>
                 </h3>
-                <p className="text-gray-300 text-lg mb-8 max-w-xl mx-auto">
+                <p className="dark:text-gray-300 text-gray-600 text-lg mb-8 max-w-xl mx-auto">
                   Start with free credits today. Buy a pack when you're ready to go big.
                   No commitment, no risk — just results.
                 </p>
