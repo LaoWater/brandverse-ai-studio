@@ -24,8 +24,7 @@ Key Insights
     * 		Reddit: Raw authenticity and unfiltered opinions.
 * 		Search Everywhere Optimization (SEO expanded): Instead of focusing on Google alone, businesses must optimize their presence across all platforms where decisions occur.
 * 		Visibility (being seen) is different from validation (being trusted and mentioned). Validation drives AI recommendations and real consumer choices.
-* 		AI models summarize based on trust signals and mentions, so brands must be part of that validation network to stay relevant.
-* 		Marketers should avoid one-size-fits-all content strategies; each platform requires tailored content and engagement strategies aligned with its unique decision-making code.
+* 		AI models summarize based on trust signals and mentions, so  requires tailored content and engagement strategies aligned with its unique decision-making code.
 “
 The process remains the same my friend - study the mechanical part of it - the low-level part of it before any automatizaitons.
 Part 1: Learn(input) about the company, mission, audience, website, competitors (optional).

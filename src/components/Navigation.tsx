@@ -1,15 +1,14 @@
 
 import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ChevronDown, User, Settings, LogOut, CreditCard, Sparkles, Building2 } from "lucide-react";
+import { Menu, X, ChevronDown, User, Settings, LogOut, CreditCard, Building2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import {
   Dialog,
@@ -20,11 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
-import { useAdmin } from "@/hooks/useAdmin";
-import { useMediaStudio } from "@/contexts/MediaStudioContext";
-import { calculateMediaStudioCredits } from "@/services/creditsService";
 import CreatorsMultiverseLogo from "@/components/CreatorsMultiverseLogo";
-import CreditsDisplay from "@/components/CreditsDisplay";
 import CreditsBar from "@/components/CreditsBar";
 import ThemeToggle from "@/components/ThemeToggle";
 import { CompanySelector } from "@/components/CompanySelector";
@@ -35,32 +30,8 @@ const Navigation = () => {
   const [isCompanySelectorOpen, setIsCompanySelectorOpen] = useState(false);
   const { user, signOut } = useAuth();
   const { selectedCompany } = useCompany();
-  const { isAdmin } = useAdmin();
   const navigate = useNavigate();
-  const location = useLocation();
   const homeMenuRef = useRef<HTMLDivElement>(null);
-
-  // Get MediaStudio context if available (only on media-studio page)
-  let mediaStudioContext;
-  try {
-    mediaStudioContext = useMediaStudio();
-  } catch {
-    // Context not available on other pages
-    mediaStudioContext = null;
-  }
-
-  // Calculate operation cost based on current page
-  const getOperationCost = (): number | undefined => {
-    if (location.pathname.includes('media-studio') && mediaStudioContext) {
-      return calculateMediaStudioCredits(
-        mediaStudioContext.selectedImageModel,
-        mediaStudioContext.imageSize,
-        mediaStudioContext.numberOfImages
-      );
-    }
-    // Add other pages here (content generator, etc.)
-    return undefined;
-  };
 
   // Click outside to close dropdown
   useEffect(() => {
@@ -179,9 +150,6 @@ const Navigation = () => {
 
             {user ? (
               <div className="flex items-center space-x-4">
-                {/* Credits Display - Available for all users */}
-                <CreditsDisplay operationCost={getOperationCost()} />
-                
                 <div className="text-right">
                   <span className="text-white text-sm block">Welcome, {user.email}</span>
                   {selectedCompany && (
@@ -286,18 +254,9 @@ const Navigation = () => {
             <div className="flex flex-col space-y-4">
               {user ? (
                 <>
-                  {/* Mobile Credits Display for Admins */}
-                  {isAdmin && (
-                    <div className="px-4 py-2 border-b border-primary/20">
-                      <CreditsDisplay />
-                    </div>
-                  )}
-                  
                   {/* Mobile Credits Bar */}
-                  <div className="border-b border-primary/20">
-                    <CreditsBar />
-                  </div>
-                  
+                  <CreditsBar />
+
                   {/* Mobile Home Menu */}
                   <div>
                     <button

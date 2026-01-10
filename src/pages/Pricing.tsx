@@ -1,5 +1,5 @@
 import Navigation from "@/components/Navigation";
-import { Check, Zap, Sparkles, Video, MessageSquare, Wand2, Gift, Shield, Rocket, ArrowRight, RefreshCcw, CreditCard, Globe, Target, Clock, ChevronRight } from "lucide-react";
+import { Check, Zap, Sparkles, Video, MessageSquare, Wand2, Gift, Shield, Rocket, ArrowRight, RefreshCcw, CreditCard, Globe, Target, Clock, ChevronRight, Search, Brain, TrendingUp, Users, Crown, Star, Infinity } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -60,12 +60,16 @@ const Pricing = () => {
       glowColor: "sky-500",
       popular: false,
       productId: "prod_SXNQ20skugqshl",
+      tier: "Explorer",
       features: [
-        "~100 social posts or",
-        "~50 AI images or",
-        "~10 short videos",
-        "Never expires"
-      ]
+        { text: "~100 social posts or ~50 images", icon: <MessageSquare className="w-4 h-4" /> },
+        { text: "~10 short-form videos", icon: <Video className="w-4 h-4" /> },
+        { text: "All AI models included", icon: <Brain className="w-4 h-4" /> },
+        { text: "1 SEO visibility scan", icon: <Search className="w-4 h-4" /> },
+        { text: "3 brand profiles", icon: <Users className="w-4 h-4" /> },
+        { text: "Credits never expire", icon: <Infinity className="w-4 h-4" /> }
+      ],
+      limits: "Standard queue priority"
     },
     {
       name: "Launch",
@@ -73,18 +77,24 @@ const Pricing = () => {
       price: "$8",
       pricePerCredit: "2.7¢",
       savings: "Save 10%",
-      description: "Ideal for your product launch",
+      description: "Built for your product launch",
       icon: <Target className="w-8 h-8" />,
       gradient: "from-emerald-500 to-teal-600",
       glowColor: "emerald-500",
       popular: true,
       productId: "prod_SXNQqHY08uDDpg",
+      tier: "Launcher",
       features: [
-        "~300 social posts or",
-        "~150 AI images or",
-        "~30 short videos",
-        "Never expires"
-      ]
+        { text: "~300 posts or ~150 images", icon: <MessageSquare className="w-4 h-4" /> },
+        { text: "~30 short-form videos", icon: <Video className="w-4 h-4" /> },
+        { text: "Premium AI models", icon: <Brain className="w-4 h-4" /> },
+        { text: "5 SEO scans + competitor analysis", icon: <Search className="w-4 h-4" /> },
+        { text: "Multi-platform SEO insights", icon: <Globe className="w-4 h-4" /> },
+        { text: "5 brand profiles", icon: <Users className="w-4 h-4" /> },
+        { text: "Priority queue access", icon: <Zap className="w-4 h-4" /> },
+        { text: "Credits never expire", icon: <Infinity className="w-4 h-4" /> }
+      ],
+      limits: "Priority generation queue"
     },
     {
       name: "Scale",
@@ -92,18 +102,26 @@ const Pricing = () => {
       price: "$20",
       pricePerCredit: "2¢",
       savings: "Save 33%",
-      description: "For serious growth mode",
-      icon: <Globe className="w-8 h-8" />,
+      description: "Unlimited growth mode",
+      icon: <Crown className="w-8 h-8" />,
       gradient: "from-violet-500 to-purple-600",
       glowColor: "violet-500",
       popular: false,
       productId: "prod_SXNRQ7G1zjUMC3",
+      tier: "Growth Leader",
       features: [
-        "~1000 social posts or",
-        "~500 AI images or",
-        "~100 short videos",
-        "Never expires"
-      ]
+        { text: "~1000 posts or ~500 images", icon: <MessageSquare className="w-4 h-4" /> },
+        { text: "~100 short-form videos", icon: <Video className="w-4 h-4" /> },
+        { text: "All premium AI models", icon: <Brain className="w-4 h-4" /> },
+        { text: "Unlimited SEO scans", icon: <Search className="w-4 h-4" /> },
+        { text: "Full SEO Agent access", icon: <TrendingUp className="w-4 h-4" /> },
+        { text: "6-platform visibility tracking", icon: <Globe className="w-4 h-4" /> },
+        { text: "10 brand profiles", icon: <Users className="w-4 h-4" /> },
+        { text: "Fastest queue priority", icon: <Zap className="w-4 h-4" /> },
+        { text: "Early access to new features", icon: <Star className="w-4 h-4" /> },
+        { text: "Credits never expire", icon: <Infinity className="w-4 h-4" /> }
+      ],
+      limits: "VIP generation priority"
     }
   ];
 
@@ -146,6 +164,13 @@ const Pricing = () => {
       cost: "Variable",
       examples: "Short-form videos, product demos, social clips",
       gradient: "from-emerald-500 to-teal-500"
+    },
+    {
+      type: "SEO Analysis",
+      icon: <Search className="w-7 h-7 text-amber-400" />,
+      cost: "5-10",
+      examples: "Visibility scans, competitor analysis, multi-platform SEO reports",
+      gradient: "from-amber-500 to-orange-500"
     }
   ];
 
@@ -270,11 +295,25 @@ const Pricing = () => {
           >
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                Credit <span className="text-cosmic font-serif">Packs</span>
+                Choose Your <span className="text-cosmic font-serif">Launch Tier</span>
               </h2>
               <p className="text-gray-300 text-lg max-w-2xl mx-auto">
-                One-time purchases. Use across all features. Keep forever.
+                One-time purchase. More credits = more features unlocked. Never expires.
               </p>
+              <div className="flex items-center justify-center gap-6 mt-6 text-sm text-gray-400">
+                <div className="flex items-center gap-2">
+                  <Search className="w-4 h-4 text-accent" />
+                  <span>SEO Agent included</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Video className="w-4 h-4 text-accent" />
+                  <span>AI video generation</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-accent" />
+                  <span>Multi-platform content</span>
+                </div>
+              </div>
             </div>
 
             <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
@@ -326,15 +365,30 @@ const Pricing = () => {
                       </CardHeader>
 
                       <CardContent className="px-6 pb-4 flex-grow relative z-10">
-                        <div className="space-y-3">
+                        {/* Tier Badge */}
+                        <div className="mb-4">
+                          <span className={`text-xs font-semibold uppercase tracking-wider bg-gradient-to-r ${pack.gradient} bg-clip-text text-transparent`}>
+                            {pack.tier}
+                          </span>
+                        </div>
+
+                        <div className="space-y-2.5">
                           {pack.features.map((feature, featureIndex) => (
                             <div key={featureIndex} className="flex items-center gap-3">
-                              <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${pack.gradient} flex items-center justify-center flex-shrink-0`}>
-                                <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                              <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${pack.gradient}/20 flex items-center justify-center flex-shrink-0 text-white/80`}>
+                                {feature.icon}
                               </div>
-                              <span className="text-gray-300 text-sm">{feature}</span>
+                              <span className="text-gray-300 text-sm">{feature.text}</span>
                             </div>
                           ))}
+                        </div>
+
+                        {/* Queue Priority Indicator */}
+                        <div className="mt-4 pt-4 border-t border-white/10">
+                          <div className="flex items-center gap-2">
+                            <Zap className={`w-4 h-4 bg-gradient-to-r ${pack.gradient} bg-clip-text`} style={{ color: pack.popular ? '#10b981' : pack.name === 'Scale' ? '#8b5cf6' : '#0ea5e9' }} />
+                            <span className="text-xs text-gray-400">{pack.limits}</span>
+                          </div>
                         </div>
                       </CardContent>
 
@@ -368,7 +422,7 @@ const Pricing = () => {
               <p className="text-gray-300">One credit system for all your launch needs</p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
               {creditUsage.map((item, index) => (
                 <Card key={index} className="cosmic-card border-0 hover:border-accent/30 transition-all duration-300">
                   <CardContent className="p-6 text-center">
@@ -478,6 +532,30 @@ const Pricing = () => {
                   <p className="text-gray-400 text-sm leading-relaxed">
                     We use the latest AI models optimized for each task — GPT-4 for content, DALL-E and Stable Diffusion for images,
                     and cutting-edge video generation. You get enterprise-quality AI at startup-friendly prices.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="cosmic-card border-0">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-semibold text-white">What is the SEO Agent?</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-400 text-sm leading-relaxed">
+                    Our SEO Agent analyzes your visibility across Google, TikTok, YouTube, Reddit, Amazon, and AI assistants —
+                    where 73% of buying decisions happen. Higher tier packs unlock more scans and deeper competitor analysis.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="cosmic-card border-0">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-semibold text-white">What are the queue priorities?</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-400 text-sm leading-relaxed">
+                    Higher tier packs get faster generation speeds. Scale pack users get VIP priority with near-instant generations,
+                    while Launch pack users get priority queue access. All tiers have access to the same AI models.
                   </p>
                 </CardContent>
               </Card>
