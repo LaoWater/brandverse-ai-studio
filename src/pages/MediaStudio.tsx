@@ -292,6 +292,18 @@ const MediaStudioContent = () => {
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-background/95">
       <Navigation />
 
+      {/* Diagonal Ambient Gradients */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        {/* Top-left to bottom-right diagonal streak */}
+        <div className="absolute -top-20 -left-20 w-[700px] h-[700px] bg-primary/25 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '8s' }}></div>
+        {/* Bottom-right accent glow */}
+        <div className="absolute -bottom-32 -right-32 w-[600px] h-[600px] bg-accent/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '10s', animationDelay: '-3s' }}></div>
+        {/* Center diagonal accent band */}
+        <div className="absolute top-1/3 left-1/4 w-[900px] h-[300px] bg-gradient-to-r from-primary/15 via-accent/12 to-primary/15 rotate-12 blur-3xl"></div>
+        {/* Extra mid-screen glow */}
+        <div className="absolute top-1/2 right-1/4 w-[400px] h-[400px] bg-primary/15 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '12s', animationDelay: '-5s' }}></div>
+      </div>
+
       <div className="container mx-auto px-4 pt-24 pb-12">
         {/* Header */}
         <div className="max-w-7xl mx-auto mb-8">
@@ -307,24 +319,42 @@ const MediaStudioContent = () => {
               </p>
             </div>
 
-            {/* Library Toggle */}
-            <Button
-              onClick={() => setShowLibrary(!showLibrary)}
-              variant="outline"
-              className="border-primary/30 hover:border-primary/50 text-white gap-2"
-            >
-              {showLibrary ? (
-                <>
-                  <Plus className="w-4 h-4" />
-                  Create New
-                </>
-              ) : (
-                <>
-                  <Library className="w-4 h-4" />
-                  My Library
-                </>
-              )}
-            </Button>
+            {/* View Mode Switcher - GPU accelerated */}
+            <div className="relative inline-flex items-center bg-muted/50 dark:bg-black/30 rounded-full p-1.5 border-0 will-change-auto">
+              {/* Sliding indicator - hardware accelerated with transform */}
+              <div
+                className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full bg-gradient-to-r from-primary to-accent transition-transform duration-300 ease-out will-change-transform"
+                style={{
+                  transform: showLibrary ? 'translateX(calc(100% + 4px))' : 'translateX(4px)',
+                }}
+              />
+
+              {/* Create New Button */}
+              <button
+                onClick={() => setShowLibrary(false)}
+                className={`relative z-10 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200 flex items-center gap-2 ${
+                  !showLibrary
+                    ? 'text-white'
+                    : 'text-gray-400 hover:text-gray-200'
+                }`}
+              >
+                <Plus className="w-4 h-4" />
+                Create New
+              </button>
+
+              {/* My Library Button */}
+              <button
+                onClick={() => setShowLibrary(true)}
+                className={`relative z-10 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200 flex items-center gap-2 ${
+                  showLibrary
+                    ? 'text-white'
+                    : 'text-gray-400 hover:text-gray-200'
+                }`}
+              >
+                <Library className="w-4 h-4" />
+                My Library
+              </button>
+            </div>
           </div>
         </div>
 

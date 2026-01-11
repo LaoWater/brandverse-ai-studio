@@ -442,7 +442,24 @@ const ContentGenerator = () => {
   return (
     <TooltipProvider>
       {isGenerating && <GenerationProgressModal stages={progressStages} currentStageId={currentStageId} />}
-      <div className={`min-h-screen ${isGenerating ? 'blur-sm pointer-events-none' : ''}`}>
+      <div className={`min-h-screen bg-cosmic-gradient ${isGenerating ? 'blur-sm pointer-events-none' : ''}`}>
+        {/* Distributed Gradient Art */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+          {/* Top-left accent orb */}
+          <div className="absolute top-20 left-[10%] w-[280px] h-[280px] bg-accent/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '8s' }}></div>
+          {/* Top-right primary orb */}
+          <div className="absolute top-32 right-[15%] w-[250px] h-[250px] bg-primary/18 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '10s', animationDelay: '-2s' }}></div>
+          {/* Mid-left primary glow */}
+          <div className="absolute top-[40%] left-[5%] w-[220px] h-[220px] bg-primary/15 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '12s', animationDelay: '-4s' }}></div>
+          {/* Center-right accent */}
+          <div className="absolute top-[45%] right-[8%] w-[200px] h-[200px] bg-accent/16 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '9s', animationDelay: '-3s' }}></div>
+          {/* Bottom-left accent */}
+          <div className="absolute bottom-[20%] left-[12%] w-[240px] h-[240px] bg-accent/18 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '11s', animationDelay: '-5s' }}></div>
+          {/* Bottom-right primary */}
+          <div className="absolute bottom-[15%] right-[10%] w-[260px] h-[260px] bg-primary/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '10s', animationDelay: '-1s' }}></div>
+          {/* Subtle diagonal band */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[120px] bg-gradient-to-r from-transparent via-primary/10 to-transparent -rotate-12 blur-3xl"></div>
+        </div>
         <Navigation />
         
         <div className="container mx-auto px-4 pt-24 pb-12">

@@ -260,39 +260,69 @@ const PostManager = () => {
   }, {} as Record<PlatformType, Post[]>) || {};
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-cosmic-gradient">
+      {/* Ambient Gradient Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        {/* Top-left warm glow */}
+        <div className="absolute top-16 left-[8%] w-[240px] h-[240px] bg-primary/16 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '9s' }}></div>
+        {/* Top-right accent */}
+        <div className="absolute top-24 right-[12%] w-[200px] h-[200px] bg-accent/14 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '11s', animationDelay: '-3s' }}></div>
+        {/* Mid-right primary */}
+        <div className="absolute top-[50%] right-[6%] w-[180px] h-[180px] bg-primary/12 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '13s', animationDelay: '-5s' }}></div>
+        {/* Bottom-left accent */}
+        <div className="absolute bottom-[25%] left-[10%] w-[220px] h-[220px] bg-accent/15 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '10s', animationDelay: '-2s' }}></div>
+        {/* Bottom-right blend */}
+        <div className="absolute bottom-[10%] right-[15%] w-[200px] h-[200px] bg-primary/14 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '12s', animationDelay: '-4s' }}></div>
+      </div>
       <Navigation />
-      
-      <div className="container mx-auto px-4 pt-24 pb-12">
+
+      <div className="container mx-auto px-4 pt-24 pb-12 relative z-10">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-4 mb-4">
-              <button
-                onClick={() => setViewMode('posts')}
-                className={`text-4xl font-bold transition-all ${
-                  viewMode === 'posts'
-                    ? 'text-white cursor-default'
-                    : 'text-gray-500 hover:text-gray-300 cursor-pointer'
-                }`}
-              >
-                Post <span className="text-cosmic font-serif">Library</span>
-              </button>
-              <span className="text-gray-500 text-3xl">/</span>
-              <button
-                onClick={() => setViewMode('studio')}
-                className={`text-4xl font-bold transition-all ${
-                  viewMode === 'studio'
-                    ? 'text-white cursor-default'
-                    : 'text-gray-500 hover:text-gray-300 cursor-pointer'
-                }`}
-              >
-                Studio <span className="text-cosmic font-serif">Library</span>
-              </button>
+            {/* View Mode Switcher - GPU accelerated */}
+            <div className="flex items-center justify-center mb-4">
+              <div className="relative inline-flex items-center bg-muted/50 dark:bg-black/30 rounded-full p-2 border-0 will-change-auto">
+                {/* Sliding indicator - hardware accelerated with transform */}
+                <div
+                  className="absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-full bg-gradient-to-r from-primary to-accent transition-transform duration-300 ease-out will-change-transform"
+                  style={{
+                    transform: viewMode === 'posts' ? 'translateX(6px)' : 'translateX(calc(100% + 6px))',
+                  }}
+                />
+
+                {/* Posts Button */}
+                <button
+                  onClick={() => setViewMode('posts')}
+                  className={`relative z-10 px-7 py-3.5 rounded-full text-xl font-semibold transition-colors duration-200 ${
+                    viewMode === 'posts'
+                      ? 'text-white'
+                      : 'text-gray-400 hover:text-gray-200'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    Post <span className={`font-serif ${viewMode === 'posts' ? 'text-white' : 'text-cosmic'}`}>Library</span>
+                  </span>
+                </button>
+
+                {/* Studio Button */}
+                <button
+                  onClick={() => setViewMode('studio')}
+                  className={`relative z-10 px-7 py-3.5 rounded-full text-xl font-semibold transition-colors duration-200 ${
+                    viewMode === 'studio'
+                      ? 'text-white'
+                      : 'text-gray-400 hover:text-gray-200'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    Studio <span className={`font-serif ${viewMode === 'studio' ? 'text-white' : 'text-cosmic'}`}>Library</span>
+                  </span>
+                </button>
+              </div>
             </div>
             <p className="text-gray-300 text-lg">
               {viewMode === 'posts'
-                ? <>Manage all your social media content for <span className="text-accent font-semibold">{selectedCompany.name}</span></>
-                : <>Browse and manage all AI-generated media for <span className="text-accent font-semibold">{selectedCompany.name}</span></>
+                ? <>Manage all your social media content for <span className="text-primary font-semibold">{selectedCompany.name}</span></>
+                : <>Browse and manage all AI-generated media for <span className="text-primary font-semibold">{selectedCompany.name}</span></>
               }
             </p>
           </div>

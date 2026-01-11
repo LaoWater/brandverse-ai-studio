@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Image, Video, Heart, Grid3x3 } from 'lucide-react';
+import { Image, Video, Heart, Grid3x3, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +17,8 @@ import {
 import MediaGrid from './MediaGrid';
 import MediaFiltersComponent from './MediaFilters';
 import MediaPreviewModal from './MediaPreviewModal';
+
+const ITEMS_PER_PAGE = 10;
 
 interface MediaLibraryProps {
   onCreateNew: () => void;
@@ -38,6 +40,10 @@ const MediaLibrary = ({ onCreateNew, isStudioContext = true }: MediaLibraryProps
   const [selectedMedia, setSelectedMedia] = useState<MediaFile | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [showAllCompanies, setShowAllCompanies] = useState(isStudioContext); // Default to true for Studio, false for Post
+
+  // Infinite scroll state
+  const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   // Determine which company ID to use for fetching
   const companyIdToFetch = (isStudioContext && showAllCompanies) ? null : selectedCompany?.id;
@@ -71,6 +77,39 @@ const MediaLibrary = ({ onCreateNew, isStudioContext = true }: MediaLibraryProps
   };
 
   const filteredMedia = getFilteredMedia();
+
+  // Paginated media for display
+  const displayedMedia = filteredMedia.slice(0, displayCount);
+  const hasMore = displayCount < filteredMedia.length;
+
+  // Reset display count when filters/tab change
+  useEffect(() => {
+    setDisplayCount(ITEMS_PER_PAGE);
+  }, [activeTab, filters, showAllCompanies, companyIdToFetch]);
+
+  // Intersection Observer for infinite scroll
+  const loadMore = useCallback(() => {
+    if (hasMore) {
+      setDisplayCount(prev => prev + ITEMS_PER_PAGE);
+    }
+  }, [hasMore]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1, rootMargin: '100px' }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasMore, loadMore]);
 
   // Toggle favorite mutation
   const favoriteMutation = useMutation({
@@ -238,7 +277,7 @@ const MediaLibrary = ({ onCreateNew, isStudioContext = true }: MediaLibraryProps
         {/* Content */}
         <TabsContent value={activeTab} className="mt-6 card-enter">
           <MediaGrid
-            media={filteredMedia}
+            media={displayedMedia}
             isLoading={isLoading}
             onToggleFavorite={handleToggleFavorite}
             onDelete={handleDelete}
@@ -246,6 +285,26 @@ const MediaLibrary = ({ onCreateNew, isStudioContext = true }: MediaLibraryProps
             onView={handleView}
             onCreateNew={onCreateNew}
           />
+
+          {/* Infinite scroll sentinel & loading indicator */}
+          {hasMore && (
+            <div
+              ref={loadMoreRef}
+              className="flex items-center justify-center py-8"
+            >
+              <div className="flex items-center gap-3 text-gray-400">
+                <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                <span className="text-sm">Loading more...</span>
+              </div>
+            </div>
+          )}
+
+          {/* Show count indicator */}
+          {filteredMedia.length > 0 && (
+            <div className="text-center text-sm text-gray-500 py-4">
+              Showing {displayedMedia.length} of {filteredMedia.length} items
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 

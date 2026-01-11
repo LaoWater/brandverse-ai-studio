@@ -357,10 +357,21 @@ const Settings = () => {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-cosmic-gradient">
+      {/* Subtle Gradient Atmosphere */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        {/* Top corners */}
+        <div className="absolute top-20 left-[12%] w-[200px] h-[200px] bg-primary/14 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '11s' }}></div>
+        <div className="absolute top-28 right-[10%] w-[180px] h-[180px] bg-accent/12 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '13s', animationDelay: '-4s' }}></div>
+        {/* Mid section */}
+        <div className="absolute top-[40%] left-[6%] w-[160px] h-[160px] bg-accent/13 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '10s', animationDelay: '-2s' }}></div>
+        <div className="absolute top-[55%] right-[8%] w-[190px] h-[190px] bg-primary/12 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '14s', animationDelay: '-5s' }}></div>
+        {/* Bottom area */}
+        <div className="absolute bottom-[15%] left-[18%] w-[210px] h-[140px] bg-primary/13 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '12s', animationDelay: '-3s' }}></div>
+      </div>
       <Navigation />
-      
-      <div className="container mx-auto px-4 pt-24 pb-12">
+
+      <div className="container mx-auto px-4 pt-24 pb-12 relative z-10">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
