@@ -3091,3 +3091,174 @@ html.light .cosmic-card .cosmic-button {
   color: rgb(17 24 39) !important;
 }
 
+/* ============================================ */
+/* SETTINGS PAGE STYLES */
+/* ============================================ */
+
+/* Settings Card - Dark Mode */
+.settings-card {
+  background: linear-gradient(
+    135deg,
+    rgba(15, 15, 25, 0.9) 0%,
+    rgba(20, 20, 35, 0.85) 100%
+  );
+  border: 1px solid rgba(91, 95, 238, 0.15);
+  backdrop-filter: blur(12px);
+  border-radius: 1rem;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.3),
+    0 0 40px rgba(91, 95, 238, 0.05);
+  overflow: hidden;
+}
+
+.settings-card .card-header,
+.settings-card > div:first-child {
+  padding: 1.5rem;
+  padding-bottom: 0;
+}
+
+.settings-card .card-content {
+  padding: 1.5rem;
+}
+
+/* Settings Input - Dark Mode */
+.settings-input {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(91, 95, 238, 0.2) !important;
+  color: white !important;
+  border-radius: 0.75rem !important;
+  padding: 0.75rem 1rem !important;
+  transition: all 0.2s ease !important;
+  height: auto !important;
+}
+
+.settings-input:focus {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgb(91, 95, 238) !important;
+  box-shadow: 0 0 0 3px rgba(91, 95, 238, 0.15) !important;
+  outline: none !important;
+}
+
+.settings-input::placeholder {
+  color: rgba(156, 163, 175, 0.7) !important;
+}
+
+/* Settings Card - Light Mode */
+html.light .settings-card {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(91, 95, 238, 0.12);
+  box-shadow:
+    0 4px 24px rgba(91, 95, 238, 0.08),
+    0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Settings Input - Light Mode */
+html.light .settings-input {
+  background: rgba(250, 251, 252, 1) !important;
+  border: 1px solid rgba(91, 95, 238, 0.2) !important;
+  color: rgb(15, 15, 23) !important;
+}
+
+html.light .settings-input:focus {
+  background: white !important;
+  border-color: rgb(91, 95, 238) !important;
+  box-shadow: 0 0 0 3px rgba(91, 95, 238, 0.1) !important;
+}
+
+html.light .settings-input::placeholder {
+  color: rgba(107, 114, 128, 0.8) !important;
+}
+
+/* Settings Labels - Light Mode */
+html.light .settings-card label {
+  color: rgb(15, 15, 23) !important;
+}
+
+/* Settings Card Headers - Light Mode */
+html.light .settings-card h3,
+html.light .settings-card .card-title {
+  color: rgb(15, 15, 23) !important;
+}
+
+html.light .settings-card .card-description,
+html.light .settings-card p.text-muted-foreground {
+  color: rgb(107, 114, 128) !important;
+}
+
+/* Settings Gradient Boxes - Light Mode */
+html.light .settings-card .bg-gradient-to-r {
+  background: linear-gradient(to right, rgba(91, 95, 238, 0.06), rgba(0, 212, 255, 0.04)) !important;
+}
+
+/* Settings Tab Navigation Fixes - Light Mode */
+html.light .settings-card .text-foreground {
+  color: rgb(15, 15, 23) !important;
+}
+
+html.light .settings-card .font-medium {
+  color: rgb(15, 15, 23) !important;
+}
+
+html.light .settings-card .font-semibold {
+  color: rgb(15, 15, 23) !important;
+}
+
+/* Fix Switch component in light mode */
+html.light .settings-card [role="switch"][data-state="checked"] {
+  background-color: rgb(91, 95, 238) !important;
+}
+
+html.light .settings-card [role="switch"][data-state="unchecked"] {
+  background-color: rgb(229, 231, 235) !important;
+}
+
+/* Cosmic button text color fix for settings */
+html.light .settings-card .cosmic-button,
+html.light .settings-card button.cosmic-button {
+  color: white !important;
+}
+
+html.light .settings-card .cosmic-button *,
+html.light .settings-card button.cosmic-button * {
+  color: white !important;
+}
+
+/* Settings Tab Navigation - Dark Mode */
+.settings-tab-nav {
+  background: rgba(15, 15, 25, 0.8);
+  border: 1px solid rgba(91, 95, 238, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.settings-tab-indicator {
+  background: linear-gradient(135deg, rgb(91, 95, 238) 0%, rgb(79, 83, 220) 100%);
+  box-shadow: 0 2px 12px rgba(91, 95, 238, 0.4);
+}
+
+/* Settings Tab Navigation - Light Mode */
+html.light .settings-tab-nav {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(91, 95, 238, 0.15) !important;
+  box-shadow: 0 4px 20px rgba(91, 95, 238, 0.1) !important;
+}
+
+html.light .settings-tab-indicator {
+  background: linear-gradient(135deg, rgb(91, 95, 238) 0%, rgb(79, 83, 220) 100%) !important;
+  box-shadow: 0 2px 12px rgba(91, 95, 238, 0.35) !important;
+}
+
+/* Tab button text - active state stays white */
+.settings-tab-nav button.text-white,
+html.light .settings-tab-nav button.text-white {
+  color: white !important;
+}
+
+/* Tab button text - inactive in light mode */
+html.light .settings-tab-nav button.text-muted-foreground {
+  color: rgb(100, 105, 120) !important;
+}
+
+html.light .settings-tab-nav button.text-muted-foreground:hover {
+  color: rgb(15, 15, 23) !important;
+}
+

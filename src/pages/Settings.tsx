@@ -6,10 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   User,
-  Settings as SettingsIcon,
   Building2,
   Trash2,
   Plus,
@@ -18,8 +16,12 @@ import {
   Mail,
   Upload,
   X,
-  ImageIcon
+  Crown,
+  LogOut,
+  Palette,
+  ChevronRight
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -28,11 +30,28 @@ import { CompanySelector } from "@/components/CompanySelector";
 import { useNavigate } from "react-router-dom";
 import { uploadCompanyLogo, deleteCompanyLogo, updateCompanyLogoPath } from "@/services/companyService";
 
+type TabId = 'profile' | 'company' | 'preferences' | 'security';
+
+interface Tab {
+  id: TabId;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+const tabs: Tab[] = [
+  { id: 'profile', label: 'Profile', icon: User },
+  { id: 'company', label: 'Company', icon: Building2 },
+  { id: 'preferences', label: 'Preferences', icon: Bell },
+  { id: 'security', label: 'Security', icon: Shield },
+];
+
 const Settings = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { selectedCompany, refreshCompanies } = useCompany();
-  
+
+  const [activeTab, setActiveTab] = useState<TabId>('profile');
+
   const [profile, setProfile] = useState({
     full_name: "",
     email: "",
@@ -138,7 +157,7 @@ const Settings = () => {
       if (error) throw error;
 
       toast({
-        title: "Profile Updated! ✅",
+        title: "Profile Updated",
         description: "Your profile has been saved successfully."
       });
     } catch (error) {
@@ -267,7 +286,7 @@ const Settings = () => {
       await refreshCompanies();
 
       toast({
-        title: "Company Updated! ✅",
+        title: "Company Updated",
         description: "Your company settings have been saved successfully."
       });
     } catch (error) {
@@ -284,7 +303,7 @@ const Settings = () => {
 
   const handleDeleteCompany = async () => {
     if (!selectedCompany) return;
-    
+
     if (!confirm(`Are you sure you want to delete "${selectedCompany.name}"? This action cannot be undone.`)) {
       return;
     }
@@ -298,7 +317,7 @@ const Settings = () => {
       if (error) throw error;
 
       await refreshCompanies();
-      
+
       toast({
         title: "Company Deleted",
         description: "The company has been removed successfully."
@@ -340,464 +359,527 @@ const Settings = () => {
     setSecurity(prev => ({ ...prev, twoFactorEnabled: checked }));
   };
 
-  const handleAutomaticBillingToggle = (checked: boolean) => {
-    if (checked) {
-      toast({
-        title: "Coming Soon",
-        description: "Automatic billing will be available soon!",
-        variant: "default"
-      });
-      return;
-    }
-    setPreferences(prev => ({ ...prev, automaticBilling: checked }));
-  };
-
   if (!user) {
     return null;
   }
 
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'profile':
+        return (
+          <motion.div
+            key="profile"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Card className="settings-card">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-foreground text-xl font-semibold">Profile Information</CardTitle>
+                <CardDescription className="text-muted-foreground">
+                  Update your personal account details
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName" className="text-foreground font-medium">Full Name</Label>
+                    <Input
+                      id="fullName"
+                      value={profile.full_name}
+                      onChange={(e) => setProfile(prev => ({ ...prev, full_name: e.target.value }))}
+                      className="settings-input"
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-foreground font-medium">Email Address</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={profile.email}
+                      onChange={(e) => setProfile(prev => ({ ...prev, email: e.target.value }))}
+                      className="settings-input"
+                      placeholder="Enter your email"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-primary/10">
+                        <Crown className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-foreground font-semibold">Subscription Plan</p>
+                        <p className="text-muted-foreground text-sm capitalize">{profile.subscription_type}</p>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => navigate('/my-plan')}
+                      variant="outline"
+                      className="border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50"
+                    >
+                      Manage Plan
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex justify-between pt-2">
+                  <Button
+                    onClick={handleSaveProfile}
+                    disabled={saving}
+                    className="cosmic-button text-white"
+                  >
+                    {saving ? 'Saving...' : 'Save Profile'}
+                  </Button>
+                  <Button
+                    onClick={handleSignOut}
+                    variant="outline"
+                    className="border-red-500/30 text-red-500 hover:bg-red-500/10 hover:border-red-500/50"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        );
+
+      case 'company':
+        return (
+          <motion.div
+            key="company"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            {selectedCompany ? (
+              <Card className="settings-card">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-foreground text-xl font-semibold">Company Settings</CardTitle>
+                      <CardDescription className="text-muted-foreground">
+                        Manage your brand identity and voice
+                      </CardDescription>
+                    </div>
+                    <Button
+                      onClick={() => navigate('/brand-setup')}
+                      size="sm"
+                      className="cosmic-button text-white"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Company
+                    </Button>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="companyName" className="text-foreground font-medium">Company Name</Label>
+                    <Input
+                      id="companyName"
+                      value={companyData.name}
+                      onChange={(e) => setCompanyData(prev => ({ ...prev, name: e.target.value }))}
+                      className="settings-input"
+                      placeholder="Enter company name"
+                    />
+                  </div>
+
+                  {/* Logo Upload Section */}
+                  <div className="space-y-3">
+                    <Label className="text-foreground font-medium">Company Logo</Label>
+                    {logoPreview || companyData.logo_path ? (
+                      <div className="relative w-full p-5 rounded-xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-16 h-16 rounded-xl bg-white/80 dark:bg-white/10 flex items-center justify-center overflow-hidden border border-primary/20 shadow-sm">
+                              <img
+                                src={logoPreview || companyData.logo_path || ''}
+                                alt="Logo preview"
+                                className="w-full h-full object-contain"
+                              />
+                            </div>
+                            <div>
+                              <p className="text-foreground font-medium">
+                                {logoFile?.name || 'Current logo'}
+                              </p>
+                              <p className="text-muted-foreground text-sm">
+                                {logoFile ? `${(logoFile.size / 1024).toFixed(1)} KB` : 'Click X to remove'}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleRemoveLogo}
+                            className="text-red-400 hover:text-red-300 hover:bg-red-400/10"
+                          >
+                            <X className="w-5 h-5" />
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLogoChange}
+                          className="hidden"
+                          id="company-logo-upload"
+                        />
+                        <Label
+                          htmlFor="company-logo-upload"
+                          className="flex flex-col items-center justify-center w-full h-32 rounded-xl border-2 border-dashed border-primary/20 hover:border-primary/40 bg-gradient-to-r from-primary/5 to-accent/5 hover:from-primary/10 hover:to-accent/10 cursor-pointer transition-all"
+                        >
+                          <div className="flex flex-col items-center space-y-2">
+                            <div className="p-3 rounded-full bg-primary/10">
+                              <Upload className="w-5 h-5 text-primary" />
+                            </div>
+                            <div className="text-center">
+                              <p className="text-foreground font-medium">Upload Company Logo</p>
+                              <p className="text-muted-foreground text-xs mt-1">PNG, JPG up to 5MB</p>
+                            </div>
+                          </div>
+                        </Label>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="mission" className="text-foreground font-medium">Mission Statement</Label>
+                    <Textarea
+                      id="mission"
+                      value={companyData.mission}
+                      onChange={(e) => setCompanyData(prev => ({ ...prev, mission: e.target.value }))}
+                      className="settings-input min-h-[100px]"
+                      placeholder="Describe your company's mission..."
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="tone" className="text-foreground font-medium">Tone of Voice</Label>
+                    <Textarea
+                      id="tone"
+                      value={companyData.tone_of_voice}
+                      onChange={(e) => setCompanyData(prev => ({ ...prev, tone_of_voice: e.target.value }))}
+                      className="settings-input min-h-[80px]"
+                      placeholder="Describe your brand's communication style..."
+                    />
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Palette className="w-5 h-5 text-primary" />
+                      <Label className="text-foreground text-base font-semibold">Brand Colors</Label>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <div className="space-y-3">
+                        <Label htmlFor="primaryColor1" className="text-foreground font-medium">Primary Color</Label>
+                        <div className="flex items-center space-x-3">
+                          <input
+                            type="color"
+                            id="primaryColor1"
+                            value={companyData.primary_color_1}
+                            onChange={(e) => setCompanyData(prev => ({ ...prev, primary_color_1: e.target.value }))}
+                            className="w-14 h-10 rounded-lg border border-primary/20 bg-transparent cursor-pointer"
+                          />
+                          <Input
+                            value={companyData.primary_color_1}
+                            onChange={(e) => setCompanyData(prev => ({ ...prev, primary_color_1: e.target.value }))}
+                            className="settings-input flex-1"
+                            placeholder="#5B5FEE"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label htmlFor="primaryColor2" className="text-foreground font-medium">Secondary Color</Label>
+                        <div className="flex items-center space-x-3">
+                          <input
+                            type="color"
+                            id="primaryColor2"
+                            value={companyData.primary_color_2}
+                            onChange={(e) => setCompanyData(prev => ({ ...prev, primary_color_2: e.target.value }))}
+                            className="w-14 h-10 rounded-lg border border-primary/20 bg-transparent cursor-pointer"
+                          />
+                          <Input
+                            value={companyData.primary_color_2}
+                            onChange={(e) => setCompanyData(prev => ({ ...prev, primary_color_2: e.target.value }))}
+                            className="settings-input flex-1"
+                            placeholder="#00D4FF"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10">
+                      <p className="text-foreground text-sm font-medium mb-3">Color Preview</p>
+                      <div className="flex space-x-3">
+                        <div
+                          className="w-12 h-12 rounded-lg border border-primary/20 shadow-sm"
+                          style={{ backgroundColor: companyData.primary_color_1 }}
+                        />
+                        <div
+                          className="w-12 h-12 rounded-lg border border-primary/20 shadow-sm"
+                          style={{ backgroundColor: companyData.primary_color_2 }}
+                        />
+                        <div
+                          className="flex-1 h-12 rounded-lg border border-primary/20 shadow-sm"
+                          style={{
+                            background: `linear-gradient(135deg, ${companyData.primary_color_1} 0%, ${companyData.primary_color_2} 100%)`
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between pt-4">
+                    <Button
+                      onClick={handleSaveCompany}
+                      disabled={saving}
+                      className="cosmic-button text-white"
+                    >
+                      {saving ? 'Saving...' : 'Save Company'}
+                    </Button>
+                    <Button
+                      onClick={handleDeleteCompany}
+                      variant="outline"
+                      className="border-red-500/30 text-red-500 hover:bg-red-500/10 hover:border-red-500/50"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete Company
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="settings-card">
+                <CardContent className="p-10 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-r from-primary/10 to-accent/10 flex items-center justify-center">
+                    <Building2 className="w-8 h-8 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-foreground mb-2">No Company Selected</h3>
+                  <p className="text-muted-foreground mb-6">Create or select a company to manage its settings</p>
+                  <Button
+                    onClick={() => navigate('/brand-setup')}
+                    className="cosmic-button text-white"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Company
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </motion.div>
+        );
+
+      case 'preferences':
+        return (
+          <motion.div
+            key="preferences"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Card className="settings-card">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-foreground text-xl font-semibold">Preferences</CardTitle>
+                <CardDescription className="text-muted-foreground">
+                  Choose what notifications and emails you'd like to receive
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Mail className="w-5 h-5 text-primary" />
+                    <h4 className="text-foreground font-semibold">Email Preferences</h4>
+                  </div>
+
+                  {[
+                    { key: 'newsletter', label: 'Newsletter', description: 'Monthly newsletter with tips and updates' },
+                    { key: 'marketingEmails', label: 'Marketing Emails', description: 'Promotional offers and new feature announcements' },
+                    { key: 'productUpdates', label: 'Product Updates', description: 'Important product updates and security notices' }
+                  ].map((item) => (
+                    <div key={item.key} className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10 hover:border-primary/20 transition-colors">
+                      <div className="space-y-0.5">
+                        <div className="text-foreground font-medium">{item.label}</div>
+                        <div className="text-muted-foreground text-sm">{item.description}</div>
+                      </div>
+
+                      <Switch
+                        checked={preferences[item.key as keyof typeof preferences]}
+                        onCheckedChange={(checked) =>
+                          setPreferences(prev => ({ ...prev, [item.key]: checked }))
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <Button
+                  onClick={() => toast({ title: "Preferences Saved" })}
+                  className="cosmic-button text-white"
+                >
+                  Save Preferences
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        );
+
+      case 'security':
+        return (
+          <motion.div
+            key="security"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Card className="settings-card">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-foreground text-xl font-semibold">Security Settings</CardTitle>
+                <CardDescription className="text-muted-foreground">
+                  Manage your account security and privacy settings
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10">
+                    <div className="space-y-0.5">
+                      <div className="text-foreground font-medium">Two-Factor Authentication</div>
+                      <div className="text-muted-foreground text-sm">Add an extra layer of security to your account</div>
+                    </div>
+
+                    <Switch
+                      checked={security.twoFactorEnabled}
+                      onCheckedChange={handleTwoFactorToggle}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-6 border-t border-red-500/20">
+                  <h4 className="text-red-500 font-semibold">Danger Zone</h4>
+                  <div className="p-5 border border-red-500/20 rounded-xl bg-red-500/5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-foreground font-medium">Deactivate Account</p>
+                        <p className="text-muted-foreground text-sm">Permanently deactivate your account and delete all data</p>
+                      </div>
+                      <Button
+                        onClick={handleDeactivateAccount}
+                        variant="outline"
+                        className="border-red-500/30 text-red-500 hover:bg-red-500/10 hover:border-red-500/50"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Deactivate
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => toast({ title: "Security Settings Saved" })}
+                  className="cosmic-button text-white"
+                >
+                  Save Security Settings
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        );
+    }
+  };
+
   return (
     <div className="min-h-screen bg-cosmic-gradient">
-      {/* Subtle Gradient Atmosphere */}
+      {/* Subtle ambient background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        {/* Top corners */}
-        <div className="absolute top-20 left-[12%] w-[200px] h-[200px] bg-primary/14 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '11s' }}></div>
-        <div className="absolute top-28 right-[10%] w-[180px] h-[180px] bg-accent/12 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '13s', animationDelay: '-4s' }}></div>
-        {/* Mid section */}
-        <div className="absolute top-[40%] left-[6%] w-[160px] h-[160px] bg-accent/13 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '10s', animationDelay: '-2s' }}></div>
-        <div className="absolute top-[55%] right-[8%] w-[190px] h-[190px] bg-primary/12 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '14s', animationDelay: '-5s' }}></div>
-        {/* Bottom area */}
-        <div className="absolute bottom-[15%] left-[18%] w-[210px] h-[140px] bg-primary/13 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '12s', animationDelay: '-3s' }}></div>
+        <div className="absolute top-20 left-[10%] w-[300px] h-[300px] bg-primary/8 rounded-full blur-[100px]" />
+        <div className="absolute top-[40%] right-[5%] w-[250px] h-[250px] bg-accent/6 rounded-full blur-[100px]" />
+        <div className="absolute bottom-[10%] left-[20%] w-[200px] h-[200px] bg-primary/5 rounded-full blur-[80px]" />
       </div>
+
       <Navigation />
 
       <div className="container mx-auto px-4 pt-24 pb-12 relative z-10">
         <div className="max-w-4xl mx-auto">
+          {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-4xl font-bold text-white mb-2">
-                <span className="text-cosmic font-serif">Settings</span> & Management
+              <h1 className="text-4xl font-bold mb-2">
+                <span className="text-cosmic font-serif">Settings</span>
+                <span className="text-foreground"> & Management</span>
               </h1>
-              <p className="text-gray-300 text-lg">
+              <p className="text-muted-foreground text-lg">
                 Manage your profile, companies, and preferences
               </p>
             </div>
             <CompanySelector />
           </div>
 
-          <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4 cosmic-card border-0">
-              <TabsTrigger value="profile" className="data-[state=active]:bg-primary data-[state=active]:text-white text-gray-300">
-                <User className="w-4 h-4 mr-2" />
-                Profile
-              </TabsTrigger>
-              <TabsTrigger value="company" className="data-[state=active]:bg-primary data-[state=active]:text-white text-gray-300">
-                <Building2 className="w-4 h-4 mr-2" />
-                Company
-              </TabsTrigger>
-              <TabsTrigger value="preferences" className="data-[state=active]:bg-primary data-[state=active]:text-white text-gray-300">
-                <Bell className="w-4 h-4 mr-2" />
-                Preferences
-              </TabsTrigger>
-              <TabsTrigger value="security" className="data-[state=active]:bg-primary data-[state=active]:text-white text-gray-300">
-                <Shield className="w-4 h-4 mr-2" />
-                Security
-              </TabsTrigger>
-            </TabsList>
+          {/* Tab Navigation */}
+          <div className="mb-8">
+            <div className="settings-tab-nav relative flex p-1.5 rounded-2xl backdrop-blur-sm">
+              {/* Sliding indicator */}
+              <motion.div
+                className="settings-tab-indicator absolute top-1.5 bottom-1.5 rounded-xl shadow-md"
+                layoutId="activeTab"
+                initial={false}
+                animate={{
+                  left: `calc(${tabs.findIndex(t => t.id === activeTab) * 25}% + 6px)`,
+                  width: 'calc(25% - 6px)',
+                }}
+                transition={{
+                  type: "spring",
+                  stiffness: 400,
+                  damping: 30
+                }}
+              />
 
-            {/* Profile Tab */}
-            <TabsContent value="profile">
-              <Card className="cosmic-card border-0">
-                <CardHeader>
-                  <CardTitle className="text-white">Profile Information</CardTitle>
-                  <CardDescription className="text-gray-300">
-                    Update your personal account details
-                  </CardDescription>
-                </CardHeader>
-                
-                <CardContent className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="fullName" className="text-white">Full Name</Label>
-                      <Input
-                        id="fullName"
-                        value={profile.full_name}
-                        onChange={(e) => setProfile(prev => ({ ...prev, full_name: e.target.value }))}
-                        className="bg-white/5 border-white/20 text-white focus:border-primary"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="email" className="text-white">Email Address</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={profile.email}
-                        onChange={(e) => setProfile(prev => ({ ...prev, email: e.target.value }))}
-                        className="bg-white/5 border-white/20 text-white focus:border-primary"
-                      />
-                    </div>
-                  </div>
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
 
-                  <div className="p-4 cosmic-card border-0">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-white font-medium">Subscription Plan</p>
-                        <p className="text-gray-400 text-sm capitalize">{profile.subscription_type}</p>
-                      </div>
-                      <Button 
-                        onClick={() => navigate('/my-plan')}
-                        variant="outline" 
-                        className="border-accent text-accent hover:bg-accent/10"
-                      >
-                        Manage Plan
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between">
-                    <Button 
-                      onClick={handleSaveProfile} 
-                      disabled={saving}
-                      className="cosmic-button text-white"
-                    >
-                      {saving ? 'Saving...' : 'Save Profile'}
-                    </Button>
-                    <Button 
-                      onClick={handleSignOut} 
-                      variant="outline" 
-                      className="border-red-500 text-red-500 hover:bg-red-500/10"
-                    >
-                      Sign Out
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Company Tab */}
-            <TabsContent value="company">
-              {selectedCompany ? (
-                <Card className="cosmic-card border-0">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="text-white">Company Settings</CardTitle>
-                        <CardDescription className="text-gray-300">
-                          Manage your brand identity and voice
-                        </CardDescription>
-                      </div>
-                      <Button
-                        onClick={() => navigate('/brand-setup')}
-                        size="sm"
-                        className="cosmic-button text-white"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add Company
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  
-                  <CardContent className="space-y-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="companyName" className="text-white">Company Name</Label>
-                      <Input
-                        id="companyName"
-                        value={companyData.name}
-                        onChange={(e) => setCompanyData(prev => ({ ...prev, name: e.target.value }))}
-                        className="bg-white/5 border-white/20 text-white focus:border-primary"
-                      />
-                    </div>
-
-                    {/* Logo Upload Section */}
-                    <div className="space-y-3">
-                      <Label className="text-white font-medium">Company Logo</Label>
-                      {logoPreview || companyData.logo_path ? (
-                        <div className="relative w-full p-6 rounded-lg bg-white/5 border border-white/10">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-4">
-                              <div className="w-20 h-20 rounded-lg bg-white/10 flex items-center justify-center overflow-hidden border border-white/20">
-                                <img
-                                  src={logoPreview || companyData.logo_path || ''}
-                                  alt="Logo preview"
-                                  className="w-full h-full object-contain"
-                                />
-                              </div>
-                              <div>
-                                <p className="text-white font-medium">
-                                  {logoFile?.name || 'Current logo'}
-                                </p>
-                                <p className="text-gray-400 text-sm">
-                                  {logoFile ? `${(logoFile.size / 1024).toFixed(1)} KB` : 'Click X to remove'}
-                                </p>
-                              </div>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={handleRemoveLogo}
-                              className="text-red-400 hover:text-red-300 hover:bg-red-400/10"
-                            >
-                              <X className="w-5 h-5" />
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="relative">
-                          <Input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleLogoChange}
-                            className="hidden"
-                            id="company-logo-upload"
-                          />
-                          <Label
-                            htmlFor="company-logo-upload"
-                            className="flex flex-col items-center justify-center w-full h-32 rounded-lg border-2 border-dashed border-white/20 hover:border-white/40 bg-white/5 hover:bg-white/10 cursor-pointer transition-all"
-                          >
-                            <div className="flex flex-col items-center space-y-2">
-                              <div className="p-3 rounded-full bg-white/10">
-                                <Upload className="w-6 h-6 text-white" />
-                              </div>
-                              <div className="text-center">
-                                <p className="text-white font-medium">Upload Company Logo</p>
-                                <p className="text-gray-400 text-xs mt-1">PNG, JPG up to 5MB</p>
-                              </div>
-                            </div>
-                          </Label>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="mission" className="text-white">Mission Statement</Label>
-                      <Textarea
-                        id="mission"
-                        value={companyData.mission}
-                        onChange={(e) => setCompanyData(prev => ({ ...prev, mission: e.target.value }))}
-                        className="bg-white/5 border-white/20 text-white min-h-[100px] focus:border-primary"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="tone" className="text-white">Tone of Voice</Label>
-                      <Textarea
-                        id="tone"
-                        value={companyData.tone_of_voice}
-                        onChange={(e) => setCompanyData(prev => ({ ...prev, tone_of_voice: e.target.value }))}
-                        className="bg-white/5 border-white/20 text-white min-h-[80px] focus:border-primary"
-                      />
-                    </div>
-
-                    <div className="space-y-4">
-                      <Label className="text-white text-lg font-semibold">Brand Colors</Label>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-3">
-                          <Label htmlFor="primaryColor1" className="text-white">Primary Brand Color</Label>
-                          <div className="flex items-center space-x-3">
-                            <input
-                              type="color"
-                              id="primaryColor1"
-                              value={companyData.primary_color_1}
-                              onChange={(e) => setCompanyData(prev => ({ ...prev, primary_color_1: e.target.value }))}
-                              className="w-20 h-12 rounded-lg border-2 border-white/20 bg-transparent cursor-pointer"
-                            />
-                            <div className="flex-1">
-                              <Input
-                                value={companyData.primary_color_1}
-                                onChange={(e) => setCompanyData(prev => ({ ...prev, primary_color_1: e.target.value }))}
-                                className="bg-white/5 border-white/20 text-white focus:border-primary"
-                                placeholder="#5B5FEE"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-3">
-                          <Label htmlFor="primaryColor2" className="text-white">Secondary Brand Color</Label>
-                          <div className="flex items-center space-x-3">
-                            <input
-                              type="color"
-                              id="primaryColor2"
-                              value={companyData.primary_color_2}
-                              onChange={(e) => setCompanyData(prev => ({ ...prev, primary_color_2: e.target.value }))}
-                              className="w-20 h-12 rounded-lg border-2 border-white/20 bg-transparent cursor-pointer"
-                            />
-                            <div className="flex-1">
-                              <Input
-                                value={companyData.primary_color_2}
-                                onChange={(e) => setCompanyData(prev => ({ ...prev, primary_color_2: e.target.value }))}
-                                className="bg-white/5 border-white/20 text-white focus:border-primary"
-                                placeholder="#00D4FF"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="p-4 cosmic-card border-0 rounded-lg">
-                        <p className="text-white text-sm font-medium mb-2">Color Preview</p>
-                        <div className="flex space-x-4">
-                          <div 
-                            className="w-16 h-16 rounded-lg border-2 border-white/20"
-                            style={{ backgroundColor: companyData.primary_color_1 }}
-                          />
-                          <div 
-                            className="w-16 h-16 rounded-lg border-2 border-white/20"
-                            style={{ backgroundColor: companyData.primary_color_2 }}
-                          />
-                          <div 
-                            className="flex-1 h-16 rounded-lg border-2 border-white/20"
-                            style={{ 
-                              background: `linear-gradient(135deg, ${companyData.primary_color_1} 0%, ${companyData.primary_color_2} 100%)` 
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between pt-4">
-                      <Button 
-                        onClick={handleSaveCompany} 
-                        disabled={saving}
-                        className="cosmic-button text-white"
-                      >
-                        {saving ? 'Saving...' : 'Save Company'}
-                      </Button>
-                      <Button 
-                        onClick={handleDeleteCompany}
-                        variant="outline" 
-                        className="border-red-500 text-red-500 hover:bg-red-500/10"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Delete Company
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card className="cosmic-card border-0">
-                  <CardContent className="p-8 text-center">
-                    <Building2 className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                    <h3 className="text-xl font-semibold text-white mb-2">No Company Selected</h3>
-                    <p className="text-gray-300 mb-6">Create or select a company to manage its settings</p>
-                    <Button 
-                      onClick={() => navigate('/brand-setup')}
-                      className="cosmic-button text-white"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Create Company
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-
-            {/* Preferences Tab */}
-            <TabsContent value="preferences">
-              <Card className="cosmic-card border-0">
-                <CardHeader>
-                  <CardTitle className="text-white">Preferences</CardTitle>
-                  <CardDescription className="text-gray-300">
-                    Choose what notifications and emails you'd like to receive
-                  </CardDescription>
-                </CardHeader>
-                
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <h4 className="text-white font-semibold flex items-center">
-                      <Mail className="w-4 h-4 mr-2" />
-                      Email Preferences
-                    </h4>
-                    
-                    {[
-                      { key: 'newsletter', label: 'Newsletter', description: 'Monthly newsletter with tips and updates' },
-                      { key: 'marketingEmails', label: 'Marketing Emails', description: 'Promotional offers and new feature announcements' },
-                      { key: 'productUpdates', label: 'Product Updates', description: 'Important product updates and security notices' }
-                    ].map((item) => (
-                      <div key={item.key} className="flex items-center justify-between p-4 cosmic-card border-0 rounded-lg">
-                        <div className="space-y-1">
-                          <div className="text-white font-medium">{item.label}</div>
-                          <div className="text-gray-400 text-sm">{item.description}</div>
-                        </div>
-                        
-                        <Switch
-                          checked={preferences[item.key as keyof typeof preferences]}
-                          onCheckedChange={(checked) => 
-                            setPreferences(prev => ({ ...prev, [item.key]: checked }))
-                          }
-                        />
-                      </div>
-                    ))}
-                  </div>
-
-                  <Button 
-                    onClick={() => toast({ title: "Preferences Saved! ✅" })} 
-                    className="cosmic-button text-white"
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`
+                      relative z-10 flex-1 flex items-center justify-center gap-2 py-3 px-4
+                      rounded-xl font-medium text-sm transition-colors duration-200
+                      ${isActive
+                        ? 'text-white'
+                        : 'text-muted-foreground hover:text-foreground'
+                      }
+                    `}
                   >
-                    Save Preferences
-                  </Button>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                    <Icon className="w-4 h-4" />
+                    <span className="hidden sm:inline">{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-            {/* Security Tab */}
-            <TabsContent value="security">
-              <Card className="cosmic-card border-0">
-                <CardHeader>
-                  <CardTitle className="text-white">Security Settings</CardTitle>
-                  <CardDescription className="text-gray-300">
-                    Manage your account security and privacy settings
-                  </CardDescription>
-                </CardHeader>
-                
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 cosmic-card border-0 rounded-lg">
-                      <div className="space-y-1">
-                        <div className="text-white font-medium">Two-Factor Authentication</div>
-                        <div className="text-gray-400 text-sm">Add an extra layer of security to your account</div>
-                      </div>
-                      
-                      <Switch
-                        checked={security.twoFactorEnabled}
-                        onCheckedChange={handleTwoFactorToggle}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-4 pt-6 border-t border-red-500/20">
-                    <h4 className="text-red-400 font-semibold">Danger Zone</h4>
-                    <div className="p-4 border border-red-500/30 rounded-lg bg-red-500/5">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-white font-medium">Deactivate Account</p>
-                          <p className="text-gray-400 text-sm">Permanently deactivate your account and delete all data</p>
-                        </div>
-                        <Button 
-                          onClick={handleDeactivateAccount}
-                          variant="outline" 
-                          className="border-red-500 text-red-500 hover:bg-red-500/10"
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Deactivate
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Button 
-                    onClick={() => toast({ title: "Security Settings Saved! ✅" })} 
-                    className="cosmic-button text-white"
-                  >
-                    Save Security Settings
-                  </Button>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+          {/* Tab Content */}
+          <AnimatePresence mode="wait">
+            {renderTabContent()}
+          </AnimatePresence>
         </div>
       </div>
     </div>
