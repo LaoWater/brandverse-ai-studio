@@ -3,10 +3,11 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Coins, Sparkles } from "lucide-react";
+import { Coins, Sparkles, Loader2 } from "lucide-react";
 import { getUserCredits, UserCredits } from "@/services/creditsService";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 const CreditsBar = () => {
   const [credits, setCredits] = useState<UserCredits | null>(null);
@@ -53,19 +54,62 @@ const CreditsBar = () => {
     };
   }, [user]);
 
-  if (!user || loading) return null;
+  if (!user) return null;
 
   const creditsCount = credits?.available_credits ?? 0;
   const maxCredits = 10; // Daily limit for free tier
   const progressPercentage = Math.min((creditsCount / maxCredits) * 100, 100);
   const isLowCredits = creditsCount <= 3;
 
+  // Loading skeleton state
+  if (loading) {
+    return (
+      <div className="relative overflow-hidden border-b border-primary/20">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-accent/10 to-transparent" />
+        <div className="relative px-4 py-3">
+          {/* Header row with loading indicator */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <div className="p-1.5 rounded-md bg-gradient-to-br from-accent/20 to-primary/20">
+                <Coins className="w-4 h-4 text-accent/50" />
+              </div>
+              <span className="text-white/70 text-sm font-medium">Credits</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-accent/10 border border-accent/20">
+              <Loader2 className="w-3.5 h-3.5 text-accent/60 animate-spin" />
+              <span className="text-accent/60 text-xs">Loading...</span>
+            </div>
+          </div>
+
+          {/* Skeleton progress bar */}
+          <div className="space-y-1.5 mb-3">
+            <div className="relative">
+              <div className="h-1.5 bg-gray-800/60 rounded-full overflow-hidden">
+                <div className="h-full w-1/3 bg-gradient-to-r from-accent/30 to-primary/30 animate-pulse rounded-full" />
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="h-3 w-16 bg-gray-700/30 rounded animate-pulse" />
+              <div className="h-3 w-8 bg-gray-700/30 rounded animate-pulse" />
+            </div>
+          </div>
+
+          {/* Skeleton button */}
+          <div className="w-full h-7 rounded-md bg-accent/10 border border-accent/20 animate-pulse" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative overflow-hidden border-b border-primary/20">
       {/* Gradient background */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-accent/10 to-transparent" />
 
-      <div className="relative px-4 py-3">
+      <div className={cn(
+        "relative px-4 py-3",
+        "animate-in fade-in duration-300"
+      )}>
         {/* Header row with credits */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center space-x-2">
@@ -79,11 +123,12 @@ const CreditsBar = () => {
             <span className="text-white text-sm font-medium">Credits</span>
           </div>
           <Badge
-            className={`font-bold text-base px-2.5 py-0.5 bg-gradient-to-r ${
+            className={cn(
+              "font-bold text-base px-2.5 py-0.5 bg-gradient-to-r transition-all duration-300",
               isLowCredits
                 ? 'from-yellow-500/25 to-orange-500/25 text-yellow-400 border-yellow-500/40'
                 : 'from-accent/25 to-primary/25 text-accent border-accent/40'
-            }`}
+            )}
           >
             {creditsCount}
           </Badge>
@@ -97,7 +142,7 @@ const CreditsBar = () => {
               className="h-1.5 bg-gray-800/60"
             />
             <div
-              className={`absolute top-0 left-0 h-1.5 rounded-full transition-all bg-gradient-to-r ${
+              className={`absolute top-0 left-0 h-1.5 rounded-full transition-all duration-500 ease-out bg-gradient-to-r ${
                 isLowCredits
                   ? 'from-yellow-500 to-orange-500'
                   : 'from-accent via-primary to-accent'
