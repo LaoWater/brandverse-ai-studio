@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Edit, Trash2, Eye, Filter, Plus, Calendar, Image, Video, Instagram, Facebook, Twitter, Linkedin, Search, X, Library } from "lucide-react";
+import { Edit, Trash2, Eye, Filter, Plus, Calendar, Image, Video, Instagram, Facebook, Twitter, Linkedin, Search, X, Library, AlertCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
@@ -17,6 +17,16 @@ import { EditPostDialog } from "@/components/EditPostDialog";
 import { FaXTwitter, FaInstagram, FaFacebook, FaLinkedin } from "react-icons/fa6";
 import { useCompany } from "@/contexts/CompanyContext";
 import MediaLibrary from "@/components/media/MediaLibrary";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type Post = Database['public']['Tables']['posts']['Row'];
 type PostStatus = Database['public']['Enums']['post_status'];
@@ -28,6 +38,7 @@ const PostManager = () => {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('posts');
+  const [postedConfirmDialog, setPostedConfirmDialog] = useState<{ isOpen: boolean; postId: string | null }>({ isOpen: false, postId: null });
   const [filters, setFilters] = useState({
     platform: 'all',
     status: 'all',
@@ -146,10 +157,10 @@ const PostManager = () => {
   });
 
   const platforms = [
-    { id: 'instagram', name: 'Instagram', icon: FaInstagram, color: 'from-pink-500 to-purple-600' },
-    { id: 'facebook', name: 'Facebook', icon: FaFacebook, color: 'from-blue-600 to-blue-700' },
-    { id: 'twitter', name: 'X', icon: FaXTwitter, color: 'from-sky-400 to-sky-600' },
-    { id: 'linkedin', name: 'LinkedIn', icon: FaLinkedin, color: 'from-blue-700 to-blue-800' }
+    { id: 'instagram', name: 'Instagram', icon: FaInstagram, color: 'from-pink-500 to-purple-600', iconColor: '#E4405F' },
+    { id: 'facebook', name: 'Facebook', icon: FaFacebook, color: 'from-blue-600 to-blue-700', iconColor: '#1877F2' },
+    { id: 'twitter', name: 'X', icon: FaXTwitter, color: 'from-sky-400 to-sky-600', iconColor: '#000000' },
+    { id: 'linkedin', name: 'LinkedIn', icon: FaLinkedin, color: 'from-blue-700 to-blue-800', iconColor: '#0A66C2' }
   ];
 
   const getStatusColor = (status: PostStatus | null | undefined) => {
@@ -164,6 +175,11 @@ const PostManager = () => {
   const getPlatformIcon = (platform: PlatformType) => {
     const platformData = platforms.find(p => p.id === platform);
     return platformData ? platformData.icon : Instagram;
+  };
+
+  const getPlatformColor = (platform: PlatformType) => {
+    const platformData = platforms.find(p => p.id === platform);
+    return platformData?.iconColor || '#6B7280';
   };
 
   const handleEditPost = (post: Post) => {
@@ -194,7 +210,18 @@ const PostManager = () => {
   };
 
   const handleQuickStatusUpdate = (postId: string, newStatus: PostStatus) => {
-    updatePostMutation.mutate({ id: postId, status: newStatus });
+    if (newStatus === 'posted') {
+      setPostedConfirmDialog({ isOpen: true, postId });
+    } else {
+      updatePostMutation.mutate({ id: postId, status: newStatus });
+    }
+  };
+
+  const confirmPostedStatus = () => {
+    if (postedConfirmDialog.postId) {
+      updatePostMutation.mutate({ id: postedConfirmDialog.postId, status: 'posted' });
+    }
+    setPostedConfirmDialog({ isOpen: false, postId: null });
   };
 
   const clearAllFilters = () => {
@@ -278,6 +305,26 @@ const PostManager = () => {
 
       <div className="container mx-auto px-4 pt-24 pb-12 relative z-10">
         <div className="max-w-7xl mx-auto">
+          {/* Company Logo - Top Right */}
+          {selectedCompany && (
+            <div className="flex justify-end mb-4">
+              <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10">
+                {selectedCompany.logo_url ? (
+                  <img
+                    src={selectedCompany.logo_url}
+                    alt={selectedCompany.name}
+                    className="w-10 h-10 rounded-lg object-cover"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold">
+                    {selectedCompany.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className="text-sm font-medium text-white">{selectedCompany.name}</span>
+              </div>
+            </div>
+          )}
+
           <div className="text-center mb-8">
             {/* View Mode Switcher - GPU accelerated */}
             <div className="flex items-center justify-center mb-4">
@@ -374,7 +421,7 @@ const PostManager = () => {
                         return (
                           <SelectItem key={platform.id} value={platform.id}>
                             <div className="flex items-center gap-2">
-                              <IconComponent className="w-4 h-4" />
+                              <IconComponent className="w-4 h-4" style={{ color: platform.iconColor }} />
                               {platform.name}
                             </div>
                           </SelectItem>
@@ -492,7 +539,7 @@ const PostManager = () => {
                             <TableRow key={post.id} className="border-white/10 hover:bg-white/5">
                               <TableCell>
                                 <div className="flex items-center gap-2">
-                                  <IconComponent className="w-5 h-5 text-white" />
+                                  <IconComponent className="w-5 h-5" style={{ color: getPlatformColor(post.platform_type) }} />
                                   <span className="text-white capitalize">{post.platform_type}</span>
                                 </div>
                               </TableCell>
@@ -567,7 +614,7 @@ const PostManager = () => {
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <IconComponent className="w-5 h-5 text-white" />
+                            <IconComponent className="w-5 h-5" style={{ color: getPlatformColor(post.platform_type) }} />
                             <Badge variant="outline" className="border-white/20 text-white capitalize">
                               {post.platform_type}
                             </Badge>
@@ -695,6 +742,39 @@ const PostManager = () => {
         isSaving={updatePostMutation.isPending}
         isImageUrl={isImageUrl}
       />
+
+      {/* Posted Status Confirmation Dialog */}
+      <AlertDialog open={postedConfirmDialog.isOpen} onOpenChange={(open) => !open && setPostedConfirmDialog({ isOpen: false, postId: null })}>
+        <AlertDialogContent className="bg-[#1a1a2e] border border-white/10">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-3 text-white">
+              <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+                <AlertCircle className="w-5 h-5 text-amber-500" />
+              </div>
+              Multi-Platform Distribution
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-300 text-base leading-relaxed">
+              <span className="block mb-3">
+                Multi-platform auto-posting is currently in <span className="text-amber-500 font-semibold">testing phase</span> and will be available soon!
+              </span>
+              <span className="block">
+                For now, you can manually create the post on your platform and mark it as posted here to track your content calendar.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-white/5 text-white border-white/10 hover:bg-white/10">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmPostedStatus}
+              className="bg-gradient-to-r from-primary to-accent text-white hover:opacity-90"
+            >
+              Continue & Mark as Posted
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -134,12 +134,12 @@ const Pricing = () => {
     {
       icon: <Clock className="w-6 h-6 text-accent" />,
       title: "Credits Never Expire",
-      description: "Your credits wait patiently until you're ready. Launch when the timing is right, not when a billing cycle dictates."
+      description: "Your credits wait patiently until you're ready. Create engagement when the timing is right, not when a billing cycle dictates."
     },
     {
       icon: <RefreshCcw className="w-6 h-6 text-accent" />,
       title: "Scale As You Grow",
-      description: "Start small, buy more as your startup gains traction. We grow when you grow — that's alignment."
+      description: "Start small, buy more as your startup gains traction. We grow when you grow."
     }
   ];
 

@@ -218,7 +218,7 @@ const HeroSection = () => {
                     <TrendingUp className="w-5 h-5 text-accent" />
                     <span className="text-white font-semibold">SEO Everywhere</span>
                   </div>
-                  <p className="text-gray-400 text-sm">Optimize for Google, TikTok, YouTube, Reddit & more</p>
+                  <p className="text-gray-400 text-sm">Optimize for Google, TikTok, Facebook, Instagram & more</p>
                 </div>
               </div>
             </div>

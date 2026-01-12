@@ -575,12 +575,21 @@
   }
 
   /* Dropdown triggers */
-  html.light [data-radix-select-trigger],
+  html.light [data-radix-select-trigger]:not([class*="bg-yellow"]):not([class*="bg-green"]):not([class*="bg-primary"]):not([class*="bg-gray-500"]),
   html.light [data-radix-dropdown-menu-trigger],
-  html.light button[role="combobox"] {
+  html.light button[role="combobox"]:not([class*="bg-yellow"]):not([class*="bg-green"]):not([class*="bg-primary"]):not([class*="bg-gray-500"]) {
     background-color: rgba(255, 255, 255, 0.9) !important;
     border: 1px solid rgba(91, 95, 238, 0.2) !important;
     color: rgb(15 15 23) !important;
+  }
+
+  /* Status dropdown triggers - preserve their colored backgrounds */
+  html.light [data-radix-select-trigger][class*="bg-yellow-500"],
+  html.light [data-radix-select-trigger][class*="bg-green-500"],
+  html.light [data-radix-select-trigger][class*="bg-primary"],
+  html.light [data-radix-select-trigger][class*="bg-gray-500"] {
+    /* Allow the tailwind bg classes to work */
+    color: inherit !important;
   }
 
   /* Dropdown trigger text and values */
@@ -902,10 +911,83 @@
     background-color: transparent !important;
   }
 
-  /* Override any gradient backgrounds that use CSS variables - but keep icon containers, social media icons, hero cards, light rays, and hardcoded hex gradients vibrant */
-  html.light [class*="bg-gradient-to"]:not(.icon-gradient-container):not(.rounded-full):not(.hero-card-bg):not(.hero-light-rays):not([class*="from-[#"]):not([class*="from-sky-"]):not([class*="from-indigo-"]) {
+  /* Override any gradient backgrounds that use CSS variables - but keep icon containers, social media icons, hero cards, light rays, hardcoded hex gradients, and pricing elements vibrant */
+  html.light [class*="bg-gradient-to"]:not(.icon-gradient-container):not(.rounded-full):not(.hero-card-bg):not(.hero-light-rays):not([class*="from-[#"]):not([class*="from-sky-"]):not([class*="from-indigo-"]):not([class*="from-emerald-"]):not([class*="from-violet-"]):not([class*="from-cyan-"]):not([class*="from-amber-"]):not([class*="from-yellow-"]):not([class*="bg-clip-text"]):not(.pricing-glow) {
     background-image: none !important;
     background-color: transparent !important;
+  }
+
+  /* ============================================ */
+  /* PRICING PAGE LIGHT MODE FIXES */
+  /* ============================================ */
+
+  /* Preserve gradient text (credit numbers, tier badges) */
+  html.light [class*="bg-gradient-to"][class*="bg-clip-text"] {
+    background-image: linear-gradient(to right, var(--tw-gradient-stops)) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+  }
+
+  /* Pricing card glow effects - light mode adapted */
+  html.light .group > [class*="absolute"][class*="-inset-0.5"][class*="bg-gradient-to"][class*="blur"] {
+    background-image: linear-gradient(to right, var(--tw-gradient-stops)) !important;
+    opacity: 0.35 !important;
+  }
+
+  html.light .group:hover > [class*="absolute"][class*="-inset-0.5"][class*="bg-gradient-to"][class*="blur"] {
+    opacity: 0.5 !important;
+  }
+
+  /* Pricing icon containers - keep vibrant gradients */
+  html.light [class*="w-16 h-16"][class*="rounded-2xl"][class*="bg-gradient-to-br"],
+  html.light [class*="w-6 h-6"][class*="rounded-lg"][class*="bg-gradient-to-br"] {
+    background-image: linear-gradient(to bottom right, var(--tw-gradient-stops)) !important;
+  }
+
+  /* Credit usage card icon backgrounds */
+  html.light [class*="w-16 h-16"][class*="relative"] [class*="bg-gradient-to-br"][class*="rounded-full"] {
+    background-image: linear-gradient(to bottom right, var(--tw-gradient-stops)) !important;
+  }
+
+  /* Credit cost badges in circles */
+  html.light [class*="absolute"][class*="-top-1"][class*="-right-1"][class*="bg-gradient-to-br"][class*="rounded-full"] {
+    background-image: linear-gradient(to bottom right, var(--tw-gradient-stops)) !important;
+  }
+
+  /* Savings badge gradient backgrounds */
+  html.light [class*="bg-gradient-to-r"][class*="from-yellow-500"] {
+    background-image: linear-gradient(to right, var(--tw-gradient-stops)) !important;
+  }
+
+  /* Most Popular badge glow */
+  html.light [class*="bg-gradient-to-r"][class*="from-emerald-500"][class*="blur"] {
+    background-image: linear-gradient(to right, var(--tw-gradient-stops)) !important;
+    opacity: 0.4 !important;
+  }
+
+  /* Most Popular badge itself */
+  html.light .bg-gradient-to-r.from-emerald-500.to-teal-500:not([class*="blur"]) {
+    background-image: linear-gradient(to right, var(--tw-gradient-stops)) !important;
+  }
+
+  /* Pricing buttons - keep gradient */
+  html.light button[class*="bg-gradient-to-r"][class*="from-sky-"],
+  html.light button[class*="bg-gradient-to-r"][class*="from-emerald-"],
+  html.light button[class*="bg-gradient-to-r"][class*="from-violet-"] {
+    background-image: linear-gradient(to right, var(--tw-gradient-stops)) !important;
+  }
+
+  /* Light mode pricing card enhancements */
+  html.light .cosmic-card[class*="overflow-hidden"][class*="h-full"] {
+    background: rgba(255, 255, 255, 0.95) !important;
+    box-shadow: 0 4px 20px rgba(91, 95, 238, 0.08), 0 0 40px rgba(0, 212, 255, 0.05) !important;
+  }
+
+  /* Pricing card internal glow elements (top right gradient) */
+  html.light [class*="absolute"][class*="top-0"][class*="right-0"][class*="w-48"][class*="h-48"][class*="bg-gradient-to-br"] {
+    background-image: linear-gradient(to bottom right, var(--tw-gradient-stops)) !important;
+    opacity: 0.4 !important;
   }
 
   /* Force icon containers to keep their gradients in light mode */
