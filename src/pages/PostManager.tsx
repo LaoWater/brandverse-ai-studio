@@ -163,12 +163,28 @@ const PostManager = () => {
     { id: 'linkedin', name: 'LinkedIn', icon: FaLinkedin, color: 'from-blue-700 to-blue-800', iconColor: '#0A66C2' }
   ];
 
-  const getStatusColor = (status: PostStatus | null | undefined) => {
+  const getStatusColor = (status: PostStatus | null | undefined): { className: string; style: React.CSSProperties } => {
     switch (status) {
-      case 'draft': return '!bg-yellow-500 text-yellow-900 border-yellow-500 shadow-lg shadow-yellow-500/20 font-semibold';
-      case 'approved': return '!bg-green-500 text-green-900 border-green-500 shadow-lg shadow-green-500/20 font-semibold';
-      case 'posted': return '!bg-primary text-white border-primary shadow-lg shadow-primary/20 font-semibold';
-      default: return '!bg-gray-500 text-gray-900 border-gray-500 shadow-lg shadow-gray-500/20 font-semibold';
+      case 'draft':
+        return {
+          className: 'text-yellow-900 border-yellow-600 font-semibold',
+          style: { backgroundColor: '#eab308' }
+        };
+      case 'approved':
+        return {
+          className: 'text-green-900 border-green-600 font-semibold',
+          style: { backgroundColor: '#22c55e' }
+        };
+      case 'posted':
+        return {
+          className: 'text-white border-2 border-emerald-300 font-semibold',
+          style: { backgroundColor: '#10b981' }
+        };
+      default:
+        return {
+          className: 'text-gray-900 border-gray-600 font-semibold',
+          style: { backgroundColor: '#6b7280' }
+        };
     }
   };
 
@@ -550,19 +566,27 @@ const PostManager = () => {
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <Select
-                                  value={post.status || 'draft'}
-                                  onValueChange={(value) => handleQuickStatusUpdate(post.id, value as PostStatus)}
-                                >
-                                  <SelectTrigger className={`status-dropdown w-32 border ${getStatusColor(post.status)}`}>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent className="bg-gray-900 border-gray-700">
-                                    <SelectItem value="draft">Draft</SelectItem>
-                                    <SelectItem value="approved">Approved</SelectItem>
-                                    <SelectItem value="posted">Posted</SelectItem>
-                                  </SelectContent>
-                                </Select>
+                                {(() => {
+                                  const statusStyle = getStatusColor(post.status);
+                                  return (
+                                    <Select
+                                      value={post.status || 'draft'}
+                                      onValueChange={(value) => handleQuickStatusUpdate(post.id, value as PostStatus)}
+                                    >
+                                      <SelectTrigger
+                                        className={`status-dropdown w-32 border ${statusStyle.className}`}
+                                        style={statusStyle.style}
+                                      >
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent className="bg-gray-900 border-gray-700">
+                                        <SelectItem value="draft">Draft</SelectItem>
+                                        <SelectItem value="approved">Approved</SelectItem>
+                                        <SelectItem value="posted">Posted</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  );
+                                })()}
                               </TableCell>
                               <TableCell>
                                 <div className="flex gap-1">
@@ -609,6 +633,7 @@ const PostManager = () => {
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredPosts?.map((post) => {
                   const IconComponent = getPlatformIcon(post.platform_type);
+                  const statusStyle = getStatusColor(post.status);
                   return (
                     <Card key={post.id} className="cosmic-card">
                       <CardHeader>
@@ -619,7 +644,7 @@ const PostManager = () => {
                               {post.platform_type}
                             </Badge>
                           </div>
-                          <Badge className={getStatusColor(post.status)}>
+                          <Badge className={statusStyle.className} style={statusStyle.style}>
                             {post.status}
                           </Badge>
                         </div>
@@ -679,11 +704,13 @@ const PostManager = () => {
                       <CardContent>
                         {platformPosts.length > 0 ? (
                           <div className="grid md:grid-cols-2 gap-4">
-                            {platformPosts.map((post) => (
+                            {platformPosts.map((post) => {
+                              const statusStyle = getStatusColor(post.status);
+                              return (
                               <div key={post.id} className="p-4 bg-white/5 rounded-lg border border-white/10">
                                 <div className="flex items-center justify-between mb-2">
                                   <h4 className="text-white font-medium">{post.title}</h4>
-                                  <Badge className={getStatusColor(post.status)}>
+                                  <Badge className={statusStyle.className} style={statusStyle.style}>
                                     {post.status}
                                   </Badge>
                                 </div>
@@ -713,7 +740,8 @@ const PostManager = () => {
                                   </div>
                                 </div>
                               </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         ) : (
                           <p className="text-gray-400 text-center py-4">No posts for this platform with current filters.</p>

@@ -536,7 +536,7 @@
   html.light [data-radix-select-viewport],
   html.light [role="listbox"],
   html.light [role="menu"],
-  html.light [role="combobox"],
+  html.light [role="combobox"]:not(.status-dropdown),
   html.light .dropdown-content,
   html.light [data-state="open"][role="menu"],
   html.light [data-state="open"][role="listbox"] {
@@ -581,24 +581,6 @@
     background-color: rgba(255, 255, 255, 0.9) !important;
     border: 1px solid rgba(91, 95, 238, 0.2) !important;
     color: rgb(15 15 23) !important;
-  }
-
-  /* Status dropdown triggers - force their colored backgrounds */
-  html.light .status-dropdown.bg-yellow-500,
-  html.light .status-dropdown.\!bg-yellow-500 {
-    background-color: rgb(234 179 8) !important;
-  }
-  html.light .status-dropdown.bg-green-500,
-  html.light .status-dropdown.\!bg-green-500 {
-    background-color: rgb(34 197 94) !important;
-  }
-  html.light .status-dropdown.bg-primary,
-  html.light .status-dropdown.\!bg-primary {
-    background-color: rgb(91 95 238) !important;
-  }
-  html.light .status-dropdown.bg-gray-500,
-  html.light .status-dropdown.\!bg-gray-500 {
-    background-color: rgb(107 114 128) !important;
   }
 
   /* Dropdown trigger text and values - exclude status dropdowns */

@@ -118,7 +118,7 @@ const SeoAgent = () => {
               </h1>
 
               <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-                Traditional SEO is dead. 73% of buying decisions happen outside Google.
+                Traditional SEO is changing. 73% of buying decisions happen outside Google.
                 Our AI agent analyzes your visibility across the entire modern decision landscape.
               </p>
             </div>
@@ -131,8 +131,18 @@ const SeoAgent = () => {
                 The <span className="text-cosmic font-serif">Google Trap</span>
               </CardTitle>
               <CardDescription className="text-gray-300 text-lg max-w-2xl mx-auto">
+                This is a concept first unveiled by NpDigital. Reflect on your own buying flow — or watch others —
+                and you'll understand how in modern times only a fraction of the decision is happening on Google anymore.
                 You're optimizing for Google while your customers are deciding on TikTok, YouTube, Reddit, and ChatGPT.
-                That's why you have traffic but no conversions.
+                That's why you have traffic but no conversions.{" "}
+                <a
+                  href="https://www.youtube.com/watch?v=39o0uYPo4jU"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-accent hover:text-accent/80 underline transition-colors"
+                >
+                  Video by NpDigital
+                </a>
               </CardDescription>
             </CardHeader>
             <CardContent>

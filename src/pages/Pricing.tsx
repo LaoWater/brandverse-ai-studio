@@ -62,8 +62,8 @@ const Pricing = () => {
       productId: "prod_SXNQ20skugqshl",
       tier: "Explorer",
       features: [
-        { text: "~100 posts or ~50 fast images", icon: <MessageSquare className="w-4 h-4" /> },
-        { text: "~1-2 short videos (4s fast)", icon: <Video className="w-4 h-4" /> },
+        { text: "100 posts or 50 fast images", icon: <MessageSquare className="w-4 h-4" /> },
+        { text: "1 short video (4s fast)", icon: <Video className="w-4 h-4" /> },
         { text: "All AI models included", icon: <Brain className="w-4 h-4" /> },
         { text: "1 SEO visibility scan", icon: <Search className="w-4 h-4" /> },
         { text: "3 brand profiles", icon: <Users className="w-4 h-4" /> },
@@ -85,8 +85,8 @@ const Pricing = () => {
       productId: "prod_SXNQqHY08uDDpg",
       tier: "Launcher",
       features: [
-        { text: "~300 posts or ~150 fast images", icon: <MessageSquare className="w-4 h-4" /> },
-        { text: "~4-5 short videos (4s fast)", icon: <Video className="w-4 h-4" /> },
+        { text: "300 posts or 150 fast images", icon: <MessageSquare className="w-4 h-4" /> },
+        { text: "4 short videos (4s fast)", icon: <Video className="w-4 h-4" /> },
         { text: "Premium AI models", icon: <Brain className="w-4 h-4" /> },
         { text: "5 SEO scans + competitor analysis", icon: <Search className="w-4 h-4" /> },
         { text: "Multi-platform SEO insights", icon: <Globe className="w-4 h-4" /> },
@@ -102,7 +102,7 @@ const Pricing = () => {
       price: "$20",
       pricePerCredit: "2¢",
       savings: "Save 33%",
-      description: "Unlimited growth mode",
+      description: "Serious growth mode",
       icon: <Crown className="w-8 h-8" />,
       gradient: "from-violet-500 to-purple-600",
       glowColor: "violet-500",
@@ -110,18 +110,42 @@ const Pricing = () => {
       productId: "prod_SXNRQ7G1zjUMC3",
       tier: "Growth Leader",
       features: [
-        { text: "~1000 posts or ~500 fast images", icon: <MessageSquare className="w-4 h-4" /> },
-        { text: "~15 short videos (4s fast)", icon: <Video className="w-4 h-4" /> },
+        { text: "1,000 posts or 500 fast images", icon: <MessageSquare className="w-4 h-4" /> },
+        { text: "14 short videos (4s fast)", icon: <Video className="w-4 h-4" /> },
         { text: "All premium AI models", icon: <Brain className="w-4 h-4" /> },
         { text: "Unlimited SEO scans", icon: <Search className="w-4 h-4" /> },
         { text: "Full SEO Agent access", icon: <TrendingUp className="w-4 h-4" /> },
-        { text: "6-platform visibility tracking", icon: <Globe className="w-4 h-4" /> },
         { text: "10 brand profiles", icon: <Users className="w-4 h-4" /> },
         { text: "Fastest queue priority", icon: <Zap className="w-4 h-4" /> },
-        { text: "Early access to new features", icon: <Star className="w-4 h-4" /> },
         { text: "Credits never expire", icon: <Infinity className="w-4 h-4" /> }
       ],
       limits: "VIP generation priority"
+    },
+    {
+      name: "Studio",
+      credits: 3000,
+      price: "$50",
+      pricePerCredit: "1.7¢",
+      savings: "Save 44%",
+      description: "For agencies & power users",
+      icon: <Sparkles className="w-8 h-8" />,
+      gradient: "from-amber-500 to-orange-600",
+      glowColor: "amber-500",
+      popular: false,
+      productId: "prod_STUDIO_PLACEHOLDER",
+      tier: "Agency Pro",
+      features: [
+        { text: "3,000 posts or 1,500 fast images", icon: <MessageSquare className="w-4 h-4" /> },
+        { text: "44 short videos (4s fast)", icon: <Video className="w-4 h-4" /> },
+        { text: "All premium AI models", icon: <Brain className="w-4 h-4" /> },
+        { text: "Unlimited SEO scans", icon: <Search className="w-4 h-4" /> },
+        { text: "Full SEO Agent access", icon: <TrendingUp className="w-4 h-4" /> },
+        { text: "Unlimited brand profiles", icon: <Users className="w-4 h-4" /> },
+        { text: "VIP queue priority", icon: <Zap className="w-4 h-4" /> },
+        { text: "Early access to new features", icon: <Star className="w-4 h-4" /> },
+        { text: "Credits never expire", icon: <Infinity className="w-4 h-4" /> }
+      ],
+      limits: "White-glove priority"
     }
   ];
 
@@ -316,7 +340,7 @@ const Pricing = () => {
               </div>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
               <TooltipProvider>
                 {creditPacks.map((pack, index) => (
                   <div key={index} className="relative group">
