@@ -575,28 +575,37 @@
   }
 
   /* Dropdown triggers */
-  html.light [data-radix-select-trigger]:not([class*="bg-yellow"]):not([class*="bg-green"]):not([class*="bg-primary"]):not([class*="bg-gray-500"]),
+  html.light [data-radix-select-trigger]:not(.status-dropdown),
   html.light [data-radix-dropdown-menu-trigger],
-  html.light button[role="combobox"]:not([class*="bg-yellow"]):not([class*="bg-green"]):not([class*="bg-primary"]):not([class*="bg-gray-500"]) {
+  html.light button[role="combobox"]:not(.status-dropdown) {
     background-color: rgba(255, 255, 255, 0.9) !important;
     border: 1px solid rgba(91, 95, 238, 0.2) !important;
     color: rgb(15 15 23) !important;
   }
 
-  /* Status dropdown triggers - preserve their colored backgrounds */
-  html.light [data-radix-select-trigger][class*="bg-yellow-500"],
-  html.light [data-radix-select-trigger][class*="bg-green-500"],
-  html.light [data-radix-select-trigger][class*="bg-primary"],
-  html.light [data-radix-select-trigger][class*="bg-gray-500"] {
-    /* Allow the tailwind bg classes to work */
-    color: inherit !important;
+  /* Status dropdown triggers - force their colored backgrounds */
+  html.light .status-dropdown.bg-yellow-500,
+  html.light .status-dropdown.\!bg-yellow-500 {
+    background-color: rgb(234 179 8) !important;
+  }
+  html.light .status-dropdown.bg-green-500,
+  html.light .status-dropdown.\!bg-green-500 {
+    background-color: rgb(34 197 94) !important;
+  }
+  html.light .status-dropdown.bg-primary,
+  html.light .status-dropdown.\!bg-primary {
+    background-color: rgb(91 95 238) !important;
+  }
+  html.light .status-dropdown.bg-gray-500,
+  html.light .status-dropdown.\!bg-gray-500 {
+    background-color: rgb(107 114 128) !important;
   }
 
-  /* Dropdown trigger text and values */
-  html.light [data-radix-select-value],
-  html.light [data-radix-select-trigger] span,
-  html.light [data-radix-select-trigger] > span,
-  html.light button[role="combobox"] span {
+  /* Dropdown trigger text and values - exclude status dropdowns */
+  html.light [data-radix-select-trigger]:not(.status-dropdown) [data-radix-select-value],
+  html.light [data-radix-select-trigger]:not(.status-dropdown) span,
+  html.light [data-radix-select-trigger]:not(.status-dropdown) > span,
+  html.light button[role="combobox"]:not(.status-dropdown) span {
     color: rgb(15 15 23) !important;
   }
 

@@ -62,8 +62,8 @@ const Pricing = () => {
       productId: "prod_SXNQ20skugqshl",
       tier: "Explorer",
       features: [
-        { text: "~100 social posts or ~50 images", icon: <MessageSquare className="w-4 h-4" /> },
-        { text: "~10 short-form videos", icon: <Video className="w-4 h-4" /> },
+        { text: "~100 posts or ~50 fast images", icon: <MessageSquare className="w-4 h-4" /> },
+        { text: "~1-2 short videos (4s fast)", icon: <Video className="w-4 h-4" /> },
         { text: "All AI models included", icon: <Brain className="w-4 h-4" /> },
         { text: "1 SEO visibility scan", icon: <Search className="w-4 h-4" /> },
         { text: "3 brand profiles", icon: <Users className="w-4 h-4" /> },
@@ -85,8 +85,8 @@ const Pricing = () => {
       productId: "prod_SXNQqHY08uDDpg",
       tier: "Launcher",
       features: [
-        { text: "~300 posts or ~150 images", icon: <MessageSquare className="w-4 h-4" /> },
-        { text: "~30 short-form videos", icon: <Video className="w-4 h-4" /> },
+        { text: "~300 posts or ~150 fast images", icon: <MessageSquare className="w-4 h-4" /> },
+        { text: "~4-5 short videos (4s fast)", icon: <Video className="w-4 h-4" /> },
         { text: "Premium AI models", icon: <Brain className="w-4 h-4" /> },
         { text: "5 SEO scans + competitor analysis", icon: <Search className="w-4 h-4" /> },
         { text: "Multi-platform SEO insights", icon: <Globe className="w-4 h-4" /> },
@@ -110,8 +110,8 @@ const Pricing = () => {
       productId: "prod_SXNRQ7G1zjUMC3",
       tier: "Growth Leader",
       features: [
-        { text: "~1000 posts or ~500 images", icon: <MessageSquare className="w-4 h-4" /> },
-        { text: "~100 short-form videos", icon: <Video className="w-4 h-4" /> },
+        { text: "~1000 posts or ~500 fast images", icon: <MessageSquare className="w-4 h-4" /> },
+        { text: "~15 short videos (4s fast)", icon: <Video className="w-4 h-4" /> },
         { text: "All premium AI models", icon: <Brain className="w-4 h-4" /> },
         { text: "Unlimited SEO scans", icon: <Search className="w-4 h-4" /> },
         { text: "Full SEO Agent access", icon: <TrendingUp className="w-4 h-4" /> },
@@ -154,15 +154,15 @@ const Pricing = () => {
     {
       type: "Image Generation",
       icon: <Wand2 className="w-7 h-7 text-cyan-400" />,
-      cost: "2+",
-      examples: "AI images, product visuals, marketing graphics",
+      cost: "2-23",
+      examples: "Fast images from 2 credits, premium 4K up to 23 credits",
       gradient: "from-cyan-500 to-blue-500"
     },
     {
       type: "Video Creation",
       icon: <Video className="w-7 h-7 text-emerald-400" />,
-      cost: "Variable",
-      examples: "Short-form videos, product demos, social clips",
+      cost: "68-368",
+      examples: "4s fast video: 68 credits, 8s standard: 368 credits",
       gradient: "from-emerald-500 to-teal-500"
     },
     {

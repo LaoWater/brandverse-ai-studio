@@ -165,10 +165,10 @@ const PostManager = () => {
 
   const getStatusColor = (status: PostStatus | null | undefined) => {
     switch (status) {
-      case 'draft': return 'bg-yellow-500 text-yellow-900 border-yellow-500 shadow-lg shadow-yellow-500/20 font-semibold';
-      case 'approved': return 'bg-green-500 text-green-900 border-green-500 shadow-lg shadow-green-500/20 font-semibold';
-      case 'posted': return 'bg-primary text-white border-primary shadow-lg shadow-primary/20 font-semibold';
-      default: return 'bg-gray-500 text-gray-900 border-gray-500 shadow-lg shadow-gray-500/20 font-semibold';
+      case 'draft': return '!bg-yellow-500 text-yellow-900 border-yellow-500 shadow-lg shadow-yellow-500/20 font-semibold';
+      case 'approved': return '!bg-green-500 text-green-900 border-green-500 shadow-lg shadow-green-500/20 font-semibold';
+      case 'posted': return '!bg-primary text-white border-primary shadow-lg shadow-primary/20 font-semibold';
+      default: return '!bg-gray-500 text-gray-900 border-gray-500 shadow-lg shadow-gray-500/20 font-semibold';
     }
   };
 
@@ -309,9 +309,9 @@ const PostManager = () => {
           {selectedCompany && (
             <div className="flex justify-end mb-4">
               <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10">
-                {selectedCompany.logo_url ? (
+                {selectedCompany.logo_path ? (
                   <img
-                    src={selectedCompany.logo_url}
+                    src={selectedCompany.logo_path}
                     alt={selectedCompany.name}
                     className="w-10 h-10 rounded-lg object-cover"
                   />
@@ -550,11 +550,11 @@ const PostManager = () => {
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <Select 
-                                  value={post.status || 'draft'} 
+                                <Select
+                                  value={post.status || 'draft'}
                                   onValueChange={(value) => handleQuickStatusUpdate(post.id, value as PostStatus)}
                                 >
-                                  <SelectTrigger className={`w-32 border ${getStatusColor(post.status)}`}>
+                                  <SelectTrigger className={`status-dropdown w-32 border ${getStatusColor(post.status)}`}>
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent className="bg-gray-900 border-gray-700">

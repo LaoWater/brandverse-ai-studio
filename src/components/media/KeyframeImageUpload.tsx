@@ -27,11 +27,12 @@ const KeyframeImageUpload = () => {
   ) => {
     if (!file) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
+    // Validate file type - only allow PNG and JPEG (Veo API requirement)
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+    if (!allowedTypes.includes(file.type.toLowerCase())) {
       toast({
-        title: 'Invalid File Type',
-        description: 'Please upload an image file (PNG, JPG, etc.)',
+        title: 'Unsupported Image Format',
+        description: 'Please upload PNG or JPEG images only. AVIF, WebP, and other formats are not supported by the video generation API.',
         variant: 'destructive',
       });
       return;
@@ -107,7 +108,7 @@ const KeyframeImageUpload = () => {
           onClick={() => {
             const input = document.createElement('input');
             input.type = 'file';
-            input.accept = 'image/*';
+            input.accept = 'image/png, image/jpeg, image/jpg';
             input.onchange = (e) => {
               const file = (e.target as HTMLInputElement).files?.[0];
               if (file) handleFileSelect(file, frameType);

@@ -71,6 +71,59 @@ export const calculateCreditsNeeded = (
 };
 
 /**
+ * Credit Pricing Constants
+ *
+ * Base: 1 credit = $0.01
+ * All API costs include 15% margin
+ *
+ * Foundation:
+ * - 1 text post = 1 credit
+ * - 1 low quality/fast image = 2 credits
+ */
+
+// Image generation credits per model and quality
+export const IMAGE_CREDITS = {
+  // GPT-Image-1.5: Low=$0.018, Medium=$0.05, High=$0.20
+  'gpt-image-1.5': {
+    '1K': 2,   // Low quality
+    '2K': 6,   // Medium quality
+    '4K': 23,  // High quality
+  },
+  // Imagen 4.0: Fast=$0.02, Standard=$0.04, Ultra=$0.06
+  'imagen-4.0-generate-001': {
+    '1K': 2,   // Fast
+    '2K': 5,   // Standard
+    '4K': 7,   // Ultra
+  },
+  // Gemini 2.5 Flash (Nano-Banana): ~$0.04
+  'gemini-2.5-flash-image': {
+    '1K': 5,
+    '2K': 5,
+    '4K': 5,
+  },
+  // Gemini 3 Pro: Higher quality tiers
+  'gemini-3-pro-image-preview': {
+    '1K': 5,
+    '2K': 6,
+    '4K': 8,
+  },
+} as const;
+
+// Video generation credits per second by model
+export const VIDEO_CREDITS_PER_SECOND = {
+  // Veo 3.1 Standard: $0.40/sec
+  'veo-3.1-generate-001': 46,
+  // Veo 3.1 Fast: $0.15/sec
+  'veo-3.1-fast-generate-001': 17,
+  // Sora 2: $0.10/sec
+  'sora-2': 12,
+  // Sora 2 Pro: $0.30/sec
+  'sora-2-pro': 35,
+  // Sora 2 Pro Higher Res: $0.50/sec
+  'sora-2-pro-hr': 58,
+} as const;
+
+/**
  * Calculate credits needed for Media Studio generation
  * Based on model, quality/size, number of images, and media type
  */
@@ -82,43 +135,20 @@ export const calculateMediaStudioCredits = (
   videoDuration: 4 | 6 | 8 = 8
 ): number => {
   // Handle video generation costs
-  // Pricing: Standard ($0.40/s), Fast ($0.15/s) - audio is default/included
   if (mediaType === 'video') {
-    const isFast = model === 'veo-3.1-fast-generate-001';
-    const pricePerSecond = isFast ? 0.15 : 0.40;
-    const totalCost = pricePerSecond * videoDuration;
-    // Convert to credits (assuming 1 credit = $0.01)
-    return Math.ceil(totalCost * 100);
+    const creditsPerSecond = VIDEO_CREDITS_PER_SECOND[model as keyof typeof VIDEO_CREDITS_PER_SECOND]
+      || VIDEO_CREDITS_PER_SECOND['veo-3.1-generate-001'];
+    return creditsPerSecond * videoDuration;
   }
 
   // Handle image generation costs
-  let creditsPerImage = 3; // Default
-
-  if (model === 'gemini-2.5-flash-image') {
-    creditsPerImage = 2; // Nano Banana Standard: always 2 credits (no quality options)
-  } else if (model === 'gemini-3-pro-image-preview') {
-    // Nano Banana Pro: varies by quality
-    if (imageSize === '4K') {
-      creditsPerImage = 8;
-    } else if (imageSize === '2K') {
-      creditsPerImage = 5;
-    } else {
-      creditsPerImage = 3; // 1K
-    }
-  } else if (model === 'imagen-4.0-generate-001') {
-    creditsPerImage = imageSize === '2K' ? 4 : 3; // Imagen 4: 1K=3, 2K=4
-  } else if (model === 'gpt-image-1.5') {
-    // GPT-Image-1.5 pricing: low=$0.009 (1 credit), medium=$0.034 (4 credits), high=$0.133 (14 credits)
-    if (imageSize === '4K') {
-      creditsPerImage = 14; // High quality
-    } else if (imageSize === '2K') {
-      creditsPerImage = 4;  // Medium quality
-    } else {
-      creditsPerImage = 1;  // Low quality
-    }
+  const modelCredits = IMAGE_CREDITS[model as keyof typeof IMAGE_CREDITS];
+  if (modelCredits) {
+    return modelCredits[imageSize] * numberOfImages;
   }
 
-  return creditsPerImage * numberOfImages;
+  // Fallback - use Imagen pricing as default
+  return IMAGE_CREDITS['imagen-4.0-generate-001'][imageSize] * numberOfImages;
 };
 
 /**
