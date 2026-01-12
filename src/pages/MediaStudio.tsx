@@ -292,16 +292,16 @@ const MediaStudioContent = () => {
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-background/95">
       <Navigation />
 
-      {/* Diagonal Ambient Gradients */}
+      {/* Diagonal Ambient Gradients - Static for performance */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         {/* Top-left to bottom-right diagonal streak */}
-        <div className="absolute -top-20 -left-20 w-[700px] h-[700px] bg-primary/25 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '8s' }}></div>
+        <div className="absolute -top-20 -left-20 w-[700px] h-[700px] bg-primary/25 rounded-full blur-3xl"></div>
         {/* Bottom-right accent glow */}
-        <div className="absolute -bottom-32 -right-32 w-[600px] h-[600px] bg-accent/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '10s', animationDelay: '-3s' }}></div>
+        <div className="absolute -bottom-32 -right-32 w-[600px] h-[600px] bg-accent/20 rounded-full blur-3xl"></div>
         {/* Center diagonal accent band */}
         <div className="absolute top-1/3 left-1/4 w-[900px] h-[300px] bg-gradient-to-r from-primary/15 via-accent/12 to-primary/15 rotate-12 blur-3xl"></div>
         {/* Extra mid-screen glow */}
-        <div className="absolute top-1/2 right-1/4 w-[400px] h-[400px] bg-primary/15 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '12s', animationDelay: '-5s' }}></div>
+        <div className="absolute top-1/2 right-1/4 w-[400px] h-[400px] bg-primary/15 rounded-full blur-3xl"></div>
       </div>
 
       <div className="container mx-auto px-4 pt-24 pb-12">

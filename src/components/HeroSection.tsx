@@ -35,19 +35,19 @@ const HeroSection = () => {
       {/* Main Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24
        md:pt-0">
-        {/* Enhanced Cosmic Background Elements - Speed Theme */}
+        {/* Enhanced Cosmic Background Elements - Static for performance */}
         <div className="absolute inset-0 overflow-hidden">
           {/* Central light speed burst */}
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/30 rounded-full blur-3xl animate-pulse"></div>
-          
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/30 rounded-full blur-3xl"></div>
+
           {/* Light speed streaks */}
-          <div className="hero-light-rays absolute top-1/4 left-1/4 w-64 h-1 bg-gradient-to-r from-transparent via-accent/60 to-transparent rotate-45 blur-sm animate-pulse"></div>
-          <div className="hero-light-rays absolute bottom-1/3 right-1/3 w-80 h-1 bg-gradient-to-r from-transparent via-primary/40 to-transparent -rotate-45 blur-sm animate-pulse" style={{ animationDelay: '-2s' }}></div>
-          <div className="hero-light-rays absolute top-1/3 right-1/4 w-48 h-1 bg-gradient-to-r from-transparent via-accent/50 to-transparent rotate-12 blur-sm animate-pulse" style={{ animationDelay: '-4s' }}></div>
-          
+          <div className="hero-light-rays absolute top-1/4 left-1/4 w-64 h-1 bg-gradient-to-r from-transparent via-accent/60 to-transparent rotate-45 blur-sm"></div>
+          <div className="hero-light-rays absolute bottom-1/3 right-1/3 w-80 h-1 bg-gradient-to-r from-transparent via-primary/40 to-transparent -rotate-45 blur-sm"></div>
+          <div className="hero-light-rays absolute top-1/3 right-1/4 w-48 h-1 bg-gradient-to-r from-transparent via-accent/50 to-transparent rotate-12 blur-sm"></div>
+
           {/* Speed particles */}
-          <div className="absolute bottom-1/3 right-1/3 w-2 h-2 bg-primary rounded-full animate-ping" style={{ animationDelay: '-1s' }}></div>
-          <div className="absolute top-1/3 right-1/4 w-2 h-2 bg-accent rounded-full animate-pulse" style={{ animationDelay: '-3s' }}></div>
+          <div className="absolute bottom-1/3 right-1/3 w-2 h-2 bg-primary rounded-full"></div>
+          <div className="absolute top-1/3 right-1/4 w-2 h-2 bg-accent rounded-full"></div>
         </div>
         
         <div className="container mx-auto px-4 text-center relative z-10">

@@ -304,18 +304,18 @@ const PostManager = () => {
 
   return (
     <div className="min-h-screen bg-cosmic-gradient">
-      {/* Ambient Gradient Background */}
+      {/* Ambient Gradient Background - Static for performance */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         {/* Top-left warm glow */}
-        <div className="absolute top-16 left-[8%] w-[240px] h-[240px] bg-primary/16 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '9s' }}></div>
+        <div className="absolute top-16 left-[8%] w-[240px] h-[240px] bg-primary/16 rounded-full blur-3xl"></div>
         {/* Top-right accent */}
-        <div className="absolute top-24 right-[12%] w-[200px] h-[200px] bg-accent/14 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '11s', animationDelay: '-3s' }}></div>
+        <div className="absolute top-24 right-[12%] w-[200px] h-[200px] bg-accent/14 rounded-full blur-3xl"></div>
         {/* Mid-right primary */}
-        <div className="absolute top-[50%] right-[6%] w-[180px] h-[180px] bg-primary/12 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '13s', animationDelay: '-5s' }}></div>
+        <div className="absolute top-[50%] right-[6%] w-[180px] h-[180px] bg-primary/12 rounded-full blur-3xl"></div>
         {/* Bottom-left accent */}
-        <div className="absolute bottom-[25%] left-[10%] w-[220px] h-[220px] bg-accent/15 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '10s', animationDelay: '-2s' }}></div>
+        <div className="absolute bottom-[25%] left-[10%] w-[220px] h-[220px] bg-accent/15 rounded-full blur-3xl"></div>
         {/* Bottom-right blend */}
-        <div className="absolute bottom-[10%] right-[15%] w-[200px] h-[200px] bg-primary/14 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '12s', animationDelay: '-4s' }}></div>
+        <div className="absolute bottom-[10%] right-[15%] w-[200px] h-[200px] bg-primary/14 rounded-full blur-3xl"></div>
       </div>
       <Navigation />
 

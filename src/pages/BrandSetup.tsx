@@ -163,18 +163,18 @@ const BrandSetup = () => {
 
   return (
     <div className="min-h-screen bg-cosmic-gradient">
-      {/* Flowing Gradient Art */}
+      {/* Flowing Gradient Art - Static for performance */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         {/* Upper accent wave */}
-        <div className="absolute top-12 left-[15%] w-[260px] h-[180px] bg-accent/17 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '10s' }}></div>
+        <div className="absolute top-12 left-[15%] w-[260px] h-[180px] bg-accent/17 rounded-full blur-3xl"></div>
         {/* Right side primary */}
-        <div className="absolute top-[30%] right-[8%] w-[200px] h-[200px] bg-primary/15 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '12s', animationDelay: '-2s' }}></div>
+        <div className="absolute top-[30%] right-[8%] w-[200px] h-[200px] bg-primary/15 rounded-full blur-3xl"></div>
         {/* Center-left glow */}
-        <div className="absolute top-[45%] left-[5%] w-[180px] h-[180px] bg-primary/13 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '14s', animationDelay: '-4s' }}></div>
+        <div className="absolute top-[45%] left-[5%] w-[180px] h-[180px] bg-primary/13 rounded-full blur-3xl"></div>
         {/* Lower right accent */}
-        <div className="absolute bottom-[30%] right-[12%] w-[220px] h-[220px] bg-accent/16 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '11s', animationDelay: '-6s' }}></div>
+        <div className="absolute bottom-[30%] right-[12%] w-[220px] h-[220px] bg-accent/16 rounded-full blur-3xl"></div>
         {/* Bottom accent */}
-        <div className="absolute bottom-[8%] left-[20%] w-[240px] h-[160px] bg-accent/14 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '9s', animationDelay: '-3s' }}></div>
+        <div className="absolute bottom-[8%] left-[20%] w-[240px] h-[160px] bg-accent/14 rounded-full blur-3xl"></div>
       </div>
       <Navigation />
 

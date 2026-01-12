@@ -93,10 +93,10 @@ const SeoAgent = () => {
     <div className="min-h-screen bg-cosmic-gradient">
       <Navigation />
 
-      {/* Background Effects */}
+      {/* Background Effects - Static gradients for performance */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/3 right-1/3 w-80 h-80 bg-accent/15 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '-2s' }}></div>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-1/3 right-1/3 w-80 h-80 bg-accent/15 rounded-full blur-3xl"></div>
       </div>
 
       <main className="pt-24 pb-16 relative z-10">
@@ -134,7 +134,8 @@ const SeoAgent = () => {
                 This is a concept first unveiled by NpDigital. Reflect on your own buying flow — or watch others —
                 and you'll understand how in modern times only a fraction of the decision is happening on Google anymore.
                 You're optimizing for Google while your customers are deciding on TikTok, YouTube, Reddit, and ChatGPT.
-                That's why you have traffic but no conversions.{" "}
+                {" "}
+                <br></br>
                 <a
                   href="https://www.youtube.com/watch?v=39o0uYPo4jU"
                   target="_blank"
