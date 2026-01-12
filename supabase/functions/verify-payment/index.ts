@@ -8,6 +8,18 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Credit pack type mapping for validation
+const VALID_PACK_TYPES = ["starter", "launch", "scale", "studio"] as const;
+type CreditPackType = typeof VALID_PACK_TYPES[number];
+
+// Price mapping for purchase history
+const PACK_PRICES: Record<CreditPackType, number> = {
+  starter: 3.00,
+  launch: 8.00,
+  scale: 20.00,
+  studio: 50.00
+};
+
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[VERIFY-PAYMENT] ${step}${detailsStr}`);
@@ -29,7 +41,7 @@ serve(async (req) => {
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
-    
+
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError) throw new Error(`Authentication error: ${userError.message}`);
@@ -52,15 +64,38 @@ serve(async (req) => {
       throw new Error("Payment not completed");
     }
 
+    // Check if this session was already processed (idempotency)
+    const { data: existingPurchase } = await supabaseClient
+      .from("purchase_history")
+      .select("id")
+      .eq("stripe_session_id", sessionId)
+      .single();
+
+    if (existingPurchase) {
+      logStep("Session already processed", { sessionId });
+      return new Response(JSON.stringify({ success: true, message: "Already processed" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
     const metadata = session.metadata;
     const paymentType = metadata?.type;
 
     if (paymentType === "credits") {
       // Handle credit pack purchase
       const creditsToAdd = parseInt(metadata?.credits || "0");
-      logStep("Processing credit pack", { creditsToAdd });
+      const packType = metadata?.pack_type as CreditPackType | undefined;
+      const packName = metadata?.pack_name || "Unknown";
 
-      // Add credits to user's account
+      logStep("Processing credit pack", { creditsToAdd, packType, packName });
+
+      // Validate pack type
+      if (!packType || !VALID_PACK_TYPES.includes(packType)) {
+        logStep("Warning: Invalid pack type in metadata", { packType });
+      }
+
+      // Get current credits
       const { data: currentCredits } = await supabaseClient
         .from("available_credits")
         .select("available_credits")
@@ -69,7 +104,8 @@ serve(async (req) => {
 
       const newCreditAmount = (currentCredits?.available_credits || 0) + creditsToAdd;
 
-      const { error: updateError } = await supabaseClient
+      // Update available credits
+      const { error: creditsUpdateError } = await supabaseClient
         .from("available_credits")
         .upsert({
           user_id: user.id,
@@ -77,29 +113,62 @@ serve(async (req) => {
           updated_at: new Date().toISOString(),
         }, { onConflict: 'user_id' });
 
-      if (updateError) throw updateError;
+      if (creditsUpdateError) throw creditsUpdateError;
       logStep("Credits updated", { newCreditAmount });
 
+      // Update user's last_credit_pack_purchased if valid pack type
+      if (packType && VALID_PACK_TYPES.includes(packType)) {
+        const { error: userUpdateError } = await supabaseClient
+          .from("users")
+          .update({
+            last_credit_pack_purchased: packType,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", user.id);
+
+        if (userUpdateError) {
+          logStep("Warning: Failed to update user pack type", { error: userUpdateError.message });
+        } else {
+          logStep("User pack type updated", { packType });
+        }
+      }
+
+      // Record purchase in history
+      const amountPaid = packType ? PACK_PRICES[packType] : (session.amount_total ? session.amount_total / 100 : null);
+      const { error: historyError } = await supabaseClient
+        .from("purchase_history")
+        .insert({
+          user_id: user.id,
+          stripe_session_id: sessionId,
+          purchase_type: "credit_pack",
+          credits_purchased: creditsToAdd,
+          amount_paid: amountPaid,
+          subscription_plan: packType || null,
+        });
+
+      if (historyError) {
+        logStep("Warning: Failed to record purchase history", { error: historyError.message });
+      } else {
+        logStep("Purchase history recorded", { packType, creditsToAdd, amountPaid });
+      }
+
     } else {
-      // Handle subscription purchase
+      // Handle subscription purchase (legacy support)
       logStep("Processing subscription");
 
-      // Determine subscription type and credits from line items
       const lineItems = await stripe.checkout.sessions.listLineItems(sessionId);
       const priceId = lineItems.data[0]?.price?.id;
-      
+
       let subscriptionType = "standard";
       let creditsToSet = 3000;
 
-      // Map price IDs to subscription types
-      if (priceId === "price_1RakAAEybjfbmfmGPLiHbxj1") { // Pro price ID
+      if (priceId === "price_1RakAAEybjfbmfmGPLiHbxj1") {
         subscriptionType = "pro";
-        creditsToSet = 999999; // Unlimited for pro
+        creditsToSet = 999999;
       }
 
       logStep("Subscription details", { subscriptionType, creditsToSet });
 
-      // Update user subscription
       const { error: userUpdateError } = await supabaseClient
         .from("users")
         .update({
@@ -110,7 +179,6 @@ serve(async (req) => {
 
       if (userUpdateError) throw userUpdateError;
 
-      // Update credits
       const { error: creditsUpdateError } = await supabaseClient
         .from("available_credits")
         .upsert({
@@ -120,6 +188,24 @@ serve(async (req) => {
         }, { onConflict: 'user_id' });
 
       if (creditsUpdateError) throw creditsUpdateError;
+
+      // Record subscription purchase
+      const { error: historyError } = await supabaseClient
+        .from("purchase_history")
+        .insert({
+          user_id: user.id,
+          stripe_session_id: sessionId,
+          stripe_price_id: priceId,
+          purchase_type: "subscription",
+          credits_purchased: creditsToSet,
+          subscription_plan: subscriptionType,
+          amount_paid: session.amount_total ? session.amount_total / 100 : null,
+        });
+
+      if (historyError) {
+        logStep("Warning: Failed to record subscription history", { error: historyError.message });
+      }
+
       logStep("Subscription and credits updated", { subscriptionType, creditsToSet });
     }
 

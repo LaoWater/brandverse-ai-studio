@@ -132,7 +132,7 @@ const Pricing = () => {
       gradient: "from-amber-500 to-orange-600",
       glowColor: "amber-500",
       popular: false,
-      productId: "prod_STUDIO_PLACEHOLDER",
+      productId: "prod_SXNSStudio3000",
       tier: "Agency Pro",
       features: [
         { text: "3,000 posts or 1,500 fast images", icon: <MessageSquare className="w-4 h-4" /> },

@@ -355,6 +355,7 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          last_credit_pack_purchased: Database["public"]["Enums"]["credit_pack_type"] | null
           referred_by: string | null
           subscription_expiry_date: string | null
           subscription_type:
@@ -369,6 +370,7 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          last_credit_pack_purchased?: Database["public"]["Enums"]["credit_pack_type"] | null
           referred_by?: string | null
           subscription_expiry_date?: string | null
           subscription_type?:
@@ -383,6 +385,7 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          last_credit_pack_purchased?: Database["public"]["Enums"]["credit_pack_type"] | null
           referred_by?: string | null
           subscription_expiry_date?: string | null
           subscription_type?:
@@ -408,6 +411,7 @@ export type Database = {
       }
     }
     Enums: {
+      credit_pack_type: "starter" | "launch" | "scale" | "studio"
       platform_type:
         | "facebook"
         | "instagram"
@@ -545,6 +549,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      credit_pack_type: ["starter", "launch", "scale", "studio"],
       platform_type: ["facebook", "instagram", "linkedin", "twitter", "tiktok"],
       post_status: ["draft", "approved", "posted"],
       purchase_type_enum: ["subscription", "credit_pack"],

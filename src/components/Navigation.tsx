@@ -62,16 +62,9 @@ const Navigation = () => {
     { name: "Pricing", href: "/pricing" },
   ];
 
-  const nonAuthNavItems = [
-    { name: "Home", href: "/" },
-    { name: "Features", href: "/features" },
-    { name: "Content Generator", href: "/content-generator" },
-    { name: "Media Studio", href: "/media-studio" },
-    { name: "Pricing", href: "/pricing" },
-
-  ];
-
-  const authNavItems = [
+  // Main navigation items - same for both authenticated and anonymous users
+  // Auth guards are handled at the feature/page level
+  const mainNavItems = [
     { name: "Content Generator", href: "/content-generator" },
     { name: "Media Studio", href: "/media-studio" },
     { name: "Library", href: "/post-manager" },
@@ -87,60 +80,45 @@ const Navigation = () => {
             <span className="text-xl font-bold text-white">Creators Multiverse</span>
           </Link>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation - Same for both auth and anon users */}
           <div className="hidden md:flex items-center space-x-8">
-            {user ? (
-              <>
-                {/* Collapsible Home Menu for authenticated users */}
-                <div className="relative" ref={homeMenuRef}>
-                  <button
-                    onClick={() => setIsHomeMenuOpen(!isHomeMenuOpen)}
-                    className="text-gray-300 hover:text-white transition-colors flex items-center gap-1"
-                  >
-                    Home
-                    <ChevronDown className={`w-4 h-4 transition-transform ${isHomeMenuOpen ? 'rotate-180' : ''}`} />
-                  </button>
-                  {isHomeMenuOpen && (
-                    <div className="absolute top-full left-0 mt-2 w-48 shadow-lg z-50 nav-dropdown-content">
-                      <div className="py-2">
-                        {publicNavItems.map((item) => (
-                          <Link
-                            key={item.name}
-                            to={item.href}
-                            className="block px-4 py-2 text-gray-300 hover:text-white hover:bg-white/10 transition-colors nav-dropdown-item"
-                            onClick={() => setIsHomeMenuOpen(false)}
-                          >
-                            {item.name}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+            {/* Collapsible Home Menu */}
+            <div className="relative" ref={homeMenuRef}>
+              <button
+                onClick={() => setIsHomeMenuOpen(!isHomeMenuOpen)}
+                className="text-gray-300 hover:text-white transition-colors flex items-center gap-1"
+              >
+                Home
+                <ChevronDown className={`w-4 h-4 transition-transform ${isHomeMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {isHomeMenuOpen && (
+                <div className="absolute top-full left-0 mt-2 w-48 shadow-lg z-50 nav-dropdown-content">
+                  <div className="py-2">
+                    {publicNavItems.map((item) => (
+                      <Link
+                        key={item.name}
+                        to={item.href}
+                        className="block px-4 py-2 text-gray-300 hover:text-white hover:bg-white/10 transition-colors nav-dropdown-item"
+                        onClick={() => setIsHomeMenuOpen(false)}
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
+              )}
+            </div>
 
-                {/* Main authenticated navigation */}
-                {authNavItems.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className="text-gray-300 hover:text-white transition-colors"
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-              </>
-            ) : (
-              // Show public navigation for non-authenticated users
-              nonAuthNavItems.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className="text-gray-300 hover:text-white transition-colors"
-                >
-                  {item.name}
-                </Link>
-              ))
-            )}
+            {/* Main navigation items - same for all users */}
+            {mainNavItems.map((item) => (
+              <Link
+                key={item.name}
+                to={item.href}
+                className="text-gray-300 hover:text-white transition-colors"
+              >
+                {item.name}
+              </Link>
+            ))}
           </div>
 
           {/* Auth Buttons */}
@@ -252,64 +230,48 @@ const Navigation = () => {
         {isOpen && (
           <div className="md:hidden py-4 border-t border-primary/20">
             <div className="flex flex-col space-y-4">
-              {user ? (
-                <>
-                  {/* Mobile Credits Bar */}
-                  <CreditsBar />
+              {/* Mobile Credits Bar - only for authenticated users */}
+              {user && <CreditsBar />}
 
-                  {/* Mobile Home Menu */}
-                  <div>
-                    <button
-                      onClick={() => setIsHomeMenuOpen(!isHomeMenuOpen)}
-                      className="text-gray-300 hover:text-white transition-colors w-full flex justify-between items-center py-2"
-                    >
-                      Home
-                      <ChevronDown className={`w-4 h-4 transition-transform ${isHomeMenuOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                    {isHomeMenuOpen && (
-                      <div className="ml-4 mt-2 space-y-2">
-                        {publicNavItems.map((item) => (
-                          <Link
-                            key={item.name}
-                            to={item.href}
-                            className="block text-gray-300 hover:text-white transition-colors py-2"
-                            onClick={() => {
-                              setIsOpen(false);
-                              setIsHomeMenuOpen(false);
-                            }}
-                          >
-                            {item.name}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
+              {/* Mobile Home Menu - same for all users */}
+              <div>
+                <button
+                  onClick={() => setIsHomeMenuOpen(!isHomeMenuOpen)}
+                  className="text-gray-300 hover:text-white transition-colors w-full flex justify-between items-center py-2"
+                >
+                  Home
+                  <ChevronDown className={`w-4 h-4 transition-transform ${isHomeMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {isHomeMenuOpen && (
+                  <div className="ml-4 mt-2 space-y-2">
+                    {publicNavItems.map((item) => (
+                      <Link
+                        key={item.name}
+                        to={item.href}
+                        className="block text-gray-300 hover:text-white transition-colors py-2"
+                        onClick={() => {
+                          setIsOpen(false);
+                          setIsHomeMenuOpen(false);
+                        }}
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
                   </div>
+                )}
+              </div>
 
-                  {/* Mobile authenticated navigation */}
-                  {authNavItems.map((item) => (
-                    <Link
-                      key={item.name}
-                      to={item.href}
-                      className="text-gray-300 hover:text-white transition-colors py-2"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
-                </>
-              ) : (
-                // ... keep existing code (mobile public navigation)
-                nonAuthNavItems.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className="text-gray-300 hover:text-white transition-colors py-2"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    {item.name}
-                  </Link>
-                ))
-              )}
+              {/* Main navigation items - same for all users */}
+              {mainNavItems.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className="text-gray-300 hover:text-white transition-colors py-2"
+                  onClick={() => setIsOpen(false)}
+                >
+                  {item.name}
+                </Link>
+              ))}
               
               {user ? (
                 <div className="pt-4 border-t border-primary/20">

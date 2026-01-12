@@ -8,6 +8,34 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Credit pack configuration - single source of truth
+const CREDIT_PACKS = {
+  "prod_SXNQ20skugqshl": {
+    packType: "starter",
+    credits: 100,
+    priceInCents: 300,
+    name: "Starter"
+  },
+  "prod_SXNQqHY08uDDpg": {
+    packType: "launch",
+    credits: 300,
+    priceInCents: 800,
+    name: "Launch"
+  },
+  "prod_SXNRQ7G1zjUMC3": {
+    packType: "scale",
+    credits: 1000,
+    priceInCents: 2000,
+    name: "Scale"
+  },
+  "prod_TmToprXiKYXIr2": {
+    packType: "studio",
+    credits: 3000,
+    priceInCents: 5000,
+    name: "Studio"
+  }
+} as const;
+
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[CREATE-CREDIT-CHECKOUT] ${step}${detailsStr}`);
@@ -28,7 +56,7 @@ serve(async (req) => {
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
-    
+
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError) throw new Error(`Authentication error: ${userError.message}`);
@@ -38,7 +66,14 @@ serve(async (req) => {
 
     const { productId, credits } = await req.json();
     if (!productId || !credits) throw new Error("Missing productId or credits");
-    logStep("Request data", { productId, credits });
+
+    // Validate product ID and get pack info
+    const packInfo = CREDIT_PACKS[productId as keyof typeof CREDIT_PACKS];
+    if (!packInfo) {
+      throw new Error(`Invalid product ID: ${productId}`);
+    }
+
+    logStep("Request data", { productId, credits, packType: packInfo.packType });
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",
@@ -59,23 +94,24 @@ serve(async (req) => {
           price_data: {
             currency: "usd",
             product: productId,
-            unit_amount: productId === "prod_SXNQ20skugqshl" ? 300 : 
-                        productId === "prod_SXNQqHY08uDDpg" ? 800 : 2000,
+            unit_amount: packInfo.priceInCents,
           },
           quantity: 1,
         },
       ],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/payment-success?session_id={CHECKOUT_SESSION_ID}&type=credits&credits=${credits}`,
+      success_url: `${req.headers.get("origin")}/payment-success?session_id={CHECKOUT_SESSION_ID}&type=credits&credits=${packInfo.credits}`,
       cancel_url: `${req.headers.get("origin")}/pricing`,
       metadata: {
         user_id: user.id,
-        credits: credits.toString(),
+        credits: packInfo.credits.toString(),
+        pack_type: packInfo.packType,
+        pack_name: packInfo.name,
         type: "credits"
       }
     });
 
-    logStep("Checkout session created", { sessionId: session.id });
+    logStep("Checkout session created", { sessionId: session.id, packType: packInfo.packType });
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
