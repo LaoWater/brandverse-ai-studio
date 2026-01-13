@@ -1341,14 +1341,43 @@
   }
 
   /* Fix tabs component */
-  html.light [role="tablist"] button {
+  /* Exclude tabs that have bg-primary backgrounds (they need white text) */
+  html.light [role="tablist"]:not([class*="border-primary"]) button {
     color: rgb(107 114 128) !important;
   }
 
-  html.light [role="tablist"] button[data-state="active"],
-  html.light [role="tablist"] button[aria-selected="true"] {
+  html.light [role="tablist"]:not([class*="border-primary"]) button[data-state="active"],
+  html.light [role="tablist"]:not([class*="border-primary"]) button[aria-selected="true"] {
     color: rgb(91, 95, 238) !important;
     border-bottom: 2px solid rgb(91, 95, 238) !important;
+  }
+
+  /* Tabs with primary-colored backgrounds need white text when active */
+  html.light [role="tablist"][class*="border-primary"] button[data-state="active"],
+  html.light [role="tablist"][class*="border-primary"] button[aria-selected="true"] {
+    color: white !important;
+    border-bottom: none !important;
+  }
+
+  /* Ensure all child elements also get white color */
+  html.light [role="tablist"][class*="border-primary"] button[data-state="active"] *,
+  html.light [role="tablist"][class*="border-primary"] button[aria-selected="true"] * {
+    color: white !important;
+  }
+
+  /* Ultra-high specificity: Tabs with bg-primary active state MUST have white text */
+  /* This targets Tailwind's data-[state=active]:bg-primary pattern */
+  html.light [role="tablist"] button[data-state="active"][class*="data-"][class*="state"][class*="active"][class*="bg-primary"] {
+    color: white !important;
+  }
+
+  /* Also target via bg-background parent (MediaLibrary TabsList) */
+  html.light [role="tablist"][class*="bg-background"] button[data-state="active"] {
+    color: white !important;
+  }
+
+  html.light [role="tablist"][class*="bg-background"] button[data-state="active"] * {
+    color: white !important;
   }
 
   /* Fix any cyan/accent hover states globally */
@@ -3164,6 +3193,7 @@ html.light .cosmic-card .cosmic-button {
   color: rgb(17 24 39) !important;
 }
 
+
 /* ============================================ */
 /* SETTINGS PAGE STYLES */
 /* ============================================ */
@@ -3335,3 +3365,21 @@ html.light .settings-tab-nav button.text-muted-foreground:hover {
   color: rgb(15, 15, 23) !important;
 }
 
+/* ============================================ */
+/* ACTIVE TAB/BUTTON WHITE TEXT OVERRIDES */
+/* For elements with gradient backgrounds that */
+/* need white text in both light and dark mode */
+/* ============================================ */
+
+/* Settings Page Tabs - Active state white text */
+/* These tabs have a gradient indicator behind them */
+html.light .settings-tab-nav button.text-white,
+.settings-tab-nav button.text-white {
+  color: white !important;
+}
+
+/* Settings Tab - all child elements white when active */
+html.light .settings-tab-nav button.text-white *,
+.settings-tab-nav button.text-white * {
+  color: white !important;
+}

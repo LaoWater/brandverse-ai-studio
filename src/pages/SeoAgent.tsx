@@ -164,29 +164,19 @@ const SeoAgent = () => {
 
     setIsAnalyzing(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error("Not authenticated");
-
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/seo-analysis`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('seo-analysis', {
+        body: {
           company_id: selectedCompany.id,
           website_url: websiteUrl.trim(),
           target_audience: targetAudience,
           buyer_persona: buyerPersona,
           competitors: competitors.split(',').map(c => c.trim()).filter(Boolean),
           keywords: keywords.split(',').map(k => k.trim()).filter(Boolean)
-        })
+        }
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Analysis failed');
+      if (error) {
+        throw new Error(error.message || 'Analysis failed');
       }
 
       toast.success("SEO Analysis completed!");
