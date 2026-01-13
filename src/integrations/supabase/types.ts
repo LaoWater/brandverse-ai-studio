@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
@@ -227,6 +227,95 @@ export type Database = {
           },
         ]
       }
+      media_files: {
+        Row: {
+          aspect_ratio: string | null
+          company_id: string | null
+          created_at: string | null
+          custom_title: string | null
+          download_count: number | null
+          duration: number | null
+          file_format: string
+          file_name: string
+          file_size: number | null
+          file_type: string
+          id: string
+          is_favorite: boolean | null
+          model_used: string
+          notes: string | null
+          prompt: string
+          public_url: string
+          quality: string | null
+          reference_image_url: string | null
+          storage_path: string
+          tags: string[] | null
+          thumbnail_url: string | null
+          updated_at: string | null
+          user_id: string
+          view_count: number | null
+        }
+        Insert: {
+          aspect_ratio?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          custom_title?: string | null
+          download_count?: number | null
+          duration?: number | null
+          file_format: string
+          file_name: string
+          file_size?: number | null
+          file_type: string
+          id?: string
+          is_favorite?: boolean | null
+          model_used: string
+          notes?: string | null
+          prompt: string
+          public_url: string
+          quality?: string | null
+          reference_image_url?: string | null
+          storage_path: string
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          updated_at?: string | null
+          user_id: string
+          view_count?: number | null
+        }
+        Update: {
+          aspect_ratio?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          custom_title?: string | null
+          download_count?: number | null
+          duration?: number | null
+          file_format?: string
+          file_name?: string
+          file_size?: number | null
+          file_type?: string
+          id?: string
+          is_favorite?: boolean | null
+          model_used?: string
+          notes?: string | null
+          prompt?: string
+          public_url?: string
+          quality?: string | null
+          reference_image_url?: string | null
+          storage_path?: string
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          updated_at?: string | null
+          user_id?: string
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_files_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platforms: {
         Row: {
           company_id: string
@@ -348,6 +437,209 @@ export type Database = {
         }
         Relationships: []
       }
+      seo_analysis: {
+        Row: {
+          analysis_result: Json
+          buyer_persona: Json | null
+          company_id: string
+          competitors: string[] | null
+          created_at: string | null
+          credits_used: number | null
+          error_message: string | null
+          id: string
+          keywords: string[] | null
+          platform_scores: Json | null
+          recommendations: Json | null
+          status: string
+          target_audience: string | null
+          updated_at: string | null
+          user_id: string
+          visibility_score: number | null
+        }
+        Insert: {
+          analysis_result?: Json
+          buyer_persona?: Json | null
+          company_id: string
+          competitors?: string[] | null
+          created_at?: string | null
+          credits_used?: number | null
+          error_message?: string | null
+          id?: string
+          keywords?: string[] | null
+          platform_scores?: Json | null
+          recommendations?: Json | null
+          status?: string
+          target_audience?: string | null
+          updated_at?: string | null
+          user_id: string
+          visibility_score?: number | null
+        }
+        Update: {
+          analysis_result?: Json
+          buyer_persona?: Json | null
+          company_id?: string
+          competitors?: string[] | null
+          created_at?: string | null
+          credits_used?: number | null
+          error_message?: string | null
+          id?: string
+          keywords?: string[] | null
+          platform_scores?: Json | null
+          recommendations?: Json | null
+          status?: string
+          target_audience?: string | null
+          updated_at?: string | null
+          user_id?: string
+          visibility_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seo_analysis_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seo_blog_posts: {
+        Row: {
+          analysis_id: string | null
+          company_id: string
+          content: string
+          created_at: string | null
+          credits_used: number | null
+          excerpt: string | null
+          id: string
+          reading_time_minutes: number | null
+          seo_meta: Json | null
+          status: string
+          target_keywords: string[] | null
+          title: string
+          updated_at: string | null
+          user_id: string
+          word_count: number | null
+        }
+        Insert: {
+          analysis_id?: string | null
+          company_id: string
+          content: string
+          created_at?: string | null
+          credits_used?: number | null
+          excerpt?: string | null
+          id?: string
+          reading_time_minutes?: number | null
+          seo_meta?: Json | null
+          status?: string
+          target_keywords?: string[] | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+          word_count?: number | null
+        }
+        Update: {
+          analysis_id?: string | null
+          company_id?: string
+          content?: string
+          created_at?: string | null
+          credits_used?: number | null
+          excerpt?: string | null
+          id?: string
+          reading_time_minutes?: number | null
+          seo_meta?: Json | null
+          status?: string
+          target_keywords?: string[] | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+          word_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seo_blog_posts_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "seo_analysis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seo_blog_posts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seo_engagement_opportunities: {
+        Row: {
+          analysis_id: string | null
+          company_id: string
+          created_at: string | null
+          discovered_at: string | null
+          id: string
+          platform: string
+          relevance_score: number | null
+          response_reasoning: string | null
+          source_content: string | null
+          source_title: string | null
+          source_url: string | null
+          status: string
+          suggested_response: string | null
+          user_id: string
+          user_notes: string | null
+        }
+        Insert: {
+          analysis_id?: string | null
+          company_id: string
+          created_at?: string | null
+          discovered_at?: string | null
+          id?: string
+          platform: string
+          relevance_score?: number | null
+          response_reasoning?: string | null
+          source_content?: string | null
+          source_title?: string | null
+          source_url?: string | null
+          status?: string
+          suggested_response?: string | null
+          user_id: string
+          user_notes?: string | null
+        }
+        Update: {
+          analysis_id?: string | null
+          company_id?: string
+          created_at?: string | null
+          discovered_at?: string | null
+          id?: string
+          platform?: string
+          relevance_score?: number | null
+          response_reasoning?: string | null
+          source_content?: string | null
+          source_title?: string | null
+          source_url?: string | null
+          status?: string
+          suggested_response?: string | null
+          user_id?: string
+          user_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seo_engagement_opportunities_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "seo_analysis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seo_engagement_opportunities_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           admin_level: number | null
@@ -355,7 +647,9 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
-          last_credit_pack_purchased: Database["public"]["Enums"]["credit_pack_type"] | null
+          last_credit_pack_purchased:
+            | Database["public"]["Enums"]["credit_pack_type"]
+            | null
           referred_by: string | null
           subscription_expiry_date: string | null
           subscription_type:
@@ -370,7 +664,9 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
-          last_credit_pack_purchased?: Database["public"]["Enums"]["credit_pack_type"] | null
+          last_credit_pack_purchased?:
+            | Database["public"]["Enums"]["credit_pack_type"]
+            | null
           referred_by?: string | null
           subscription_expiry_date?: string | null
           subscription_type?:
@@ -385,7 +681,9 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
-          last_credit_pack_purchased?: Database["public"]["Enums"]["credit_pack_type"] | null
+          last_credit_pack_purchased?:
+            | Database["public"]["Enums"]["credit_pack_type"]
+            | null
           referred_by?: string | null
           subscription_expiry_date?: string | null
           subscription_type?:
@@ -402,13 +700,34 @@ export type Database = {
     }
     Functions: {
       deduct_credits: {
-        Args: { _user_id: string; _credits_to_deduct: number }
+        Args: { _credits_to_deduct: number; _user_id: string }
         Returns: boolean
       }
-      reset_daily_credits: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
+      get_trending_media_tags: {
+        Args: { p_limit?: number; p_user_id: string }
+        Returns: {
+          tag: string
+          usage_count: number
+        }[]
       }
+      get_user_media_storage_usage: {
+        Args: { p_user_id: string }
+        Returns: {
+          image_count: number
+          total_files: number
+          total_size_mb: number
+          video_count: number
+        }[]
+      }
+      increment_media_download_count: {
+        Args: { media_id: string }
+        Returns: boolean
+      }
+      increment_media_view_count: {
+        Args: { media_id: string }
+        Returns: boolean
+      }
+      reset_daily_credits: { Args: never; Returns: undefined }
     }
     Enums: {
       credit_pack_type: "starter" | "launch" | "scale" | "studio"
