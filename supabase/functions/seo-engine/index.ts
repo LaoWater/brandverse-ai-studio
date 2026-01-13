@@ -18,6 +18,10 @@ interface EngineRequest {
   topic?: string; // For blog generation
 }
 
+// Credit costs for SEO Engine actions
+const SEO_BLOG_CREDITS = 1;
+const SEO_ENGAGEMENT_CREDITS = 2;
+
 interface CompanyData {
   id: string;
   name: string;
@@ -261,6 +265,28 @@ serve(async (req) => {
       throw new Error("company_id, analysis_id, and action are required");
     }
 
+    // Determine credits needed based on action
+    const creditsNeeded = request.action === 'generate_blog' ? SEO_BLOG_CREDITS : SEO_ENGAGEMENT_CREDITS;
+
+    // Check and deduct credits BEFORE processing
+    const { data: deductResult, error: deductError } = await supabaseClient.rpc('deduct_credits', {
+      _user_id: user.id,
+      _credits_to_deduct: creditsNeeded
+    });
+
+    if (deductError) {
+      logStep("Credit deduction error", { error: deductError.message });
+      throw new Error(`Failed to process credits: ${deductError.message}`);
+    }
+
+    if (!deductResult) {
+      logStep("Insufficient credits");
+      const actionName = request.action === 'generate_blog' ? 'Blog generation' : 'Engagement finder';
+      throw new Error(`Insufficient credits. ${actionName} requires ${creditsNeeded} credit(s).`);
+    }
+
+    logStep("Credits deducted", { credits: creditsNeeded, action: request.action });
+
     // Fetch company data
     const { data: company, error: companyError } = await supabaseClient
       .from('companies')
@@ -309,7 +335,7 @@ serve(async (req) => {
           word_count: blogPost.wordCount,
           reading_time_minutes: Math.ceil(blogPost.wordCount / 200),
           status: 'draft',
-          credits_used: 3
+          credits_used: SEO_BLOG_CREDITS
         })
         .select()
         .single();

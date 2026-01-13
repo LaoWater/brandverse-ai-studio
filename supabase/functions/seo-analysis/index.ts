@@ -280,6 +280,9 @@ Format your response as JSON with this structure:
   }
 }
 
+// Credit cost for SEO Analysis
+const SEO_ANALYSIS_CREDITS = 3;
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -304,6 +307,24 @@ serve(async (req) => {
     if (!user?.id) throw new Error("User not authenticated");
 
     logStep("User authenticated", { userId: user.id });
+
+    // Check and deduct credits BEFORE running analysis
+    const { data: deductResult, error: deductError } = await supabaseClient.rpc('deduct_credits', {
+      _user_id: user.id,
+      _credits_to_deduct: SEO_ANALYSIS_CREDITS
+    });
+
+    if (deductError) {
+      logStep("Credit deduction error", { error: deductError.message });
+      throw new Error(`Failed to process credits: ${deductError.message}`);
+    }
+
+    if (!deductResult) {
+      logStep("Insufficient credits");
+      throw new Error(`Insufficient credits. SEO Analysis requires ${SEO_ANALYSIS_CREDITS} credits.`);
+    }
+
+    logStep("Credits deducted", { credits: SEO_ANALYSIS_CREDITS });
 
     // Parse request
     const request: AnalysisRequest = await req.json();
@@ -375,7 +396,7 @@ serve(async (req) => {
         platform_scores: analysisResult.platformScores,
         recommendations: analysisResult.recommendations,
         status: 'completed',
-        credits_used: 5 // MVP: fixed credit cost
+        credits_used: SEO_ANALYSIS_CREDITS
       })
       .select()
       .single();

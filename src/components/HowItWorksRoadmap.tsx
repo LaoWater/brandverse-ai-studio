@@ -115,10 +115,10 @@ const RoadmapStep: React.FC<RoadmapStepProps> = ({ step, index, totalSteps, scro
   };
 
   return (
-    <div ref={ref} className="relative flex items-start my-12 md:my-16">
+    <div ref={ref} className="relative flex items-start my-6 sm:my-12 md:my-16">
       <motion.div
         style={{ scale: nodeScale, opacity: nodeOpacity }}
-        className={`absolute left-1/2 -translate-x-1/2 z-10 w-8 h-8 md:w-10 md:h-10 rounded-full border-2 ${step.borderColor} bg-gradient-to-br ${step.bgColor.replace('/10', '/60')} dark:${step.bgColor.replace('/10', '/50')} flex items-center justify-center shadow-md dark:shadow-lg [&>svg]:!fill-transparent`}
+        className={`hidden sm:flex absolute left-1/2 -translate-x-1/2 z-10 w-8 h-8 md:w-10 md:h-10 rounded-full border-2 ${step.borderColor} bg-gradient-to-br ${step.bgColor.replace('/10', '/60')} dark:${step.bgColor.replace('/10', '/50')} items-center justify-center shadow-md dark:shadow-lg [&>svg]:!fill-transparent`}
       >
         <IconComponent className={`w-4 h-4 md:w-5 md:h-5 ${step.iconColor} stroke-current`} strokeWidth={2} />
       </motion.div>
@@ -127,31 +127,27 @@ const RoadmapStep: React.FC<RoadmapStepProps> = ({ step, index, totalSteps, scro
         variants={cardVariants}
         initial="hidden"
         animate={isInView ? "visible" : "hidden"}
-        // theme('spacing.24') is 6rem. This is the space each card container yields to the center.
-        // This creates a 5rem visual gap between card content and the timeline dot's edge.
-        // The Card component inside will occupy (TotalWidth/2 - 6rem - internal_padding).
-        // This will be ~75% of the space on its side if parent is max-w-3xl.
-        className={`w-full md:w-[calc(55%-theme(spacing.24))] md:px-10 ${
+        className={`w-full md:w-[calc(55%-theme(spacing.24))] px-2 sm:px-0 md:px-10 ${
           index % 2 === 0 ? 'md:mr-auto' : 'md:ml-auto'
         }`}
       >
         <Card className={`overflow-hidden shadow-lg dark:shadow-2xl bg-card/60 dark:${step.bgColor} ${step.borderColor} border dark:backdrop-blur-md backdrop-blur-sm dark:bg-opacity-80`}>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className={`p-3 rounded-full bg-gradient-to-br ${step.bgColor.replace('/10', '/50')} dark:${step.bgColor.replace('/10', '/30')} ${step.borderColor} border-2 shadow-sm`}>
-                <IconComponent className={`w-6 h-6 ${step.iconColor}`} />
+          <CardHeader className="p-4 sm:p-6">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className={`p-2 sm:p-3 rounded-full bg-gradient-to-br ${step.bgColor.replace('/10', '/50')} dark:${step.bgColor.replace('/10', '/30')} ${step.borderColor} border-2 shadow-sm`}>
+                <IconComponent className={`w-5 h-5 sm:w-6 sm:h-6 ${step.iconColor}`} />
               </div>
               <div>
-                <CardDescription className={`${step.textColor} dark:${step.textColor} font-semibold text-sm`}>
+                <CardDescription className={`${step.textColor} dark:${step.textColor} font-semibold text-xs sm:text-sm`}>
                   Step {step.stepNumber}
                 </CardDescription>
-                <CardTitle className={`text-2xl font-bold text-foreground dark:${step.textColor.replace('-300', '-100')}`}>{step.title}</CardTitle>
+                <CardTitle className={`text-lg sm:text-2xl font-bold text-foreground dark:${step.textColor.replace('-300', '-100')}`}>{step.title}</CardTitle>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-foreground dark:text-gray-300 leading-relaxed font-medium">{step.description}</p>
-            <ul className="list-disc list-inside space-y-1.5 text-foreground/80 dark:text-gray-400 text-sm leading-relaxed">
+          <CardContent className="space-y-2 sm:space-y-3 p-4 pt-0 sm:p-6 sm:pt-0">
+            <p className="text-foreground dark:text-gray-300 leading-relaxed font-medium text-sm sm:text-base">{step.description}</p>
+            <ul className="list-disc list-inside space-y-1 sm:space-y-1.5 text-foreground/80 dark:text-gray-400 text-xs sm:text-sm leading-relaxed">
               {step.details.map((detail, i) => (
                 <li key={i}>{detail}</li>
               ))}
@@ -180,7 +176,7 @@ export function HowItWorksRoadmap() {
   // const backgroundScale = useTransform(scrollYProgress, [0, 0.5, 1], [1.05, 1, 1.05]);
 
   return (
-    <section id="how-it-works" className="py-24 relative bg-background overflow-hidden">
+    <section id="how-it-works" className="py-12 sm:py-24 relative bg-background overflow-hidden">
       {/* Background Image - Only shown in dark mode for performance */}
       <div className="absolute inset-0 overflow-hidden hidden dark:block">
         <motion.div
@@ -215,9 +211,9 @@ export function HowItWorksRoadmap() {
       </div>
 
       <div className="container mx-auto px-4 relative z-30">
-        <div className="text-center mb-16 md:mb-24">
+        <div className="text-center mb-8 sm:mb-16 md:mb-24">
           <motion.h2
-            className="text-4xl md:text-5xl font-bold text-foreground dark:text-white dark:drop-shadow-lg"
+            className="text-2xl sm:text-4xl md:text-5xl font-bold text-foreground dark:text-white dark:drop-shadow-lg"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -226,7 +222,7 @@ export function HowItWorksRoadmap() {
             How It Works
           </motion.h2>
           <motion.p
-            className="text-xl text-foreground/80 dark:text-gray-300 mt-4 max-w-3xl mx-auto leading-relaxed dark:drop-shadow-md"
+            className="text-base sm:text-xl text-foreground/80 dark:text-gray-300 mt-3 sm:mt-4 max-w-3xl mx-auto leading-relaxed dark:drop-shadow-md px-2"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
@@ -238,13 +234,13 @@ export function HowItWorksRoadmap() {
 
         <div ref={roadmapRef} className="relative max-w-5xl mx-auto"> {/* Using max-w-5xl for wider layout */}
           <motion.div
-            // Updated gradient to end with purple - More visible in light mode
-            className="absolute top-0 left-1/2 -translate-x-1/2 w-1 bg-gradient-to-b from-sky-400/80 via-purple-400/80 to-emerald-400/80 dark:from-sky-500 dark:via-purple-500 dark:to-emerald-500 rounded-full shadow-md dark:shadow-lg"
+            // Updated gradient to end with purple - More visible in light mode - Hidden on mobile
+            className="hidden sm:block absolute top-0 left-1/2 -translate-x-1/2 w-1 bg-gradient-to-b from-sky-400/80 via-purple-400/80 to-emerald-400/80 dark:from-sky-500 dark:via-purple-500 dark:to-emerald-500 rounded-full shadow-md dark:shadow-lg"
             style={{ height: lineHeight, opacity: lineOpacity }}
             aria-hidden="true"
           />
 
-          <div className="space-y-8 md:space-y-0">
+          <div className="space-y-4 sm:space-y-8 md:space-y-0">
             {steps.map((step, index) => (
               <RoadmapStep
                 key={step.stepNumber}
@@ -258,20 +254,20 @@ export function HowItWorksRoadmap() {
         </div>
 
         <motion.div
-          className="text-center mt-16 md:mt-13"
+          className="text-center mt-8 sm:mt-16 md:mt-13"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
           viewport={{ once: true }}
         >
-          <p className="text-xl text-foreground/80 dark:text-gray-300 mb-5 dark:drop-shadow-md">Ready to launch your product into the spotlight?</p>
+          <p className="text-base sm:text-xl text-foreground/80 dark:text-gray-300 mb-4 sm:mb-5 dark:drop-shadow-md px-2">Ready to launch your product into the spotlight?</p>
           <Button
             asChild
             size="lg"
-            className="bg-accent hover:bg-accent/90 text-black px-8 py-4 text-lg font-semibold shadow-xl dark:shadow-2xl hover:shadow-accent/20 transition-all duration-300 hover:scale-105"
+            className="bg-accent hover:bg-accent/90 text-black px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-lg font-semibold shadow-xl dark:shadow-2xl hover:shadow-accent/20 transition-all duration-300 hover:scale-105"
           >
             <a href="/brand-setup">
-              Start Your Launch <ArrowRight className="ml-2 w-5 h-5" />
+              Start Your Launch <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
             </a>
           </Button>
         </motion.div>

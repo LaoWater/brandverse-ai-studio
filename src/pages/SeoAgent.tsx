@@ -36,13 +36,15 @@ import {
   Building2,
   ChevronDown,
   ChevronUp,
-  Wand2
+  Wand2,
+  Coins
 } from "lucide-react";
 import { FaTiktok, FaRedditAlien, FaXTwitter } from "react-icons/fa6";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getUserCredits, SEO_CREDITS } from "@/services/creditsService";
 
 type SeoTab = 'overview' | 'analysis' | 'engine';
 
@@ -67,6 +69,21 @@ const SeoAgent = () => {
   const [isGeneratingBlog, setIsGeneratingBlog] = useState(false);
   const [isSearchingEngagement, setIsSearchingEngagement] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Credits state
+  const [userCredits, setUserCredits] = useState<number>(0);
+
+  // Fetch user credits
+  useEffect(() => {
+    const fetchCredits = async () => {
+      if (!user) return;
+      const credits = await getUserCredits();
+      if (credits) {
+        setUserCredits(credits.available_credits);
+      }
+    };
+    fetchCredits();
+  }, [user]);
 
   // Load saved preferences from latest analysis
   useEffect(() => {
@@ -162,6 +179,12 @@ const SeoAgent = () => {
       return;
     }
 
+    // Check credits before proceeding
+    if (userCredits < SEO_CREDITS.ANALYSIS) {
+      toast.error(`Insufficient credits. SEO Analysis requires ${SEO_CREDITS.ANALYSIS} credits. You have ${userCredits}.`);
+      return;
+    }
+
     setIsAnalyzing(true);
     try {
       const { data, error } = await supabase.functions.invoke('seo-analysis', {
@@ -179,6 +202,8 @@ const SeoAgent = () => {
         throw new Error(error.message || 'Analysis failed');
       }
 
+      // Update local credits state
+      setUserCredits(prev => prev - SEO_CREDITS.ANALYSIS);
       toast.success("SEO Analysis completed!");
       queryClient.invalidateQueries({ queryKey: ['seo-analysis'] });
 
@@ -199,6 +224,12 @@ const SeoAgent = () => {
       return;
     }
 
+    // Check credits before proceeding
+    if (userCredits < SEO_CREDITS.BLOG_POST) {
+      toast.error(`Insufficient credits. Blog generation requires ${SEO_CREDITS.BLOG_POST} credit. You have ${userCredits}.`);
+      return;
+    }
+
     setIsGeneratingBlog(true);
     try {
       const { data, error } = await supabase.functions.invoke('seo-engine', {
@@ -214,6 +245,8 @@ const SeoAgent = () => {
         throw new Error(error.message || 'Blog generation failed');
       }
 
+      // Update local credits state
+      setUserCredits(prev => prev - SEO_CREDITS.BLOG_POST);
       toast.success("Blog post generated!");
       setBlogTopic('');
       queryClient.invalidateQueries({ queryKey: ['seo-blog-posts'] });
@@ -232,6 +265,12 @@ const SeoAgent = () => {
       return;
     }
 
+    // Check credits before proceeding
+    if (userCredits < SEO_CREDITS.ENGAGEMENT) {
+      toast.error(`Insufficient credits. Engagement finder requires ${SEO_CREDITS.ENGAGEMENT} credits. You have ${userCredits}.`);
+      return;
+    }
+
     setIsSearchingEngagement(true);
     try {
       const { data, error } = await supabase.functions.invoke('seo-engine', {
@@ -246,6 +285,8 @@ const SeoAgent = () => {
         throw new Error(error.message || 'Engagement search failed');
       }
 
+      // Update local credits state
+      setUserCredits(prev => prev - SEO_CREDITS.ENGAGEMENT);
       toast.success("Found new engagement opportunities!");
       queryClient.invalidateQueries({ queryKey: ['seo-engagement'] });
 
@@ -348,10 +389,10 @@ const SeoAgent = () => {
     }
   ];
 
-  const tabs: { id: SeoTab; label: string; sublabel: string }[] = [
-    { id: 'overview', label: 'SEO', sublabel: 'Overview' },
-    { id: 'analysis', label: 'SEO', sublabel: 'Analysis' },
-    { id: 'engine', label: 'SEO', sublabel: 'Engine' }
+  const tabs: { id: SeoTab; label: string; mobileLabel: string; sublabel: string }[] = [
+    { id: 'overview', label: 'SEO', mobileLabel: '', sublabel: 'Overview' },
+    { id: 'analysis', label: 'SEO', mobileLabel: '', sublabel: 'Analysis' },
+    { id: 'engine', label: 'SEO', mobileLabel: '', sublabel: 'Engine' }
   ];
 
   // Check if user needs to login or company needs setup
@@ -380,12 +421,12 @@ const SeoAgent = () => {
       <main className="pt-24 pb-16 relative z-10">
         <div className="container mx-auto px-6">
           {/* Sliding Tabs Header with Company Logo */}
-          <div className="relative flex items-center justify-center mb-8">
+          <div className="relative flex items-center justify-center mb-6 sm:mb-8">
             {/* Tabs */}
-            <div className="relative inline-flex items-center bg-muted/50 dark:bg-black/30 rounded-full p-2 border-0 will-change-auto">
+            <div className="relative inline-flex items-center bg-muted/50 dark:bg-black/30 rounded-full p-1.5 sm:p-2 border-0 will-change-auto">
               {/* Sliding indicator */}
               <div
-                className="absolute top-1.5 bottom-1.5 rounded-full bg-gradient-to-r from-primary to-accent transition-all duration-300 ease-out will-change-transform"
+                className="absolute top-1 bottom-1 sm:top-1.5 sm:bottom-1.5 rounded-full bg-gradient-to-r from-primary to-accent transition-all duration-300 ease-out will-change-transform"
                 style={{
                   width: `calc(${100 / tabs.length}% - 8px)`,
                   transform: `translateX(calc(${tabs.findIndex(t => t.id === activeTab) * 100}% + 6px + ${tabs.findIndex(t => t.id === activeTab) * 4}px))`,
@@ -396,22 +437,23 @@ const SeoAgent = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`relative z-10 px-6 py-3.5 rounded-full text-lg font-semibold transition-colors duration-200 ${
+                  className={`relative z-10 px-3 py-2 sm:px-6 sm:py-3.5 rounded-full text-sm sm:text-lg font-semibold transition-colors duration-200 ${
                     activeTab === tab.id
                       ? 'text-white'
                       : 'text-gray-400 hover:text-gray-200'
                   }`}
                 >
-                  <span className="flex items-center gap-2">
-                    {tab.label} <span className={`font-serif ${activeTab === tab.id ? 'text-white' : 'text-cosmic'}`}>{tab.sublabel}</span>
+                  <span className="flex items-center gap-1 sm:gap-2">
+                    <span className="hidden sm:inline">{tab.label}</span>
+                    <span className={`font-serif ${activeTab === tab.id ? 'text-white' : 'text-cosmic'}`}>{tab.sublabel}</span>
                   </span>
                 </button>
               ))}
             </div>
 
-            {/* Company Logo - Absolute Top Right */}
+            {/* Company Logo - Absolute Top Right - Hidden on mobile */}
             {selectedCompany && (
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-3">
+              <div className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 items-center gap-3">
                 {selectedCompany.logo_path ? (
                   <div className="w-12 h-12 rounded-lg overflow-hidden">
                     <img
@@ -434,17 +476,17 @@ const SeoAgent = () => {
           {activeTab === 'overview' && (
             <div className="animate-fade-in">
               {/* Hero Section */}
-              <div className="text-center mb-16">
-                <div className="max-w-4xl mx-auto space-y-6">
-                  <h1 className="text-5xl md:text-6xl font-bold leading-tight">
-                    <span className="text-cosmic font-serif flex items-center justify-center gap-3">
-                      <Globe className="w-12 h-12 md:w-14 md:h-14 text-accent animate-pulse" />
-                      SEO Everywhere
+              <div className="text-center mb-8 sm:mb-16">
+                <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 px-2">
+                  <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold leading-tight">
+                    <span className="text-cosmic font-serif flex items-center justify-center gap-2 sm:gap-3">
+                      <Globe className="w-8 h-8 sm:w-12 sm:h-12 md:w-14 md:h-14 text-accent animate-pulse" />
+                      <span className="hidden sm:inline">SEO</span> Everywhere
                     </span>
                     <span className="text-white block mt-2">Agent</span>
                   </h1>
 
-                  <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+                  <p className="text-base sm:text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
                     Traditional SEO is changing. 73% of buying decisions happen outside Google.
                     Our AI agent analyzes your visibility across the entire modern decision landscape.
                   </p>
@@ -452,12 +494,12 @@ const SeoAgent = () => {
               </div>
 
               {/* The Problem Section */}
-              <Card className="cosmic-card border-accent/30 mb-16 overflow-hidden">
-                <CardHeader className="text-center">
-                  <CardTitle className="text-3xl text-white">
+              <Card className="cosmic-card border-accent/30 mb-8 sm:mb-16 overflow-hidden">
+                <CardHeader className="text-center p-4 sm:p-6">
+                  <CardTitle className="text-xl sm:text-3xl text-white">
                     The <span className="text-cosmic font-serif">Google Trap</span>
                   </CardTitle>
-                  <CardDescription className="text-gray-300 text-lg max-w-2xl mx-auto">
+                  <CardDescription className="text-gray-300 text-sm sm:text-lg max-w-2xl mx-auto">
                     This is a concept first unveiled by NpDigital. Reflect on your own buying flow - or watch others -
                     and you'll understand how in modern times only a fraction of the decision is happening on Google anymore.
                     You're optimizing for Google while your customers are deciding on TikTok, YouTube, Reddit, and ChatGPT.
@@ -473,28 +515,28 @@ const SeoAgent = () => {
                     </a>
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
                     {platforms.map((platform) => (
                       <div
                         key={platform.name}
-                        className="relative group p-6 rounded-xl bg-white/5 border border-white/10 hover:border-accent/40 transition-all duration-300 hover:scale-105"
+                        className="relative group p-3 sm:p-6 rounded-xl bg-white/5 border border-white/10 hover:border-accent/40 transition-all duration-300 hover:scale-105"
                       >
-                        <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${platform.color} flex items-center justify-center mb-4 text-white group-hover:scale-110 transition-transform`}>
+                        <div className={`w-10 h-10 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br ${platform.color} flex items-center justify-center mb-2 sm:mb-4 text-white group-hover:scale-110 transition-transform [&>svg]:w-5 [&>svg]:h-5 sm:[&>svg]:w-8 sm:[&>svg]:h-8`}>
                           {platform.icon}
                         </div>
-                        <div className="flex items-baseline gap-2 mb-2">
-                          <span className="text-3xl font-bold text-accent">{platform.percentage}</span>
-                          <span className="text-gray-400 text-sm">of decisions</span>
+                        <div className="flex items-baseline gap-1 sm:gap-2 mb-1 sm:mb-2">
+                          <span className="text-xl sm:text-3xl font-bold text-accent">{platform.percentage}</span>
+                          <span className="text-gray-400 text-xs sm:text-sm">of decisions</span>
                         </div>
-                        <h3 className="text-white font-semibold mb-1">{platform.name}</h3>
-                        <p className="text-gray-400 text-sm">{platform.description}</p>
+                        <h3 className="text-white font-semibold mb-1 text-sm sm:text-base">{platform.name}</h3>
+                        <p className="text-gray-400 text-xs sm:text-sm hidden sm:block">{platform.description}</p>
                       </div>
                     ))}
                   </div>
 
-                  <div className="mt-8 p-6 rounded-xl bg-gradient-to-r from-accent/10 to-primary/10 border border-accent/20">
-                    <p className="text-center text-gray-300">
+                  <div className="mt-4 sm:mt-8 p-3 sm:p-6 rounded-xl bg-gradient-to-r from-accent/10 to-primary/10 border border-accent/20">
+                    <p className="text-center text-gray-300 text-xs sm:text-base">
                       <span className="text-accent font-bold">The insight:</span> Consumers aren't searching anymore - they're deciding in micro-moments
                       across dozens of platforms simultaneously. Each platform has its own decision psychology.
                     </p>
@@ -503,20 +545,20 @@ const SeoAgent = () => {
               </Card>
 
               {/* What SEO Agent Does */}
-              <div className="mb-16">
-                <h2 className="text-3xl md:text-4xl font-bold text-center text-white mb-12">
-                  What the <span className="text-cosmic font-serif">SEO Agent</span> Does
+              <div className="mb-8 sm:mb-16">
+                <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-center text-white mb-6 sm:mb-12">
+                  What the <span className="text-cosmic font-serif">Agent</span> Does
                 </h2>
-                <div className="grid md:grid-cols-2 gap-8">
+                <div className="grid md:grid-cols-2 gap-4 sm:gap-8">
                   {capabilities.map((capability, index) => (
                     <Card key={index} className="cosmic-card border-0 hover:border-accent/30 transition-all duration-300">
-                      <CardContent className="p-6 flex gap-4">
-                        <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
+                      <CardContent className="p-4 sm:p-6 flex gap-3 sm:gap-4">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0 [&>svg]:w-5 [&>svg]:h-5 sm:[&>svg]:w-6 sm:[&>svg]:h-6">
                           {capability.icon}
                         </div>
                         <div>
-                          <h3 className="text-white font-semibold text-lg mb-2">{capability.title}</h3>
-                          <p className="text-gray-400">{capability.description}</p>
+                          <h3 className="text-white font-semibold text-sm sm:text-lg mb-1 sm:mb-2">{capability.title}</h3>
+                          <p className="text-gray-400 text-xs sm:text-base">{capability.description}</p>
                         </div>
                       </CardContent>
                     </Card>
@@ -526,21 +568,21 @@ const SeoAgent = () => {
 
               {/* CTA Section */}
               <div className="text-center">
-                <div className="max-w-2xl mx-auto space-y-6">
-                  <h3 className="text-3xl font-bold text-white">
+                <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6 px-2">
+                  <h3 className="text-xl sm:text-3xl font-bold text-white">
                     Ready to <span className="text-cosmic font-serif">Get Started?</span>
                   </h3>
-                  <p className="text-gray-300 text-lg">
-                    Run your first SEO analysis to understand your visibility across the modern decision landscape.
+                  <p className="text-gray-300 text-sm sm:text-lg">
+                    Run your first analysis to understand your visibility across the modern decision landscape.
                   </p>
                   <Button
                     size="lg"
-                    className="cosmic-button px-8 py-6 text-lg font-semibold"
+                    className="cosmic-button px-6 py-4 sm:px-8 sm:py-6 text-base sm:text-lg font-semibold"
                     onClick={() => setActiveTab('analysis')}
                   >
-                    <Rocket className="mr-2 w-5 h-5" />
+                    <Rocket className="mr-2 w-4 h-4 sm:w-5 sm:h-5" />
                     Start Analysis
-                    <ArrowRight className="ml-2 w-5 h-5" />
+                    <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
                   </Button>
                 </div>
               </div>
@@ -549,11 +591,11 @@ const SeoAgent = () => {
 
           {activeTab === 'analysis' && (
             <div className="animate-fade-in max-w-4xl mx-auto">
-              <div className="text-center mb-8">
-                <h1 className="text-4xl font-bold text-white mb-4">
-                  SEO <span className="text-cosmic font-serif">Analysis</span>
+              <div className="text-center mb-6 sm:mb-8 px-2">
+                <h1 className="text-2xl sm:text-4xl font-bold text-white mb-3 sm:mb-4">
+                  <span className="hidden sm:inline">SEO</span> <span className="text-cosmic font-serif">Analysis</span>
                 </h1>
-                <p className="text-gray-300 text-lg">
+                <p className="text-gray-300 text-sm sm:text-lg">
                   Enter your website and we'll deeply analyze your online presence
                 </p>
               </div>
@@ -714,23 +756,32 @@ const SeoAgent = () => {
                       )}
 
                       {/* Run Analysis Button */}
-                      <Button
-                        className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white py-6 text-lg font-semibold"
-                        onClick={runAnalysis}
-                        disabled={isAnalyzing || !websiteUrl.trim()}
-                      >
-                        {isAnalyzing ? (
-                          <>
-                            <Loader2 className="mr-2 w-5 h-5 animate-spin" />
-                            Analyzing your website...
-                          </>
-                        ) : (
-                          <>
-                            <Search className="mr-2 w-5 h-5" />
-                            Run SEO Analysis
-                          </>
-                        )}
-                      </Button>
+                      <div className="space-y-2">
+                        <Button
+                          className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white py-6 text-lg font-semibold"
+                          onClick={runAnalysis}
+                          disabled={isAnalyzing || !websiteUrl.trim() || userCredits < SEO_CREDITS.ANALYSIS}
+                        >
+                          {isAnalyzing ? (
+                            <>
+                              <Loader2 className="mr-2 w-5 h-5 animate-spin" />
+                              Analyzing your website...
+                            </>
+                          ) : (
+                            <>
+                              <Search className="mr-2 w-5 h-5" />
+                              Run SEO Analysis
+                              <span className="ml-2 flex items-center text-sm opacity-80">
+                                <Coins className="w-4 h-4 mr-1" />
+                                {SEO_CREDITS.ANALYSIS}
+                              </span>
+                            </>
+                          )}
+                        </Button>
+                        <p className="text-center text-sm text-gray-400">
+                          Your credits: <span className={userCredits < SEO_CREDITS.ANALYSIS ? 'text-red-400' : 'text-accent'}>{userCredits}</span>
+                        </p>
+                      </div>
                     </CardContent>
                   </Card>
 
@@ -813,11 +864,11 @@ const SeoAgent = () => {
 
           {activeTab === 'engine' && (
             <div className="animate-fade-in">
-              <div className="text-center mb-8">
-                <h1 className="text-4xl font-bold text-white mb-4">
-                  SEO <span className="text-cosmic font-serif">Engine</span>
+              <div className="text-center mb-6 sm:mb-8 px-2">
+                <h1 className="text-2xl sm:text-4xl font-bold text-white mb-3 sm:mb-4">
+                  <span className="hidden sm:inline">SEO</span> <span className="text-cosmic font-serif">Engine</span>
                 </h1>
-                <p className="text-gray-300 text-lg">
+                <p className="text-gray-300 text-sm sm:text-lg">
                   Generate content and find engagement opportunities based on your analysis
                 </p>
               </div>
@@ -886,7 +937,7 @@ const SeoAgent = () => {
                         <Button
                           className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white"
                           onClick={generateBlogPost}
-                          disabled={isGeneratingBlog}
+                          disabled={isGeneratingBlog || userCredits < SEO_CREDITS.BLOG_POST}
                         >
                           {isGeneratingBlog ? (
                             <>
@@ -897,6 +948,10 @@ const SeoAgent = () => {
                             <>
                               <PenTool className="mr-2 w-5 h-5" />
                               Generate Blog Post
+                              <span className="ml-2 flex items-center text-sm opacity-80">
+                                <Coins className="w-4 h-4 mr-1" />
+                                {SEO_CREDITS.BLOG_POST}
+                              </span>
                             </>
                           )}
                         </Button>
@@ -948,7 +1003,7 @@ const SeoAgent = () => {
                         <Button
                           className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white"
                           onClick={searchEngagement}
-                          disabled={isSearchingEngagement}
+                          disabled={isSearchingEngagement || userCredits < SEO_CREDITS.ENGAGEMENT}
                         >
                           {isSearchingEngagement ? (
                             <>
@@ -959,6 +1014,10 @@ const SeoAgent = () => {
                             <>
                               <RefreshCw className="mr-2 w-5 h-5" />
                               Find Opportunities
+                              <span className="ml-2 flex items-center text-sm opacity-80">
+                                <Coins className="w-4 h-4 mr-1" />
+                                {SEO_CREDITS.ENGAGEMENT}
+                              </span>
                             </>
                           )}
                         </Button>

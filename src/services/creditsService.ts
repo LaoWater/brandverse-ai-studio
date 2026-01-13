@@ -168,3 +168,27 @@ export const calculateMediaStudioCreditsByTier = (
   const creditsPerImage = CREDIT_COSTS[qualityTier];
   return creditsPerImage * numberOfImages;
 };
+
+/**
+ * SEO Agent Credit Costs
+ */
+export const SEO_CREDITS = {
+  ANALYSIS: 3,        // Deep website analysis + LLM processing
+  BLOG_POST: 1,       // Generate SEO-optimized blog post
+  ENGAGEMENT: 2,      // Find engagement opportunities
+} as const;
+
+export type SeoAction = 'analysis' | 'blog' | 'engagement';
+
+export const getSeoCredits = (action: SeoAction): number => {
+  switch (action) {
+    case 'analysis':
+      return SEO_CREDITS.ANALYSIS;
+    case 'blog':
+      return SEO_CREDITS.BLOG_POST;
+    case 'engagement':
+      return SEO_CREDITS.ENGAGEMENT;
+    default:
+      return 0;
+  }
+};

@@ -321,14 +321,14 @@ const PostManager = () => {
 
       <div className="container mx-auto px-4 pt-24 pb-12 relative z-10">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-8">
+          <div className="text-center mb-6 sm:mb-8">
             {/* View Mode Switcher with Company Logo - GPU accelerated */}
-            <div className="relative flex items-center justify-center gap-6 mb-4">
+            <div className="relative flex items-center justify-center gap-4 sm:gap-6 mb-3 sm:mb-4">
               {/* Tabs */}
-              <div className="relative inline-flex items-center bg-muted/50 dark:bg-black/30 rounded-full p-2 border-0 will-change-auto">
+              <div className="relative inline-flex items-center bg-muted/50 dark:bg-black/30 rounded-full p-1.5 sm:p-2 border-0 will-change-auto">
                 {/* Sliding indicator - hardware accelerated with transform */}
                 <div
-                  className="absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-full bg-gradient-to-r from-primary to-accent transition-transform duration-300 ease-out will-change-transform"
+                  className="absolute top-1 bottom-1 sm:top-1.5 sm:bottom-1.5 w-[calc(50%-6px)] rounded-full bg-gradient-to-r from-primary to-accent transition-transform duration-300 ease-out will-change-transform"
                   style={{
                     transform: viewMode === 'posts' ? 'translateX(6px)' : 'translateX(calc(100% + 6px))',
                   }}
@@ -337,35 +337,35 @@ const PostManager = () => {
                 {/* Posts Button */}
                 <button
                   onClick={() => setViewMode('posts')}
-                  className={`relative z-10 px-7 py-3.5 rounded-full text-xl font-semibold transition-colors duration-200 ${
+                  className={`relative z-10 px-4 py-2.5 sm:px-7 sm:py-3.5 rounded-full text-sm sm:text-xl font-semibold transition-colors duration-200 ${
                     viewMode === 'posts'
                       ? 'text-white'
                       : 'text-gray-400 hover:text-gray-200'
                   }`}
                 >
-                  <span className="flex items-center gap-2">
-                    Post <span className={`font-serif ${viewMode === 'posts' ? 'text-white' : 'text-cosmic'}`}>Library</span>
+                  <span className="flex items-center gap-1 sm:gap-2">
+                    <span className="hidden sm:inline">Post</span> <span className={`font-serif ${viewMode === 'posts' ? 'text-white' : 'text-cosmic'}`}>Library</span>
                   </span>
                 </button>
 
                 {/* Studio Button */}
                 <button
                   onClick={() => setViewMode('studio')}
-                  className={`relative z-10 px-7 py-3.5 rounded-full text-xl font-semibold transition-colors duration-200 ${
+                  className={`relative z-10 px-4 py-2.5 sm:px-7 sm:py-3.5 rounded-full text-sm sm:text-xl font-semibold transition-colors duration-200 ${
                     viewMode === 'studio'
                       ? 'text-white'
                       : 'text-gray-400 hover:text-gray-200'
                   }`}
                 >
-                  <span className="flex items-center gap-2">
-                    Studio <span className={`font-serif ${viewMode === 'studio' ? 'text-white' : 'text-cosmic'}`}>Library</span>
+                  <span className="flex items-center gap-1 sm:gap-2">
+                    <span className="hidden sm:inline">Studio</span> <span className={`font-serif ${viewMode === 'studio' ? 'text-white' : 'text-cosmic'}`}><span className="sm:hidden">Media</span><span className="hidden sm:inline">Library</span></span>
                   </span>
                 </button>
               </div>
 
-              {/* Company Logo - Absolute Top Right */}
+              {/* Company Logo - Absolute Top Right - Hidden on mobile */}
               {selectedCompany && (
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-3">
+                <div className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 items-center gap-3">
                   {selectedCompany.logo_path ? (
                     <div className="w-12 h-12 rounded-lg overflow-hidden">
                       <img
@@ -383,7 +383,7 @@ const PostManager = () => {
                 </div>
               )}
             </div>
-            <p className="text-gray-300 text-lg">
+            <p className="text-gray-300 text-sm sm:text-lg px-2">
               {viewMode === 'posts'
                 ? <>Manage all your social media content for <span className="text-primary font-semibold">{selectedCompany.name}</span></>
                 : <>Browse and manage all AI-generated media for <span className="text-primary font-semibold">{selectedCompany.name}</span></>
@@ -498,7 +498,7 @@ const PostManager = () => {
           </div>
 
           <Tabs defaultValue="table" className="space-y-6">
-            <TabsList className="bg-white/10 border-white/20">
+            <TabsList className="bg-white/10 border-white/20 post-manager-tabs">
               <TabsTrigger value="table" className="data-[state=active]:bg-primary text-white">Table View</TabsTrigger>
               <TabsTrigger value="cards" className="data-[state=active]:bg-primary text-white">Card View</TabsTrigger>
               <TabsTrigger value="platform" className="data-[state=active]:bg-primary text-white">By Platform</TabsTrigger>

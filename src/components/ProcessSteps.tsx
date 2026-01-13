@@ -25,27 +25,25 @@ const ProcessSteps = () => {
   ];
 
   return (
-    <section className="py-12 relative">
+    <section className="py-8 sm:py-12 relative">
       <div className="container mx-auto px-4">
-       
-        
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-4 sm:gap-8 max-w-6xl mx-auto">
           {steps.map((step, index) => (
             <Card key={index} className="cosmic-card group hover:scale-105 transition-all duration-300">
-              <CardContent className="p-8 text-center">
-                <div className={`w-16 h-16 rounded-full bg-gradient-to-r ${step.color} flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                  <step.icon className="w-8 h-8 text-white" />
+              <CardContent className="p-4 sm:p-8 text-center">
+                <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-to-r ${step.color} flex items-center justify-center mx-auto mb-4 sm:mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                  <step.icon className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                 </div>
-                
-                <div className="text-2xl font-bold text-white mb-2">
+
+                <div className="text-xl sm:text-2xl font-bold text-white mb-2">
                   {String(index + 1).padStart(2, '0')}
                 </div>
-                
-                <h3 className="text-xl font-semibold text-white mb-4">
+
+                <h3 className="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4">
                   {step.title}
                 </h3>
-                
-                <p className="text-gray-300 leading-relaxed">
+
+                <p className="text-gray-300 leading-relaxed text-sm sm:text-base">
                   {step.description}
                 </p>
               </CardContent>

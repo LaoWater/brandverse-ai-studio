@@ -36,18 +36,18 @@ const ReviewsSection = () => {
   ];
 
   return (
-    <section className="py-16 relative">
+    <section className="py-10 sm:py-16 relative">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4">
             Creators Love Our <span className="text-cosmic font-serif">Multiverse</span>
           </h2>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+          <p className="text-base sm:text-xl text-gray-300 max-w-2xl mx-auto px-2">
             Join thousands of creators who've transformed their content strategy with AI
           </p>
         </div>
         
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-4 sm:gap-8 max-w-6xl mx-auto">
           {reviews.map((review, index) => {
             // Determine if the avatar should be a link or a div
             const AvatarWrapper = review.website ? 'a' : 'div';
@@ -58,31 +58,31 @@ const ReviewsSection = () => {
             } : {};
 
             return (
-              <div 
+              <div
                 key={index}
-                className="cosmic-card p-6 relative overflow-hidden group hover:scale-105 transition-all duration-300"
+                className="cosmic-card p-4 sm:p-6 relative overflow-hidden group hover:scale-105 transition-all duration-300"
               >
                 {/* Cosmic glow effect on hover */}
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 
                 <div className="relative z-10">
                   {/* Stars */}
-                  <div className="flex items-center mb-4">
+                  <div className="flex items-center mb-3 sm:mb-4">
                     {[...Array(review.rating)].map((_, i) => (
-                      <Star key={i} className="w-5 h-5 text-accent fill-accent" />
+                      <Star key={i} className="w-4 h-4 sm:w-5 sm:h-5 text-accent fill-accent" />
                     ))}
                   </div>
-                  
+
                   {/* Review text */}
-                  <p className="text-gray-300 mb-6 italic leading-relaxed">
+                  <p className="text-gray-300 mb-4 sm:mb-6 italic leading-relaxed text-sm sm:text-base">
                     "{review.review}"
                   </p>
-                  
+
                   {/* Savings highlight */}
-                  <div className="bg-gradient-to-r from-green-500/20 to-accent/20 rounded-lg p-3 mb-4 border border-green-500/30">
+                  <div className="bg-gradient-to-r from-green-500/20 to-accent/20 rounded-lg p-2 sm:p-3 mb-3 sm:mb-4 border border-green-500/30">
                     <div className="text-center">
-                      <div className="text-green-400 font-bold text-lg">{review.savings}</div>
-                      <div className="text-green-300 text-sm">Time & Cost Savings</div>
+                      <div className="text-green-400 font-bold text-sm sm:text-lg">{review.savings}</div>
+                      <div className="text-green-300 text-xs sm:text-sm">Time & Cost Savings</div>
                     </div>
                   </div>
                   
@@ -135,21 +135,21 @@ const ReviewsSection = () => {
         </div>
         
         {/* Trust indicators */}
-        <div className="text-center mt-12 opacity-80">
-          <div className="flex justify-center items-center space-x-8 text-gray-400">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-accent">1,000+</div>
-              <div className="text-sm">Active Creators</div>
+        <div className="text-center mt-8 sm:mt-12 opacity-80">
+          <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-0 sm:space-x-8 text-gray-400">
+            <div className="text-center px-4">
+              <div className="text-xl sm:text-2xl font-bold text-accent">1,000+</div>
+              <div className="text-xs sm:text-sm">Active Creators</div>
             </div>
-            <div className="w-px h-12 bg-gray-600"></div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-accent">300K+</div>
-              <div className="text-sm">Posts Generated</div>
+            <div className="hidden sm:block w-px h-12 bg-gray-600"></div>
+            <div className="text-center px-4">
+              <div className="text-xl sm:text-2xl font-bold text-accent">300K+</div>
+              <div className="text-xs sm:text-sm">Posts Generated</div>
             </div>
-            <div className="w-px h-12 bg-gray-600"></div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-accent">10K+</div>
-              <div className="text-sm">Hours Saved Monthly</div>
+            <div className="hidden sm:block w-px h-12 bg-gray-600"></div>
+            <div className="text-center px-4">
+              <div className="text-xl sm:text-2xl font-bold text-accent">10K+</div>
+              <div className="text-xs sm:text-sm">Hours Saved Monthly</div>
             </div>
           </div>
         </div>
