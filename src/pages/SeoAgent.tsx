@@ -201,27 +201,17 @@ const SeoAgent = () => {
 
     setIsGeneratingBlog(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error("Not authenticated");
-
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/seo-engine`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('seo-engine', {
+        body: {
           action: 'generate_blog',
           company_id: selectedCompany.id,
           analysis_id: latestAnalysis.id,
           topic: blogTopic
-        })
+        }
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Blog generation failed');
+      if (error) {
+        throw new Error(error.message || 'Blog generation failed');
       }
 
       toast.success("Blog post generated!");
@@ -244,26 +234,16 @@ const SeoAgent = () => {
 
     setIsSearchingEngagement(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error("Not authenticated");
-
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/seo-engine`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('seo-engine', {
+        body: {
           action: 'find_engagement',
           company_id: selectedCompany.id,
           analysis_id: latestAnalysis.id
-        })
+        }
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Engagement search failed');
+      if (error) {
+        throw new Error(error.message || 'Engagement search failed');
       }
 
       toast.success("Found new engagement opportunities!");
