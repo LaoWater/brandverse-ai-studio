@@ -100,7 +100,7 @@ Format your response as JSON:
         { role: "user", content: userPrompt }
       ],
       temperature: 0.8,
-      max_tokens: 3000,
+      max_completion_tokens: 3000,
       response_format: { type: "json_object" }
     })
   });
@@ -204,7 +204,7 @@ Format as JSON:
         { role: "user", content: userPrompt }
       ],
       temperature: 0.9,
-      max_tokens: 2000,
+      max_completion_tokens: 2000,
       response_format: { type: "json_object" }
     })
   });
@@ -332,12 +332,21 @@ serve(async (req) => {
     } else if (request.action === 'find_engagement') {
       const opportunities = await findEngagementOpportunities(company, analysis);
 
+      // Normalize platform values to match database constraint
+      const validPlatforms = ['reddit', 'twitter', 'facebook', 'quora', 'forum', 'other'];
+      const normalizePlatform = (platform: string): string => {
+        const p = platform.toLowerCase().trim();
+        if (p === 'x' || p === 'twitter/x' || p === 'x/twitter') return 'twitter';
+        if (validPlatforms.includes(p)) return p;
+        return 'other';
+      };
+
       // Save opportunities to database
       const opportunitiesToInsert = opportunities.map(opp => ({
         company_id: request.company_id,
         user_id: user.id,
         analysis_id: request.analysis_id,
-        platform: opp.platform,
+        platform: normalizePlatform(opp.platform),
         source_url: opp.source_url,
         source_title: opp.source_title,
         source_content: opp.source_content,
