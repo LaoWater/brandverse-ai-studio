@@ -321,29 +321,10 @@ const PostManager = () => {
 
       <div className="container mx-auto px-4 pt-24 pb-12 relative z-10">
         <div className="max-w-7xl mx-auto">
-          {/* Company Logo - Top Right */}
-          {selectedCompany && (
-            <div className="flex justify-end mb-4">
-              <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10">
-                {selectedCompany.logo_path ? (
-                  <img
-                    src={selectedCompany.logo_path}
-                    alt={selectedCompany.name}
-                    className="w-10 h-10 rounded-lg object-cover"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold">
-                    {selectedCompany.name.charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <span className="text-sm font-medium text-white">{selectedCompany.name}</span>
-              </div>
-            </div>
-          )}
-
           <div className="text-center mb-8">
-            {/* View Mode Switcher - GPU accelerated */}
-            <div className="flex items-center justify-center mb-4">
+            {/* View Mode Switcher with Company Logo - GPU accelerated */}
+            <div className="relative flex items-center justify-center gap-6 mb-4">
+              {/* Tabs */}
               <div className="relative inline-flex items-center bg-muted/50 dark:bg-black/30 rounded-full p-2 border-0 will-change-auto">
                 {/* Sliding indicator - hardware accelerated with transform */}
                 <div
@@ -381,6 +362,26 @@ const PostManager = () => {
                   </span>
                 </button>
               </div>
+
+              {/* Company Logo - Absolute Top Right */}
+              {selectedCompany && (
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-3">
+                  {selectedCompany.logo_path ? (
+                    <div className="w-12 h-12 rounded-lg overflow-hidden">
+                      <img
+                        src={selectedCompany.logo_path}
+                        alt={selectedCompany.name}
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold text-lg">
+                      {selectedCompany.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <span className="text-base font-medium text-white">{selectedCompany.name}</span>
+                </div>
+              )}
             </div>
             <p className="text-gray-300 text-lg">
               {viewMode === 'posts'

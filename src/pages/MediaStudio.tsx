@@ -319,8 +319,9 @@ const MediaStudioContent = () => {
               </p>
             </div>
 
-            {/* View Mode Switcher - GPU accelerated */}
-            <div className="relative inline-flex items-center bg-muted/50 dark:bg-black/30 rounded-full p-1.5 border-0 will-change-auto">
+            {/* View Mode Switcher with Company Logo - GPU accelerated */}
+            <div className="relative flex items-center gap-6">
+              <div className="relative inline-flex items-center bg-muted/50 dark:bg-black/30 rounded-full p-1.5 border-0 will-change-auto">
               {/* Sliding indicator - hardware accelerated with transform */}
               <div
                 className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full bg-gradient-to-r from-primary to-accent transition-transform duration-300 ease-out will-change-transform"
@@ -354,6 +355,7 @@ const MediaStudioContent = () => {
                 <Library className="w-4 h-4" />
                 My Library
               </button>
+              </div>
             </div>
           </div>
         </div>
