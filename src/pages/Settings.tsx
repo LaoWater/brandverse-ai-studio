@@ -50,7 +50,7 @@ const Settings = () => {
   const { user, signOut } = useAuth();
   const { selectedCompany, refreshCompanies } = useCompany();
 
-  const [activeTab, setActiveTab] = useState<TabId>('profile');
+  const [activeTab, setActiveTab] = useState<TabId>('company');
 
   const [profile, setProfile] = useState({
     full_name: "",
