@@ -155,7 +155,7 @@ const HeroSection = () => {
                 ))}
               </div>
               <p className="text-xs text-gray-500 max-w-md text-center px-2">
-                73% of buying decisions happen outside Google. We help you reach customers on TikTok, YouTube, Reddit, and beyond.
+                Over 70% of buying decisions happen outside Google. We help you reach customers on TikTok, YouTube, Reddit, and beyond.
               </p>
             </div>
             {/* === END UPDATED SECTION === */}
