@@ -456,8 +456,10 @@ async function uploadVideoToStorage(
   userId: string,
   companyId: string,
   model: string
-): Promise<{ publicUrl: string; storagePath: string }> {
+): Promise<{ publicUrl: string; storagePath: string; fileSize: number }> {
   logStep("Uploading video to Supabase Storage");
+
+  const fileSize = videoData.size;
 
   // Create storage path
   const timestamp = Date.now();
@@ -484,7 +486,66 @@ async function uploadVideoToStorage(
 
   logStep("Video uploaded successfully", { storagePath, publicUrl });
 
-  return { publicUrl, storagePath };
+  return { publicUrl, storagePath, fileSize };
+}
+
+// Save video media record to database
+async function saveVideoMediaRecord(
+  supabaseClient: any,
+  userId: string,
+  companyId: string,
+  storagePath: string,
+  publicUrl: string,
+  fileSize: number,
+  prompt: string,
+  model: string,
+  mode: string,
+  aspectRatio: string,
+  duration: number,
+  fps: number,
+  inputImageUrl?: string
+): Promise<void> {
+  logStep("Saving video media record to database");
+
+  const timestamp = Date.now();
+  const fileName = `generated_${timestamp}.mp4`;
+
+  const mediaRecord = {
+    user_id: userId,
+    company_id: companyId === 'default' ? null : companyId,
+    file_name: fileName,
+    file_type: 'video',
+    file_format: 'mp4',
+    file_size: fileSize,
+    storage_path: storagePath,
+    public_url: publicUrl,
+    thumbnail_url: publicUrl, // Use same URL for thumbnail (can generate proper thumbnail later)
+    prompt: prompt,
+    model_used: model,
+    aspect_ratio: aspectRatio,
+    quality: mode, // Store mode as quality for videos
+    duration: duration,
+    reference_image_url: inputImageUrl || null,
+    tags: [],
+    is_favorite: false,
+    custom_title: null,
+    notes: null,
+    download_count: 0,
+    view_count: 0,
+  };
+
+  const { error } = await supabaseClient
+    .from('media_files')
+    .insert([mediaRecord]);
+
+  if (error) {
+    logStep("Database insert error", { error: error.message });
+    // Don't throw - video is already uploaded, just log the error
+    // User can still see the video via the returned URL
+    console.error("Failed to save video media record:", error);
+  } else {
+    logStep("Video media record saved successfully");
+  }
 }
 
 // Main handler
@@ -542,12 +603,29 @@ serve(async (req) => {
     const videoData = await generateVideoWithVeo(request);
 
     // Upload to storage
-    const { publicUrl, storagePath } = await uploadVideoToStorage(
+    const { publicUrl, storagePath, fileSize } = await uploadVideoToStorage(
       supabaseClient,
       videoData,
       user.id,
       request.company_id || 'default',
       request.model
+    );
+
+    // Save video media record to database (so it appears in user's library even if browser crashes)
+    await saveVideoMediaRecord(
+      supabaseClient,
+      user.id,
+      request.company_id || 'default',
+      storagePath,
+      publicUrl,
+      fileSize,
+      request.prompt,
+      request.model,
+      request.mode,
+      request.aspect_ratio,
+      request.duration,
+      request.fps || 24,
+      request.input_image_url || request.first_frame_url
     );
 
     // Prepare response

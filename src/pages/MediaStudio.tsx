@@ -26,7 +26,6 @@ import { Sparkles, Zap, ArrowRight, Loader, CheckCircle, Library, Plus } from 'l
 import { useToast } from '@/hooks/use-toast';
 import {
   generateMediaWithProgress,
-  saveMediaRecord,
   uploadReferenceImage,
   uploadVideoFrameImage,
 } from '@/services/mediaStudioService';
@@ -179,9 +178,9 @@ const MediaStudioContent = () => {
         }
       );
 
-      return { result, referenceImageUrls, mediaType };
+      return { result, mediaType };
     },
-    onSuccess: async ({ result, referenceImageUrls, mediaType: generatedMediaType }) => {
+    onSuccess: async ({ result, mediaType: generatedMediaType }) => {
       // Handle error result (when generateMedia returns success: false)
       if (!result.success) {
         resetGeneration(); // Close the modal immediately
@@ -200,37 +199,15 @@ const MediaStudioContent = () => {
       }
 
       // Handle success result
+      // NOTE: The edge function already saves the media record to the database
+      // This ensures the record exists even if the user's browser crashes
+      // We only need to refresh the UI here
       if (result.success && user) {
         const isVideo = generatedMediaType === 'video';
-        const fileExtension = isVideo ? 'mp4' : 'png';
-        const fileFormat = isVideo ? 'mp4' : 'png';
-
-        // Save to database
-        await saveMediaRecord({
-          user_id: user.id,
-          company_id: selectedCompany?.id || null,
-          file_name: `generated_${Date.now()}.${fileExtension}`,
-          file_type: isVideo ? 'video' : 'image',
-          file_format: fileFormat,
-          file_size: null, // Will be updated when actual file is uploaded
-          storage_path: result.mediaUrl, // Dummy for now
-          public_url: result.mediaUrl,
-          thumbnail_url: result.thumbnailUrl || null,
-          prompt,
-          model_used: isVideo ? selectedVideoModel : selectedImageModel,
-          aspect_ratio: aspectRatio,
-          quality: isVideo ? null : (imageSize || '1K'),
-          duration: isVideo ? 8 : null,
-          reference_image_url: referenceImageUrls.length > 0 ? referenceImageUrls[0] : null,
-          tags: [],
-          is_favorite: false,
-          custom_title: null,
-          notes: null,
-        });
 
         completeGeneration(result.mediaUrl, result.thumbnailUrl);
 
-        // Invalidate library query
+        // Invalidate library query to refresh with the new record from the database
         queryClient.invalidateQueries({ queryKey: ['mediaLibrary'] });
 
         // Show success toast

@@ -668,12 +668,13 @@ async function uploadToStorage(
   userId: string,
   companyId: string,
   model: string
-): Promise<{ publicUrl: string; storagePath: string }> {
+): Promise<{ publicUrl: string; storagePath: string; fileSize: number }> {
   logStep("Uploading to Supabase Storage");
 
   // Convert data URL to blob
   const base64Data = imageDataUrl.split(',')[1];
   const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+  const fileSize = binaryData.length;
 
   // Create storage path
   const timestamp = Date.now();
@@ -700,7 +701,65 @@ async function uploadToStorage(
 
   logStep("Image uploaded successfully", { storagePath, publicUrl });
 
-  return { publicUrl, storagePath };
+  return { publicUrl, storagePath, fileSize };
+}
+
+// Save media record to database
+async function saveMediaRecord(
+  supabaseClient: any,
+  userId: string,
+  companyId: string,
+  storagePath: string,
+  publicUrl: string,
+  fileSize: number,
+  prompt: string,
+  model: string,
+  aspectRatio: string,
+  imageSize?: string,
+  seed?: number,
+  referenceImageUrls?: string[]
+): Promise<void> {
+  logStep("Saving media record to database");
+
+  const timestamp = Date.now();
+  const fileName = `generated_${timestamp}.png`;
+
+  const mediaRecord = {
+    user_id: userId,
+    company_id: companyId === 'default' ? null : companyId,
+    file_name: fileName,
+    file_type: 'image',
+    file_format: 'png',
+    file_size: fileSize,
+    storage_path: storagePath,
+    public_url: publicUrl,
+    thumbnail_url: publicUrl, // Use same URL for thumbnail
+    prompt: prompt,
+    model_used: model,
+    aspect_ratio: aspectRatio,
+    quality: imageSize || '1K',
+    duration: null, // Only for videos
+    reference_image_url: referenceImageUrls && referenceImageUrls.length > 0 ? referenceImageUrls[0] : null,
+    tags: [],
+    is_favorite: false,
+    custom_title: null,
+    notes: null,
+    download_count: 0,
+    view_count: 0,
+  };
+
+  const { error } = await supabaseClient
+    .from('media_files')
+    .insert([mediaRecord]);
+
+  if (error) {
+    logStep("Database insert error", { error: error.message });
+    // Don't throw - image is already uploaded, just log the error
+    // User can still see the image via the returned URL
+    console.error("Failed to save media record:", error);
+  } else {
+    logStep("Media record saved successfully");
+  }
 }
 
 // Main handler
@@ -769,12 +828,28 @@ serve(async (req) => {
     }
 
     // Upload to storage
-    const { publicUrl, storagePath } = await uploadToStorage(
+    const { publicUrl, storagePath, fileSize } = await uploadToStorage(
       supabaseClient,
       imageDataUrl,
       user.id,
       request.company_id || 'default',
       request.model
+    );
+
+    // Save media record to database (so it appears in user's library even if browser crashes)
+    await saveMediaRecord(
+      supabaseClient,
+      user.id,
+      request.company_id || 'default',
+      storagePath,
+      publicUrl,
+      fileSize,
+      request.prompt,
+      request.model,
+      request.aspect_ratio,
+      request.image_size,
+      request.seed,
+      request.reference_image_urls
     );
 
     // Prepare response
