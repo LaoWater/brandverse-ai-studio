@@ -90,14 +90,14 @@ Anamorphic lens flares. Color palette: transitions from cold blue laptop glow to
 purples and cyans. Deep space blacks. Electric cyan (#00D4FF) accents.
 
 Scene: Opens on founder at desk from previous segment. Camera pushes slowly toward laptop
-screen - we see social media dashboards, analytics, content calendars. Push continues
-INTO the screen - glass ripple effect as we transition through.
+screen holographs on top of laptop, as we're seeing it from behind - we see social media dashboards, analytics, content calendars. 
+Push continues INTO the holographs becoming chaotic - glass ripple effect as we transition through.
 
 SURREAL TRANSITION: Founder now stands in cosmic void at the base of an impossibly tall
 mountain. The mountain is constructed from floating, glowing social media elements:
 Instagram posts, TikTok videos, LinkedIn articles, hashtags, analytics graphs, follower
 counts - all swirling upward infinitely. Platform logos (Instagram, TikTok, YouTube,
-LinkedIn, Twitter) orbit the mountain like planets.
+LinkedIn, Twitter, Reddit) orbit the mountain like planets.
 
 Text fragments float past the founder: "post daily", "optimize keywords", "engage
 followers", "beat the algorithm", "create reels", "trending sounds" - overwhelming,

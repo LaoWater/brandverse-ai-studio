@@ -18,11 +18,13 @@ import ReferenceImageLibrary from '@/components/media/ReferenceImageLibrary';
 import KeyframeImageUpload from '@/components/media/KeyframeImageUpload';
 import VideoPromptGuide from '@/components/media/VideoPromptGuide';
 import MediaLibrary from '@/components/media/MediaLibrary';
+import { VideoEditor } from '@/components/editor';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { Sparkles, Zap, ArrowRight, Loader, CheckCircle, Library, Plus } from 'lucide-react';
+import { Sparkles, Zap, ArrowRight, Loader, CheckCircle, Library, Plus, Film } from 'lucide-react';
+import type { MediaStudioView } from '@/types/editor';
 import { useToast } from '@/hooks/use-toast';
 import {
   generateMediaWithProgress,
@@ -83,7 +85,9 @@ const MediaStudioContent = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [showLibrary, setShowLibrary] = useState(false);
+
+  // View state: 'create' | 'library' | 'editor'
+  const [currentView, setCurrentView] = useState<MediaStudioView>('create');
 
   // State for video continuation feature
   const [isContinuingVideo, setIsContinuingVideo] = useState(false);
@@ -269,7 +273,7 @@ const MediaStudioContent = () => {
 
         // Auto-switch to library after 2 seconds
         setTimeout(() => {
-          setShowLibrary(true);
+          setCurrentView('library');
           resetGeneration();
         }, 2000);
       }
@@ -357,7 +361,7 @@ const MediaStudioContent = () => {
       }
 
       // Switch to create view
-      setShowLibrary(false);
+      setCurrentView('create');
     } catch (error) {
       console.error('Failed to load image for generation:', error);
       toast({
@@ -404,7 +408,7 @@ const MediaStudioContent = () => {
       setVideoGenerationMode('image-to-video');
 
       // Switch to create view
-      setShowLibrary(false);
+      setCurrentView('create');
 
       toast({
         title: 'Ready to Continue',
@@ -434,7 +438,7 @@ const MediaStudioContent = () => {
     setVideoGenerationMode('extend-video');
 
     // Switch to create view
-    setShowLibrary(false);
+    setCurrentView('create');
 
     toast({
       title: 'Ready to Extend',
@@ -474,22 +478,26 @@ const MediaStudioContent = () => {
               </p>
             </div>
 
-            {/* View Mode Switcher with Company Logo - GPU accelerated */}
+            {/* View Mode Switcher - Three tabs: Create, Library, Editor */}
             <div className="relative flex items-center gap-6">
               <div className="relative inline-flex items-center bg-muted/50 dark:bg-black/30 rounded-full p-1.5 border-0 will-change-auto">
               {/* Sliding indicator - hardware accelerated with transform */}
               <div
-                className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full bg-gradient-to-r from-primary to-accent transition-transform duration-300 ease-out will-change-transform"
+                className="absolute top-1 bottom-1 w-[calc(33.333%-3px)] rounded-full bg-gradient-to-r from-primary to-accent transition-transform duration-300 ease-out will-change-transform"
                 style={{
-                  transform: showLibrary ? 'translateX(calc(100% + 4px))' : 'translateX(4px)',
+                  transform: currentView === 'create'
+                    ? 'translateX(4px)'
+                    : currentView === 'library'
+                    ? 'translateX(calc(100% + 4px))'
+                    : 'translateX(calc(200% + 8px))',
                 }}
               />
 
               {/* Create New Button */}
               <button
-                onClick={() => setShowLibrary(false)}
+                onClick={() => setCurrentView('create')}
                 className={`relative z-10 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200 flex items-center gap-2 ${
-                  !showLibrary
+                  currentView === 'create'
                     ? 'text-white'
                     : 'text-gray-400 hover:text-gray-200'
                 }`}
@@ -500,9 +508,9 @@ const MediaStudioContent = () => {
 
               {/* My Library Button */}
               <button
-                onClick={() => setShowLibrary(true)}
+                onClick={() => setCurrentView('library')}
                 className={`relative z-10 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200 flex items-center gap-2 ${
-                  showLibrary
+                  currentView === 'library'
                     ? 'text-white'
                     : 'text-gray-400 hover:text-gray-200'
                 }`}
@@ -510,13 +518,26 @@ const MediaStudioContent = () => {
                 <Library className="w-4 h-4" />
                 My Library
               </button>
+
+              {/* Editor Button */}
+              <button
+                onClick={() => setCurrentView('editor')}
+                className={`relative z-10 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200 flex items-center gap-2 ${
+                  currentView === 'editor'
+                    ? 'text-white'
+                    : 'text-gray-400 hover:text-gray-200'
+                }`}
+              >
+                <Film className="w-4 h-4" />
+                Editor
+              </button>
               </div>
             </div>
           </div>
         </div>
 
         {/* Main Layout */}
-        {!showLibrary ? (
+        {currentView === 'create' ? (
           <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
             {/* Left Sidebar - Controls */}
             <aside className="space-y-4">
@@ -653,17 +674,22 @@ const MediaStudioContent = () => {
               </Card>
             </main>
           </div>
-        ) : (
+        ) : currentView === 'library' ? (
           /* Library View */
           <div className="max-w-7xl mx-auto">
             <MediaLibrary
-              onCreateNew={() => setShowLibrary(false)}
+              onCreateNew={() => setCurrentView('create')}
               onUseForGeneration={handleUseForGeneration}
               onContinueVideo={handleContinueVideo}
               onExtendVideo={handleExtendVideo}
               isContinuingVideo={isContinuingVideo}
               continueVideoProgress={continueVideoProgress}
             />
+          </div>
+        ) : (
+          /* Editor View */
+          <div className="max-w-7xl mx-auto">
+            <VideoEditor onBack={() => setCurrentView('library')} />
           </div>
         )}
       </div>

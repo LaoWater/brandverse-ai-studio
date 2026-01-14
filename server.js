@@ -6,6 +6,14 @@ const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.join(__dirname, 'dist');
 
+// CORS headers required for SharedArrayBuffer (used by FFmpeg.wasm in video editor)
+// This enables multi-threaded video processing in the browser
+app.use((req, res, next) => {
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  next();
+});
+
 // Serve static files from the dist directory
 app.use(express.static(distDir));
 
