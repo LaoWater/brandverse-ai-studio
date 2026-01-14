@@ -1,4 +1,4 @@
-import { Settings2, Maximize2, Clock, Zap, Coins, Volume2, VolumeX } from 'lucide-react';
+import { Settings2, Maximize2, Clock, Monitor, Coins, Volume2, VolumeX } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -6,7 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useMediaStudio, AspectRatio } from '@/contexts/MediaStudioContext';
+import { useMediaStudio, VideoAspectRatio, VideoResolution } from '@/contexts/MediaStudioContext';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 
@@ -14,44 +14,56 @@ const VideoFormatControls = () => {
   const {
     aspectRatio,
     setAspectRatio,
-    videoFps,
-    setVideoFps,
+    videoResolution,
+    setVideoResolution,
     videoDuration,
     setVideoDuration,
     generateAudio,
     setGenerateAudio,
     selectedVideoModel,
     videoGenerationMode,
+    videoReferenceImages,
   } = useMediaStudio();
 
-  // Video aspect ratios (Veo 3.1 supports 16:9, 9:16, 1:1)
-  // Ordered by popularity for social media (9:16 first)
-  const videoAspectRatios: { value: AspectRatio; label: string; description: string }[] = [
-    { value: '9:16', label: '9:16 Portrait', description: 'TikTok, Instagram Stories' },
+  // Video aspect ratios - Veo 3.1 ONLY supports 16:9 and 9:16 (NOT 1:1)
+  const videoAspectRatios: { value: VideoAspectRatio; label: string; description: string }[] = [
+    { value: '9:16', label: '9:16 Portrait', description: 'TikTok, Reels, Stories' },
     { value: '16:9', label: '16:9 Landscape', description: 'YouTube, widescreen' },
-    { value: '1:1', label: '1:1 Square', description: 'Social media posts' },
   ];
 
-  // FPS options
-  const fpsOptions: { value: 24 | 30; label: string; description: string }[] = [
-    { value: 24, label: '24 fps', description: 'Cinematic standard' },
-    { value: 30, label: '30 fps', description: 'Smooth motion' },
+  // Resolution options (official Veo 3.1 param)
+  // 1080p and 4k require 8s duration
+  const isHighResAllowed = videoDuration === 8;
+  const resolutionOptions: { value: VideoResolution; label: string; description: string; disabled?: boolean }[] = [
+    { value: '720p', label: '720p HD', description: 'Fast generation, good quality' },
+    { value: '1080p', label: '1080p Full HD', description: '8s duration required', disabled: !isHighResAllowed },
+    { value: '4k', label: '4K Ultra HD', description: '8s duration required', disabled: !isHighResAllowed },
   ];
 
   // Duration options (4s, 6s, 8s)
-  // Note: 8s only when using reference images
-  const hasReferenceImages = videoGenerationMode === 'image-to-video' || videoGenerationMode === 'keyframe-to-video';
+  // 8s required for: reference images, 1080p/4k resolution, or image modes
+  const hasReferenceImages = videoReferenceImages.length > 0;
+  const isImageMode = videoGenerationMode === 'image-to-video' || videoGenerationMode === 'interpolation';
+  const isHighRes = videoResolution === '1080p' || videoResolution === '4k';
+  const requires8s = hasReferenceImages || isImageMode || isHighRes;
+
   const durationOptions: { value: 4 | 6 | 8; label: string; description: string; disabled?: boolean }[] = [
-    { value: 4, label: '4 seconds', description: 'Quick clip', disabled: hasReferenceImages },
-    { value: 6, label: '6 seconds', description: 'Medium clip', disabled: hasReferenceImages },
-    { value: 8, label: '8 seconds', description: 'Full clip', disabled: false },
+    { value: 4, label: '4 seconds', description: 'Quick clip', disabled: requires8s },
+    { value: 6, label: '6 seconds', description: 'Medium clip', disabled: requires8s },
+    { value: 8, label: '8 seconds', description: 'Full clip (required for HD/4K)', disabled: false },
   ];
 
-  // Calculate credits based on model
-  // Pricing: Standard ($0.40/s), Fast ($0.15/s) - audio is default/included
+  // Calculate credits based on model and resolution
+  // Pricing: Standard ($0.40/s), Fast ($0.15/s)
+  // Higher resolutions may have premium pricing
   const getEstimatedCredits = () => {
     const isFast = selectedVideoModel === 'veo-3.1-fast-generate-001';
-    const pricePerSecond = isFast ? 0.15 : 0.40;
+    let pricePerSecond = isFast ? 0.15 : 0.40;
+
+    // Premium for high resolution
+    if (videoResolution === '1080p') pricePerSecond *= 1.5;
+    if (videoResolution === '4k') pricePerSecond *= 2;
+
     const totalCost = pricePerSecond * videoDuration;
     // Convert to credits (assuming 1 credit = $0.01)
     return Math.ceil(totalCost * 100);
@@ -93,34 +105,39 @@ const VideoFormatControls = () => {
         </Select>
       </div>
 
-      {/* FPS */}
+      {/* Resolution (Veo 3.1 official param) */}
       <div className="space-y-2">
         <Label className="text-sm text-gray-400 flex items-center gap-1.5">
-          <Zap className="w-3.5 h-3.5" />
-          Frame Rate
+          <Monitor className="w-3.5 h-3.5" />
+          Resolution
+          {!isHighResAllowed && (
+            <span className="text-xs text-yellow-500/80 ml-auto">Set 8s for HD/4K</span>
+          )}
         </Label>
         <Select
-          value={videoFps.toString()}
-          onValueChange={(value) => setVideoFps(parseInt(value) as 24 | 30)}
+          value={videoResolution}
+          onValueChange={(value) => setVideoResolution(value as VideoResolution)}
         >
           <SelectTrigger className="w-full bg-background/50 border-primary/20 text-white hover:border-primary/40 transition-colors">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-card border-primary/20">
-            {fpsOptions.map((fps) => (
+            {resolutionOptions.map((res) => (
               <SelectItem
-                key={fps.value}
-                value={fps.value.toString()}
-                className="text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer"
+                key={res.value}
+                value={res.value}
+                disabled={res.disabled}
+                className="text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="flex flex-col py-1">
-                  <span className="font-medium text-sm">{fps.label}</span>
-                  <span className="text-xs text-gray-400">{fps.description}</span>
+                  <span className="font-medium text-sm">{res.label}</span>
+                  <span className="text-xs text-gray-400">{res.description}</span>
                 </div>
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
+        <p className="text-xs text-gray-500">Output at 24fps (Veo 3.1 standard)</p>
       </div>
 
       {/* Duration Selector */}
@@ -128,14 +145,16 @@ const VideoFormatControls = () => {
         <Label className="text-sm text-gray-400 flex items-center gap-1.5">
           <Clock className="w-3.5 h-3.5" />
           Duration
-          {hasReferenceImages && (
-            <span className="text-xs text-yellow-500/80 ml-auto">8s only with images</span>
+          {requires8s && (
+            <span className="text-xs text-yellow-500/80 ml-auto">
+              {isHighRes ? '8s required for HD/4K' : isImageMode ? '8s required for image mode' : '8s required'}
+            </span>
           )}
         </Label>
         <Select
           value={videoDuration.toString()}
           onValueChange={(value) => setVideoDuration(parseInt(value) as 4 | 6 | 8)}
-          disabled={hasReferenceImages}
+          disabled={requires8s}
         >
           <SelectTrigger className="w-full bg-background/50 border-primary/20 text-white hover:border-primary/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             <SelectValue />

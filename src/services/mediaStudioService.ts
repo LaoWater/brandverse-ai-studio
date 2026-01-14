@@ -59,18 +59,20 @@ export interface GenerationConfig {
   numberOfImages?: number;     // 1-4 for Imagen, 1-10 for GPT-image
   imageSize?: '1K' | '2K' | '4K';  // For Imagen 4 and Gemini 3 Pro
   seed?: number;               // For reproducible generation (Imagen 4, GPT-image)
-  negativePrompt?: string;     // For Imagen 4
+  negativePrompt?: string;     // For Imagen 4 AND Veo 3.1 video
   enhancePrompt?: boolean;     // For Imagen 4
-  referenceImageUrls?: string[]; // Multiple reference images (up to 14 for Gemini 3 Pro)
+  referenceImageUrls?: string[]; // Multiple reference images (up to 14 for Gemini 3 Pro, up to 3 for Veo 3.1)
 
-  // Video-specific
-  videoMode?: 'text-to-video' | 'image-to-video' | 'keyframe-to-video';
-  videoDuration?: 4 | 6 | 8;   // Veo 3.1 supports 4, 6, or 8 seconds (8s only with reference images)
-  videoFps?: 24 | 30;          // 24fps or 30fps
+  // Video-specific (Veo 3.1 official params)
+  videoMode?: 'text-to-video' | 'image-to-video' | 'interpolation' | 'extend-video';
+  videoDuration?: 4 | 6 | 8;   // 8s required for 1080p/4k, reference images, or extension
+  videoResolution?: '720p' | '1080p' | '4k'; // 1080p/4k only with 8s duration; 720p ONLY for extension
   generateAudio?: boolean;     // Generate audio with video (default: true)
+  personGeneration?: 'allow_all' | 'allow_adult'; // Controls people generation
   inputImageUrl?: string;      // For image-to-video mode
-  firstFrameUrl?: string;      // For keyframe-to-video mode
-  lastFrameUrl?: string;       // For keyframe-to-video mode
+  firstFrameUrl?: string;      // For interpolation mode (start frame)
+  lastFrameUrl?: string;       // For interpolation mode (end frame)
+  sourceVideoGcsUri?: string;  // For extend-video mode (GCS URI of video to extend)
 
   // Common
   userId?: string;             // For tracking
@@ -109,18 +111,24 @@ export interface MediaGenerationAPIPayload {
   company_id?: string;
 }
 
-// API Payload for backend - Video generation
+// API Payload for backend - Video generation (Veo 3.1 official params)
 export interface VideoGenerationAPIPayload {
   prompt: string;
   model: 'veo-3.1-generate-001' | 'veo-3.1-fast-generate-001';
-  mode: 'text-to-video' | 'image-to-video' | 'keyframe-to-video';
-  aspect_ratio: '16:9' | '9:16' | '1:1';
-  duration: 4 | 6 | 8;              // Veo 3.1 supports 4, 6, or 8 seconds (8s only with reference images)
-  fps?: 24 | 30;                    // 24fps or 30fps (default: 24)
+  mode: 'text-to-video' | 'image-to-video' | 'interpolation' | 'extend-video';
+  aspect_ratio: '16:9' | '9:16';    // Only 16:9 and 9:16 supported by Veo 3.1
+  duration: 4 | 6 | 8;              // 8s required for 1080p/4k, reference images, or extension
+  resolution?: '720p' | '1080p' | '4k'; // 1080p/4k only with 8s duration; 720p ONLY for extension
+  negative_prompt?: string;         // Describes what NOT to include in the video
   generate_audio?: boolean;         // Generate audio with video (default: true)
-  input_image_url?: string;         // For image-to-video mode
-  first_frame_url?: string;         // For keyframe-to-video mode
-  last_frame_url?: string;          // For keyframe-to-video mode
+  person_generation?: 'allow_all' | 'allow_adult'; // Controls people generation
+  input_image_url?: string;         // For image-to-video mode (maps to API "image")
+  // For interpolation mode - Official API: "image" (start) + "lastFrame" (end)
+  first_frame_url?: string;         // Start image (maps to API "image" param)
+  last_frame_url?: string;          // End image (maps to API "lastFrame" param)
+  reference_image_urls?: string[];  // Up to 3 style/content reference images (Veo 3.1 exclusive)
+  // For extend-video mode - Continue a previously generated Veo video
+  source_video_gcs_uri?: string;    // GCS URI of Veo-generated video to extend (720p, 8s, <2 days old)
   user_id?: string;
   company_id?: string;
 }
@@ -179,39 +187,76 @@ export const prepareMediaAPIPayload = (config: GenerationConfig): MediaGeneratio
 };
 
 /**
- * Prepare API payload for video generation
+ * Prepare API payload for video generation (Veo 3.1)
  * Converts frontend config to backend API format
+ * Official docs: https://ai.google.dev/gemini-api/docs/video
  */
 export const prepareVideoAPIPayload = (config: GenerationConfig): VideoGenerationAPIPayload => {
   if (!config.videoMode) {
     throw new Error('Video mode is required for video generation');
   }
 
+  // Validate aspect ratio for Veo 3.1 (only 16:9 and 9:16 supported)
+  const aspectRatio = config.aspectRatio as '16:9' | '9:16';
+  if (!['16:9', '9:16'].includes(aspectRatio)) {
+    throw new Error('Veo 3.1 only supports aspect ratios: 16:9 or 9:16');
+  }
+
   const payload: VideoGenerationAPIPayload = {
     prompt: config.prompt,
     model: config.model as 'veo-3.1-generate-001' | 'veo-3.1-fast-generate-001',
     mode: config.videoMode,
-    aspect_ratio: config.aspectRatio as '16:9' | '9:16' | '1:1',
+    aspect_ratio: aspectRatio,
     duration: config.videoDuration || 8, // Default to 8 seconds
   };
 
-  if (config.videoFps) {
-    payload.fps = config.videoFps;
+  // Resolution (720p default, 1080p/4k require 8s duration)
+  if (config.videoResolution) {
+    payload.resolution = config.videoResolution;
   }
 
-  // Add audio generation flag - always send it (defaults to true if not specified)
+  // Negative prompt - describes what NOT to include
+  if (config.negativePrompt) {
+    payload.negative_prompt = config.negativePrompt;
+  }
+
+  // Audio generation flag (defaults to true)
   payload.generate_audio = config.generateAudio ?? true;
 
-  // Add mode-specific image URLs
+  // Person generation control
+  if (config.personGeneration) {
+    payload.person_generation = config.personGeneration;
+  }
+
+  // Reference images for style/content guidance (Veo 3.1 exclusive, max 3)
+  if (config.referenceImageUrls && config.referenceImageUrls.length > 0) {
+    if (config.referenceImageUrls.length > 3) {
+      throw new Error('Veo 3.1 supports a maximum of 3 reference images');
+    }
+    payload.reference_image_urls = config.referenceImageUrls;
+  }
+
+  // Mode-specific parameters
   if (config.videoMode === 'image-to-video' && config.inputImageUrl) {
     payload.input_image_url = config.inputImageUrl;
   }
 
-  if (config.videoMode === 'keyframe-to-video') {
+  if (config.videoMode === 'interpolation') {
     if (config.firstFrameUrl) payload.first_frame_url = config.firstFrameUrl;
     if (config.lastFrameUrl) payload.last_frame_url = config.lastFrameUrl;
   }
 
+  if (config.videoMode === 'extend-video') {
+    // Video extension mode - requires GCS URI, 720p, and 8s duration
+    if (!config.sourceVideoGcsUri) {
+      throw new Error('Source video GCS URI is required for extend-video mode');
+    }
+    payload.source_video_gcs_uri = config.sourceVideoGcsUri;
+    payload.resolution = '720p'; // Extension only supports 720p
+    payload.duration = 8; // Extension requires 8s duration
+  }
+
+  // Tracking
   if (config.userId) {
     payload.user_id = config.userId;
   }

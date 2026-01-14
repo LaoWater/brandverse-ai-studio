@@ -131,28 +131,28 @@ const KeyframeImageUpload = () => {
     </div>
   );
 
-  // Only show for keyframe-to-video mode
-  if (videoGenerationMode === 'keyframe-to-video') {
+  // Show for interpolation mode (Veo 3.1 official: creates smooth transition between two images)
+  if (videoGenerationMode === 'interpolation') {
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-2 text-sm font-medium text-white">
           <FrameIcon className="w-4 h-4 text-accent" />
-          Keyframe Images
+          Interpolation Images
         </div>
         <p className="text-xs text-gray-400">
-          Upload first and last frames. Veo will generate a smooth transition between them.
+          Upload start and end images. Veo 3.1 will generate a smooth morphing transition between them.
         </p>
         <div className="grid grid-cols-2 gap-4">
           {renderUploadZone(
             'first',
-            'First Frame',
+            'Start Image',
             firstFramePreview,
             firstFrameImage,
             setFirstFrameImage
           )}
           {renderUploadZone(
             'last',
-            'Last Frame',
+            'End Image',
             lastFramePreview,
             lastFrameImage,
             setLastFrameImage

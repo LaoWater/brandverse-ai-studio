@@ -18,6 +18,7 @@ import {
   Film,
   FastForward,
   Loader2,
+  Play,
 } from 'lucide-react';
 import { MediaFile } from '@/services/mediaStudioService';
 import { Button } from '@/components/ui/button';
@@ -35,9 +36,34 @@ interface MediaPreviewModalProps {
   onUseForImageGeneration?: (media: MediaFile) => void;
   onUseForVideoGeneration?: (media: MediaFile) => void;
   onContinueVideo?: (media: MediaFile) => void;
+  onExtendVideo?: (media: MediaFile, gcsUri: string) => void; // New: Extend video using GCS URI
   isContinuingVideo?: boolean;
   continueVideoProgress?: string;
 }
+
+// Helper to extract GCS URI from notes field
+const extractGcsUri = (notes: string | null): string | null => {
+  if (!notes) return null;
+  const match = notes.match(/GCS: (gs:\/\/[^\s|]+)/);
+  return match ? match[1] : null;
+};
+
+// Check if video is eligible for extension (< 2 days old, has GCS URI)
+const isVideoExtendable = (media: MediaFile): { canExtend: boolean; gcsUri: string | null; reason?: string } => {
+  if (media.file_type !== 'video') return { canExtend: false, gcsUri: null, reason: 'Not a video' };
+
+  const gcsUri = extractGcsUri(media.notes);
+  if (!gcsUri) return { canExtend: false, gcsUri: null, reason: 'No extension data (older video)' };
+
+  // Check if video is less than 2 days old
+  const createdAt = new Date(media.created_at);
+  const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+  if (createdAt < twoDaysAgo) {
+    return { canExtend: false, gcsUri, reason: 'Video is > 2 days old' };
+  }
+
+  return { canExtend: true, gcsUri };
+};
 
 const MediaPreviewModal = ({
   media,
@@ -49,6 +75,7 @@ const MediaPreviewModal = ({
   onUseForImageGeneration,
   onUseForVideoGeneration,
   onContinueVideo,
+  onExtendVideo,
   isContinuingVideo = false,
   continueVideoProgress = '',
 }: MediaPreviewModalProps) => {
@@ -317,6 +344,54 @@ const MediaPreviewModal = ({
                       </div>
                     </>
                   )}
+
+                  {/* Extend Video (Veo 3.1) - Only for eligible videos */}
+                  {isVideo && onExtendVideo && (() => {
+                    const { canExtend, gcsUri, reason } = isVideoExtendable(media);
+                    return (
+                      <>
+                        <Separator className="bg-primary/20" />
+                        <div className="space-y-3">
+                          <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                            <Play className="w-4 h-4 text-green-400" />
+                            Extend Video
+                            <Badge className="bg-green-500/20 text-green-400 text-[10px] border-0">
+                              Veo 3.1
+                            </Badge>
+                          </h3>
+                          <p className="text-xs text-gray-400">
+                            {canExtend
+                              ? 'Extend this video by ~7 seconds using AI. Continues the narrative seamlessly.'
+                              : reason
+                            }
+                          </p>
+                          <Button
+                            onClick={() => {
+                              if (canExtend && gcsUri) {
+                                onExtendVideo(media, gcsUri);
+                                onClose();
+                              }
+                            }}
+                            disabled={!canExtend}
+                            className={cn(
+                              "w-full",
+                              canExtend
+                                ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white"
+                                : "bg-gray-700 text-gray-400 cursor-not-allowed"
+                            )}
+                          >
+                            <Play className="w-4 h-4 mr-2" />
+                            {canExtend ? 'Extend This Video (+7s)' : 'Not Available'}
+                          </Button>
+                          {canExtend && (
+                            <p className="text-[10px] text-gray-500">
+                              720p output • 8s generation • Must be &lt; 2 days old
+                            </p>
+                          )}
+                        </div>
+                      </>
+                    );
+                  })()}
 
                   <Separator className="bg-primary/20" />
 

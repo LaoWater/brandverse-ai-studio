@@ -28,22 +28,41 @@ const logStep = (step: string, details?: any) => {
 };
 
 // Type definitions for API payloads
+// Based on official Veo 3.1 API: https://ai.google.dev/gemini-api/docs/video
 interface VideoGenerationRequest {
   prompt: string;
   model: 'veo-3.1-generate-001' | 'veo-3.1-fast-generate-001';
-  mode: 'text-to-video' | 'image-to-video' | 'keyframe-to-video';
-  aspect_ratio: '16:9' | '9:16' | '1:1';
-  duration: 4 | 6 | 8; // Veo 3.1 supports 4, 6, or 8 seconds (8s only with reference images)
-  fps?: 24 | 30; // 24fps or 30fps (default: 24)
-  generate_audio?: boolean; // Required for Veo 3 models - generate audio (default: true)
+  mode: 'text-to-video' | 'image-to-video' | 'interpolation' | 'extend-video';
 
-  // For image-to-video mode
+  // Core parameters (official Veo 3.1)
+  aspect_ratio: '16:9' | '9:16'; // Only these two supported by Veo 3.1
+  duration: 4 | 6 | 8; // 8s required for 1080p/4k, reference images, or extension
+  resolution?: '720p' | '1080p' | '4k'; // 1080p/4k only with 8s duration; 720p ONLY for extension
+
+  // Content control
+  negative_prompt?: string; // Describes what NOT to include in the video
+  generate_audio?: boolean; // Generate audio with video (default: true)
+  person_generation?: 'allow_all' | 'allow_adult'; // Controls people generation
+
+  // For image-to-video mode (animate a single image)
+  // Maps to API: "image" parameter
   input_image_url?: string;
 
-  // For keyframe-to-video mode
-  first_frame_url?: string;
-  last_frame_url?: string;
+  // For interpolation mode (transition between two images)
+  // Official API naming: "image" (start) + "lastFrame" (end)
+  image_url?: string;        // Starting image (maps to API "image" param) - preferred
+  first_frame_url?: string;  // Alias for image_url (backwards compatibility)
+  last_frame_url?: string;   // Ending image (maps to API "lastFrame" param)
 
+  // Reference images for style/content guidance (Veo 3.1 exclusive - up to 3)
+  reference_image_urls?: string[];
+
+  // For extend-video mode (Veo 3.1 exclusive)
+  // Extends a previously generated Veo video by ~7 seconds
+  // Requirements: 720p only, 8s duration, video must be <2 days old, max 141s input -> 148s output
+  source_video_gcs_uri?: string; // GCS URI of the Veo-generated video to extend
+
+  // Tracking
   user_id?: string;
   company_id?: string;
 }
@@ -53,13 +72,19 @@ interface VideoGenerationResponse {
   video_url: string;
   thumbnail_url?: string;
   storage_path: string;
+  // GCS URI for video extension feature - store this to enable "extend video" later
+  // Videos can be extended within 2 days of generation
+  gcs_uri?: string;
   metadata: {
     model: string;
     mode: string;
     prompt: string;
     aspect_ratio: string;
+    resolution: string;
     duration: number;
-    fps: number;
+    negative_prompt?: string;
+    has_reference_images: boolean;
+    is_extension?: boolean; // True if this video was created by extending another
   };
   error?: string;
 }
@@ -189,32 +214,61 @@ async function getAccessToken(): Promise<string> {
   }
 }
 
+// Result from video generation - includes GCS URI for extension capability
+interface VeoGenerationResult {
+  videoBlob: Blob;
+  gcsUri: string; // Store this to enable video extension later (valid for 2 days)
+}
+
 // Generate video using Google Veo 3.1 (Vertex AI)
-async function generateVideoWithVeo(request: VideoGenerationRequest): Promise<Blob> {
+// Official docs: https://ai.google.dev/gemini-api/docs/video
+async function generateVideoWithVeo(request: VideoGenerationRequest): Promise<VeoGenerationResult> {
   // Use existing project configuration
   const projectId = Deno.env.get("GOOGLE_CLOUD_PROJECT_ID") || "creators-multi-verse";
   // Veo is available in us-central1 (primary AI region)
   const location = "us-central1";
   const gcsBucket = Deno.env.get("GCS_BUCKET_NAME") || "creatorsm-media-bucket";
 
-  // Validate constraints: reference images only support 8s duration
-  const hasReferenceImage = request.mode === 'image-to-video' || request.mode === 'keyframe-to-video';
-  if (hasReferenceImage && request.duration !== 8) {
+  // Determine resolution (default 720p)
+  const resolution = request.resolution || '720p';
+
+  // Validate Veo 3.1 constraints
+  const hasReferenceImages = request.reference_image_urls && request.reference_image_urls.length > 0;
+  const isHighRes = resolution === '1080p' || resolution === '4k';
+  const isImageMode = request.mode === 'image-to-video' || request.mode === 'interpolation';
+
+  // Constraint: 1080p/4k and reference images require 8s duration
+  if ((isHighRes || hasReferenceImages) && request.duration !== 8) {
     logStep("Duration constraint violation", {
-      mode: request.mode,
+      resolution,
+      hasReferenceImages,
       duration: request.duration,
-      message: "Reference images only support 8s duration"
     });
-    throw new Error("When using reference images (image-to-video or keyframe-to-video), duration must be 8 seconds");
+    throw new Error(`Duration must be 8 seconds when using ${isHighRes ? resolution : 'reference images'}`);
   }
 
-  logStep("Generating with Veo", {
+  // Constraint: reference images limit (max 3 for Veo 3.1)
+  if (hasReferenceImages && request.reference_image_urls!.length > 3) {
+    throw new Error("Veo 3.1 supports a maximum of 3 reference images");
+  }
+
+  // Determine personGeneration based on mode
+  // Text-to-video: allow_all, Image modes: allow_adult
+  const personGeneration = request.person_generation ||
+    (isImageMode ? 'allow_adult' : 'allow_all');
+
+  logStep("Generating with Veo 3.1", {
     model: request.model,
     mode: request.mode,
     prompt: request.prompt.substring(0, 50),
+    negativePrompt: request.negative_prompt?.substring(0, 30),
     aspectRatio: request.aspect_ratio,
+    resolution,
     duration: request.duration,
     generateAudio: request.generate_audio ?? true,
+    hasReferenceImages,
+    referenceImageCount: request.reference_image_urls?.length || 0,
+    personGeneration,
     projectId,
     location
   });
@@ -237,16 +291,40 @@ async function generateVideoWithVeo(request: VideoGenerationRequest): Promise<Bl
     sampleCount: 1,
     durationSeconds: request.duration,
     aspectRatio: request.aspect_ratio,
-    personGeneration: "allow_adult",
-    generateAudio: request.generate_audio ?? true, // Default to true if not specified
+    resolution: resolution, // Official Veo 3.1 param: 720p, 1080p, 4k
+    personGeneration: personGeneration,
+    generateAudio: request.generate_audio ?? true,
   };
+
+  // Add negative prompt if provided (official Veo 3.1 param)
+  if (request.negative_prompt) {
+    parameters.negativePrompt = request.negative_prompt;
+  }
 
   switch (request.mode) {
     case 'text-to-video': {
       // Simple text-to-video generation
-      instances = [{
+      const instance: any = {
         prompt: request.prompt,
-      }];
+      };
+
+      // Add reference images if provided (Veo 3.1 exclusive feature)
+      if (hasReferenceImages) {
+        const referenceImages = [];
+        for (const url of request.reference_image_urls!) {
+          const { data, mimeType } = await fetchImageAsBase64(url);
+          referenceImages.push({
+            referenceImage: {
+              bytesBase64Encoded: data,
+              mimeType: mimeType
+            },
+            referenceType: "REFERENCE_TYPE_STYLE" // Can also be REFERENCE_TYPE_SUBJECT
+          });
+        }
+        instance.referenceImages = referenceImages;
+      }
+
+      instances = [instance];
       break;
     }
 
@@ -269,26 +347,69 @@ async function generateVideoWithVeo(request: VideoGenerationRequest): Promise<Bl
       break;
     }
 
-    case 'keyframe-to-video': {
-      // Keyframe interpolation: extend video from last frame
-      // Note: Veo API uses video extension, not dual keyframes
-      // We'll use the first image as a static video and last frame as target
-      if (!request.first_frame_url || !request.last_frame_url) {
-        throw new Error("first_frame_url and last_frame_url are required for keyframe-to-video mode");
+    case 'interpolation': {
+      // Interpolation: smooth transition between two images
+      // Official Veo 3.1 API: "image" (start) + "lastFrame" (end)
+      // We accept either image_url or first_frame_url for backwards compatibility
+      const startImageUrl = request.image_url || request.first_frame_url;
+      if (!startImageUrl || !request.last_frame_url) {
+        throw new Error("image_url (or first_frame_url) and last_frame_url are required for interpolation mode");
       }
 
-      const lastFrame = await fetchImageAsBase64(request.last_frame_url);
+      const [startImage, endImage] = await Promise.all([
+        fetchImageAsBase64(startImageUrl),
+        fetchImageAsBase64(request.last_frame_url)
+      ]);
 
-      // For now, use image-to-video with the last frame
-      // (True keyframe interpolation requires existing video + target frame)
+      // Official API structure: image + lastFrame
       instances = [{
         prompt: request.prompt,
         image: {
-          bytesBase64Encoded: lastFrame.data,
-          mimeType: lastFrame.mimeType
+          bytesBase64Encoded: startImage.data,
+          mimeType: startImage.mimeType
+        },
+        lastFrame: {
+          bytesBase64Encoded: endImage.data,
+          mimeType: endImage.mimeType
         }
       }];
       parameters.resizeMode = "pad";
+      break;
+    }
+
+    case 'extend-video': {
+      // Video Extension: Continue a previously generated Veo video
+      // Official Veo 3.1 feature - extends by ~7 seconds (up to 20 times)
+      // Requirements:
+      // - source_video_gcs_uri: GCS URI of a Veo-generated video
+      // - Resolution: 720p ONLY
+      // - Duration: 8s ONLY
+      // - Video age: must be < 2 days old
+      // - Max input length: 141 seconds -> output 148 seconds
+      if (!request.source_video_gcs_uri) {
+        throw new Error("source_video_gcs_uri is required for extend-video mode");
+      }
+
+      // Validate extension constraints
+      if (resolution !== '720p') {
+        throw new Error("Video extension only supports 720p resolution");
+      }
+      if (request.duration !== 8) {
+        throw new Error("Video extension requires 8 second duration");
+      }
+
+      logStep("Extending video", {
+        sourceUri: request.source_video_gcs_uri,
+        prompt: request.prompt.substring(0, 50)
+      });
+
+      // For video extension, we pass the video object with the GCS URI
+      instances = [{
+        prompt: request.prompt,
+        video: {
+          gcsUri: request.source_video_gcs_uri
+        }
+      }];
       break;
     }
 
@@ -306,7 +427,7 @@ async function generateVideoWithVeo(request: VideoGenerationRequest): Promise<Bl
     mode: request.mode,
     outputPath,
     hasInstances: instances.length > 0,
-    parameters: parameters // Log full parameters to debug
+    parameters: parameters
   });
 
   const response = await fetch(endpoint, {
@@ -434,10 +555,15 @@ async function generateVideoWithVeo(request: VideoGenerationRequest): Promise<Bl
 
       logStep("Video downloaded successfully", {
         sizeBytes: videoBlob.size,
-        type: videoBlob.type
+        type: videoBlob.type,
+        gcsUri: gcsUri // Log for debugging
       });
 
-      return videoBlob;
+      // Return both blob and GCS URI (for video extension feature)
+      return {
+        videoBlob,
+        gcsUri // Store this to enable extending this video later (valid for 2 days)
+      };
     }
 
     logStep(`Polling operation (${i + 1}/${maxPolls})`, {
@@ -501,14 +627,21 @@ async function saveVideoMediaRecord(
   model: string,
   mode: string,
   aspectRatio: string,
+  resolution: string,
   duration: number,
-  fps: number,
-  inputImageUrl?: string
+  negativePrompt?: string,
+  inputImageUrl?: string,
+  gcsUri?: string // GCS URI for video extension feature (valid for 2 days)
 ): Promise<void> {
   logStep("Saving video media record to database");
 
   const timestamp = Date.now();
   const fileName = `generated_${timestamp}.mp4`;
+
+  // Build notes with metadata for extension feature
+  let notes = `Mode: ${mode}`;
+  if (negativePrompt) notes += ` | Negative: ${negativePrompt}`;
+  if (gcsUri) notes += ` | GCS: ${gcsUri}`; // Store GCS URI in notes for extension capability
 
   const mediaRecord = {
     user_id: userId,
@@ -523,13 +656,13 @@ async function saveVideoMediaRecord(
     prompt: prompt,
     model_used: model,
     aspect_ratio: aspectRatio,
-    quality: mode, // Store mode as quality for videos
+    quality: resolution, // Store resolution as quality for videos (720p, 1080p, 4k)
     duration: duration,
     reference_image_url: inputImageUrl || null,
     tags: [],
     is_favorite: false,
     custom_title: null,
-    notes: null,
+    notes: notes,
     download_count: 0,
     view_count: 0,
   };
@@ -587,31 +720,61 @@ serve(async (req) => {
       throw new Error("input_image_url is required for image-to-video mode");
     }
 
-    if (request.mode === 'keyframe-to-video' && (!request.first_frame_url || !request.last_frame_url)) {
-      throw new Error("first_frame_url and last_frame_url are required for keyframe-to-video mode");
+    if (request.mode === 'interpolation') {
+      const hasStartImage = request.image_url || request.first_frame_url;
+      if (!hasStartImage || !request.last_frame_url) {
+        throw new Error("image_url (start image) and last_frame_url (end image) are required for interpolation mode");
+      }
+    }
+
+    if (request.mode === 'extend-video') {
+      if (!request.source_video_gcs_uri) {
+        throw new Error("source_video_gcs_uri is required for extend-video mode");
+      }
+      // Extension only works with 720p and 8s duration
+      if (request.resolution && request.resolution !== '720p') {
+        throw new Error("Video extension only supports 720p resolution");
+      }
+      if (request.duration !== 8) {
+        throw new Error("Video extension requires 8 second duration");
+      }
+    }
+
+    // Validate aspect ratio (Veo 3.1 only supports 16:9 and 9:16)
+    if (!['16:9', '9:16'].includes(request.aspect_ratio)) {
+      throw new Error("Veo 3.1 only supports aspect ratios: 16:9 or 9:16");
+    }
+
+    // Validate resolution if provided
+    if (request.resolution && !['720p', '1080p', '4k'].includes(request.resolution)) {
+      throw new Error("Invalid resolution. Supported: 720p, 1080p, 4k");
     }
 
     logStep("Request validated", {
       model: request.model,
       mode: request.mode,
       aspectRatio: request.aspect_ratio,
+      resolution: request.resolution || '720p',
       duration: request.duration,
+      negativePrompt: request.negative_prompt ? 'yes' : 'no',
+      referenceImages: request.reference_image_urls?.length || 0,
       generate_audio: request.generate_audio
     });
 
     // Generate video
-    const videoData = await generateVideoWithVeo(request);
+    const { videoBlob, gcsUri } = await generateVideoWithVeo(request);
 
     // Upload to storage
     const { publicUrl, storagePath, fileSize } = await uploadVideoToStorage(
       supabaseClient,
-      videoData,
+      videoBlob,
       user.id,
       request.company_id || 'default',
       request.model
     );
 
     // Save video media record to database (so it appears in user's library even if browser crashes)
+    const resolution = request.resolution || '720p';
     await saveVideoMediaRecord(
       supabaseClient,
       user.id,
@@ -623,24 +786,31 @@ serve(async (req) => {
       request.model,
       request.mode,
       request.aspect_ratio,
+      resolution,
       request.duration,
-      request.fps || 24,
-      request.input_image_url || request.first_frame_url
+      request.negative_prompt,
+      request.input_image_url || request.first_frame_url,
+      gcsUri // Store GCS URI for video extension feature
     );
 
-    // Prepare response
+    // Prepare response - include GCS URI for video extension capability
+    const isExtension = request.mode === 'extend-video';
     const response: VideoGenerationResponse = {
       success: true,
       video_url: publicUrl,
       thumbnail_url: publicUrl, // TODO: Generate thumbnail from first frame
       storage_path: storagePath,
+      gcs_uri: gcsUri, // IMPORTANT: Store this to enable "Extend Video" feature (valid for 2 days)
       metadata: {
         model: request.model,
         mode: request.mode,
         prompt: request.prompt,
         aspect_ratio: request.aspect_ratio,
+        resolution: resolution,
         duration: request.duration,
-        fps: request.fps || 24,
+        negative_prompt: request.negative_prompt,
+        has_reference_images: (request.reference_image_urls?.length || 0) > 0,
+        is_extension: isExtension,
       }
     };
 

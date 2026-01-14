@@ -26,6 +26,7 @@ interface MediaLibraryProps {
   isStudioContext?: boolean; // Determines if this is Studio (show all by default) or Post library (show current company only)
   onUseForGeneration?: (media: MediaFile, targetType: MediaType) => void; // Callback when user wants to use image for generation
   onContinueVideo?: (media: MediaFile) => void; // Callback when user wants to continue a video
+  onExtendVideo?: (media: MediaFile, gcsUri: string) => void; // Callback when user wants to extend a video (Veo 3.1)
   isContinuingVideo?: boolean; // Whether video continuation is in progress
   continueVideoProgress?: string; // Progress message for video continuation
 }
@@ -35,6 +36,7 @@ const MediaLibrary = ({
   isStudioContext = true,
   onUseForGeneration,
   onContinueVideo,
+  onExtendVideo,
   isContinuingVideo = false,
   continueVideoProgress = '',
 }: MediaLibraryProps) => {
@@ -342,6 +344,7 @@ const MediaLibrary = ({
             : undefined
         }
         onContinueVideo={onContinueVideo}
+        onExtendVideo={onExtendVideo}
         isContinuingVideo={isContinuingVideo}
         continueVideoProgress={continueVideoProgress}
       />

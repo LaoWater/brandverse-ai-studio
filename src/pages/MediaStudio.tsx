@@ -53,11 +53,14 @@ const MediaStudioContent = () => {
     enhancePrompt,
     referenceImages,
     videoDuration,
-    videoFps,
+    videoResolution,
     generateAudio,
+    videoNegativePrompt,
+    videoReferenceImages,
     firstFrameImage,
     lastFrameImage,
     inputVideoImage,
+    sourceVideoGcsUri,
     isGenerating,
     generationProgress,
     currentStage,
@@ -71,6 +74,7 @@ const MediaStudioContent = () => {
     setInputVideoImageFromUrl,
     clearReferenceImages,
     clearVideoFrames,
+    setSourceVideoForExtension,
   } = useMediaStudio();
 
   const { user } = useAuth();
@@ -138,22 +142,35 @@ const MediaStudioContent = () => {
             throw new Error('Failed to upload input image. Please try again.');
           }
           console.log('[MediaStudio] Input image uploaded:', inputImageUrl);
-        } else if (videoGenerationMode === 'keyframe-to-video' && user) {
+        } else if (videoGenerationMode === 'interpolation' && user) {
+          // Interpolation mode: upload both first and last frames
           if (firstFrameImage) {
-            console.log('[MediaStudio] Uploading first frame...');
+            console.log('[MediaStudio] Uploading start image for interpolation...');
             firstFrameUrl = await uploadVideoFrameImage(firstFrameImage, user.id, 'first');
             if (!firstFrameUrl) {
-              throw new Error('Failed to upload first frame. Please try again.');
+              throw new Error('Failed to upload start image. Please try again.');
             }
-            console.log('[MediaStudio] First frame uploaded:', firstFrameUrl);
+            console.log('[MediaStudio] Start image uploaded:', firstFrameUrl);
           }
           if (lastFrameImage) {
-            console.log('[MediaStudio] Uploading last frame...');
+            console.log('[MediaStudio] Uploading end image for interpolation...');
             lastFrameUrl = await uploadVideoFrameImage(lastFrameImage, user.id, 'last');
             if (!lastFrameUrl) {
-              throw new Error('Failed to upload last frame. Please try again.');
+              throw new Error('Failed to upload end image. Please try again.');
             }
-            console.log('[MediaStudio] Last frame uploaded:', lastFrameUrl);
+            console.log('[MediaStudio] End image uploaded:', lastFrameUrl);
+          }
+        }
+
+        // Upload video reference images (Veo 3.1 exclusive feature, max 3)
+        if (videoReferenceImages.length > 0 && user) {
+          console.log('[MediaStudio] Uploading video reference images...', videoReferenceImages.length);
+          for (const image of videoReferenceImages) {
+            const uploadedUrl = await uploadReferenceImage(image, user.id);
+            console.log('[MediaStudio] Video reference image uploaded:', uploadedUrl);
+            if (uploadedUrl) {
+              referenceImageUrls.push(uploadedUrl);
+            }
           }
         }
       }
@@ -171,17 +188,19 @@ const MediaStudioContent = () => {
           numberOfImages: mediaType === 'image' ? numberOfImages : undefined,
           imageSize: mediaType === 'image' ? imageSize : undefined,
           seed: mediaType === 'image' ? seed : undefined,
-          negativePrompt: mediaType === 'image' ? negativePrompt : undefined,
+          negativePrompt: mediaType === 'image' ? negativePrompt : (mediaType === 'video' ? videoNegativePrompt : undefined),
           enhancePrompt: mediaType === 'image' ? enhancePrompt : undefined,
-          referenceImageUrls: mediaType === 'image' ? referenceImageUrls : undefined,
-          // Video-specific
+          referenceImageUrls: referenceImageUrls.length > 0 ? referenceImageUrls : undefined,
+          // Video-specific (Veo 3.1 official params)
           videoMode: mediaType === 'video' ? videoGenerationMode : undefined,
           videoDuration: mediaType === 'video' ? videoDuration : undefined,
-          videoFps: mediaType === 'video' ? videoFps : undefined,
+          videoResolution: mediaType === 'video' ? videoResolution : undefined,
           generateAudio: mediaType === 'video' ? generateAudio : undefined,
           inputImageUrl: mediaType === 'video' ? inputImageUrl : undefined,
           firstFrameUrl: mediaType === 'video' ? firstFrameUrl : undefined,
           lastFrameUrl: mediaType === 'video' ? lastFrameUrl : undefined,
+          // For extend-video mode
+          sourceVideoGcsUri: mediaType === 'video' && videoGenerationMode === 'extend-video' ? sourceVideoGcsUri || undefined : undefined,
           // Common
           userId: user.id,
           companyId: selectedCompany?.id,
@@ -372,6 +391,25 @@ const MediaStudioContent = () => {
       setIsContinuingVideo(false);
       setContinueVideoProgress('');
     }
+  };
+
+  // Handler for extending a video (Veo 3.1 exclusive feature)
+  const handleExtendVideo = (media: MediaFile, gcsUri: string) => {
+    // Set up extension mode with the GCS URI and video preview
+    setSourceVideoForExtension(gcsUri, media.public_url);
+
+    // Switch to video mode
+    setMediaType('video');
+    setVideoGenerationMode('extend-video');
+
+    // Switch to create view
+    setShowLibrary(false);
+
+    toast({
+      title: 'Ready to Extend',
+      description: 'Enter a prompt describing how you want to continue this video.',
+      className: 'bg-green-600/90 border-green-600 text-white',
+    });
   };
 
   return (
@@ -591,6 +629,7 @@ const MediaStudioContent = () => {
               onCreateNew={() => setShowLibrary(false)}
               onUseForGeneration={handleUseForGeneration}
               onContinueVideo={handleContinueVideo}
+              onExtendVideo={handleExtendVideo}
               isContinuingVideo={isContinuingVideo}
               continueVideoProgress={continueVideoProgress}
             />

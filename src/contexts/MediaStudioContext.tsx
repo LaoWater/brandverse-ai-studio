@@ -15,8 +15,11 @@ export type VideoModel =
   | 'veo-3.1-generate-001'         // Standard - High-quality production videos
   | 'veo-3.1-fast-generate-001';   // Fast - Rapid iterations, A/B testing
 
-// Video Generation Modes
-export type VideoGenerationMode = 'text-to-video' | 'image-to-video' | 'keyframe-to-video';
+// Video Generation Modes (Veo 3.1 official)
+export type VideoGenerationMode = 'text-to-video' | 'image-to-video' | 'interpolation' | 'extend-video';
+
+// Video Resolution (Veo 3.1 official)
+export type VideoResolution = '720p' | '1080p' | '4k';
 
 // Nano Banana Variants
 export type NanoBananaVariant = 'standard' | 'pro';
@@ -24,8 +27,9 @@ export type NanoBananaVariant = 'standard' | 'pro';
 // Quality Tiers - Maps to specific models (kept for backwards compatibility)
 export type QualityTier = 'fast' | 'standard' | 'ultra';
 
-// Aspect Ratios - Supported by all models
+// Aspect Ratios - Image supports all, Video only 16:9 and 9:16
 export type AspectRatio = '1:1' | '16:9' | '9:16' | '3:4' | '4:3' | '3:2';
+export type VideoAspectRatio = '16:9' | '9:16'; // Veo 3.1 only supports these two
 
 export interface MediaStudioState {
   // Media type selection
@@ -57,16 +61,22 @@ export interface MediaStudioState {
   negativePrompt?: string;       // For Imagen 4
   enhancePrompt: boolean;        // For Imagen 4 - LLM-based prompt rewriting (enabled by default)
 
-  // Video-specific settings
-  videoDuration: 4 | 6 | 8;      // Veo 3.1 supports 4, 6, or 8 seconds (8s only with reference images)
-  videoFps: 24 | 30;             // 24fps or 30fps
+  // Video-specific settings (Veo 3.1 official params)
+  videoDuration: 4 | 6 | 8;      // 8s required for 1080p/4k, reference images, or extension
+  videoResolution: VideoResolution; // 720p (default), 1080p, 4k; 720p ONLY for extension
   generateAudio: boolean;        // Generate audio with video (default: true)
-  firstFrameImage: File | null;  // For keyframe-to-video mode
+  videoNegativePrompt?: string;  // Describes what NOT to include in the video
+  firstFrameImage: File | null;  // For interpolation mode (start frame)
   firstFramePreview: string | null;
-  lastFrameImage: File | null;   // For keyframe-to-video mode
+  lastFrameImage: File | null;   // For interpolation mode (end frame)
   lastFramePreview: string | null;
-  inputVideoImage: File | null;  // For image-to-video mode (reusing reference image upload)
+  inputVideoImage: File | null;  // For image-to-video mode
   inputVideoImagePreview: string | null;
+  videoReferenceImages: File[];  // Up to 3 style/content reference images (Veo 3.1 exclusive)
+  videoReferenceImagePreviews: string[];
+  // For extend-video mode - Continues a Veo-generated video (~7s extension)
+  sourceVideoGcsUri: string | null; // GCS URI of the video to extend (valid for 2 days)
+  sourceVideoPreview: string | null; // Preview URL for UI display
 
   // Generation state
   isGenerating: boolean;
@@ -87,16 +97,23 @@ interface MediaStudioContextType extends MediaStudioState {
   setSelectedImageModel: (model: ImageModel) => void;
   setNanoBananaVariant: (variant: NanoBananaVariant) => void;
 
-  // Video model setters
+  // Video model setters (Veo 3.1)
   setSelectedVideoModel: (model: VideoModel) => void;
   setVideoGenerationMode: (mode: VideoGenerationMode) => void;
   setVideoDuration: (duration: 4 | 6 | 8) => void;
-  setVideoFps: (fps: 24 | 30) => void;
+  setVideoResolution: (resolution: VideoResolution) => void;
   setGenerateAudio: (generate: boolean) => void;
+  setVideoNegativePrompt: (prompt: string | undefined) => void;
   setFirstFrameImage: (file: File | null) => void;
   setLastFrameImage: (file: File | null) => void;
   setInputVideoImage: (file: File | null) => void;
+  addVideoReferenceImage: (file: File) => void;
+  removeVideoReferenceImage: (index: number) => void;
+  clearVideoReferenceImages: () => void;
   clearVideoFrames: () => void;
+  // For extend-video mode
+  setSourceVideoForExtension: (gcsUri: string, previewUrl: string) => void;
+  clearSourceVideo: () => void;
 
   // Common setters
   setPrompt: (prompt: string) => void;
@@ -155,16 +172,21 @@ const initialState: MediaStudioState = {
   negativePrompt: undefined,
   enhancePrompt: true,
 
-  // Video-specific settings
+  // Video-specific settings (Veo 3.1 official params)
   videoDuration: 8,
-  videoFps: 24,
+  videoResolution: '720p', // Default to 720p
   generateAudio: true, // Default to true (generate audio)
+  videoNegativePrompt: undefined,
   firstFrameImage: null,
   firstFramePreview: null,
   lastFrameImage: null,
   lastFramePreview: null,
   inputVideoImage: null,
   inputVideoImagePreview: null,
+  videoReferenceImages: [],
+  videoReferenceImagePreviews: [],
+  sourceVideoGcsUri: null,
+  sourceVideoPreview: null,
 
   // Generation state
   isGenerating: false,
@@ -282,12 +304,49 @@ export const MediaStudioProvider: React.FC<{ children: ReactNode }> = ({ childre
     setState(prev => ({ ...prev, videoDuration: duration }));
   };
 
-  const setVideoFps = (fps: 24 | 30) => {
-    setState(prev => ({ ...prev, videoFps: fps }));
+  const setVideoResolution = (resolution: VideoResolution) => {
+    setState(prev => ({ ...prev, videoResolution: resolution }));
   };
 
   const setGenerateAudio = (generate: boolean) => {
     setState(prev => ({ ...prev, generateAudio: generate }));
+  };
+
+  const setVideoNegativePrompt = (prompt: string | undefined) => {
+    setState(prev => ({ ...prev, videoNegativePrompt: prompt }));
+  };
+
+  const addVideoReferenceImage = (file: File) => {
+    // Limit to 3 reference images for Veo 3.1
+    if (state.videoReferenceImages.length >= 3) {
+      console.warn('Maximum 3 reference images allowed for Veo 3.1');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setState(prev => ({
+        ...prev,
+        videoReferenceImages: [...prev.videoReferenceImages, file],
+        videoReferenceImagePreviews: [...prev.videoReferenceImagePreviews, reader.result as string],
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeVideoReferenceImage = (index: number) => {
+    setState(prev => ({
+      ...prev,
+      videoReferenceImages: prev.videoReferenceImages.filter((_, i) => i !== index),
+      videoReferenceImagePreviews: prev.videoReferenceImagePreviews.filter((_, i) => i !== index),
+    }));
+  };
+
+  const clearVideoReferenceImages = () => {
+    setState(prev => ({
+      ...prev,
+      videoReferenceImages: [],
+      videoReferenceImagePreviews: [],
+    }));
   };
 
   const setFirstFrameImage = (file: File | null) => {
@@ -362,6 +421,32 @@ export const MediaStudioProvider: React.FC<{ children: ReactNode }> = ({ childre
       lastFramePreview: null,
       inputVideoImage: null,
       inputVideoImagePreview: null,
+      videoReferenceImages: [],
+      videoReferenceImagePreviews: [],
+      videoNegativePrompt: undefined,
+      sourceVideoGcsUri: null,
+      sourceVideoPreview: null,
+    }));
+  };
+
+  // Set source video for extend-video mode
+  const setSourceVideoForExtension = (gcsUri: string, previewUrl: string) => {
+    setState(prev => ({
+      ...prev,
+      sourceVideoGcsUri: gcsUri,
+      sourceVideoPreview: previewUrl,
+      videoGenerationMode: 'extend-video',
+      // Extension requires 720p and 8s
+      videoResolution: '720p',
+      videoDuration: 8,
+    }));
+  };
+
+  const clearSourceVideo = () => {
+    setState(prev => ({
+      ...prev,
+      sourceVideoGcsUri: null,
+      sourceVideoPreview: null,
     }));
   };
 
@@ -449,12 +534,18 @@ export const MediaStudioProvider: React.FC<{ children: ReactNode }> = ({ childre
     setSelectedVideoModel,
     setVideoGenerationMode,
     setVideoDuration,
-    setVideoFps,
+    setVideoResolution,
     setGenerateAudio,
+    setVideoNegativePrompt,
     setFirstFrameImage,
     setLastFrameImage,
     setInputVideoImage,
+    addVideoReferenceImage,
+    removeVideoReferenceImage,
+    clearVideoReferenceImages,
     clearVideoFrames,
+    setSourceVideoForExtension,
+    clearSourceVideo,
     setPrompt,
     addReferenceImage,
     removeReferenceImage,
