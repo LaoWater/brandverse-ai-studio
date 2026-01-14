@@ -497,7 +497,104 @@ async function generateVideoWithVeo(request: VideoGenerationRequest): Promise<Ve
 
       // Check for errors
       if (pollData.error) {
-        throw new Error(`Veo generation failed: ${JSON.stringify(pollData.error)}`);
+        // Parse Google API error codes into user-friendly messages
+        const errorCode = pollData.error.code;
+        const operationId = pollData.error.message?.match(/Operation ID: ([\w-]+)/)?.[1];
+
+        const userFriendlyErrors: Record<number, { title: string; message: string; suggestion: string }> = {
+          // CANCELLED
+          1: {
+            title: "Generation Cancelled",
+            message: "The video generation was cancelled.",
+            suggestion: "Please try again when ready."
+          },
+          // UNKNOWN
+          2: {
+            title: "Unknown Error",
+            message: "An unexpected error occurred while generating your video.",
+            suggestion: "Please try again. If the problem persists, try with a different prompt."
+          },
+          // INVALID_ARGUMENT
+          3: {
+            title: "Invalid Request",
+            message: "There was an issue with the generation parameters.",
+            suggestion: "Try adjusting your prompt or settings and try again."
+          },
+          // DEADLINE_EXCEEDED
+          4: {
+            title: "Request Timeout",
+            message: "The video generation took too long to complete.",
+            suggestion: "Please try again. Consider using a shorter duration or simpler prompt."
+          },
+          // NOT_FOUND
+          5: {
+            title: "Resource Not Found",
+            message: "A required resource could not be found.",
+            suggestion: "Please try again with a different input image or prompt."
+          },
+          // PERMISSION_DENIED
+          7: {
+            title: "Access Denied",
+            message: "Unable to access the video generation service.",
+            suggestion: "Please contact support if this problem continues."
+          },
+          // RESOURCE_EXHAUSTED
+          8: {
+            title: "Service Busy",
+            message: "The video generation service is currently at capacity.",
+            suggestion: "Please wait a few minutes and try again."
+          },
+          // FAILED_PRECONDITION
+          9: {
+            title: "Unable to Process",
+            message: "The request could not be processed in its current state.",
+            suggestion: "Try with a different image or prompt."
+          },
+          // ABORTED
+          10: {
+            title: "Generation Aborted",
+            message: "The video generation was interrupted.",
+            suggestion: "Please try again."
+          },
+          // INTERNAL
+          13: {
+            title: "Service Temporarily Unavailable",
+            message: "Google's video generation service encountered a temporary issue.",
+            suggestion: "This is usually resolved within a few minutes. Please try again shortly."
+          },
+          // UNAVAILABLE
+          14: {
+            title: "Service Unavailable",
+            message: "The video generation service is temporarily unavailable.",
+            suggestion: "Please wait a few minutes and try again."
+          },
+          // DATA_LOSS
+          15: {
+            title: "Processing Error",
+            message: "An error occurred while processing your video.",
+            suggestion: "Please try again with a different prompt or settings."
+          }
+        };
+
+        const errorInfo = userFriendlyErrors[errorCode] || {
+          title: "Generation Failed",
+          message: "An unexpected error occurred.",
+          suggestion: "Please try again. If the problem persists, try a different prompt."
+        };
+
+        // Create structured error for frontend
+        const structuredError = {
+          type: "GOOGLE_API_ERROR",
+          code: errorCode,
+          title: errorInfo.title,
+          message: errorInfo.message,
+          suggestion: errorInfo.suggestion,
+          operationId: operationId,
+          retryable: [4, 8, 13, 14].includes(errorCode) // These are typically transient
+        };
+
+        logStep("Veo generation error (parsed)", structuredError);
+        throw new Error(JSON.stringify(structuredError));
       }
 
       // Get the GCS URI from the response

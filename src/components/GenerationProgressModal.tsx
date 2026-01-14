@@ -26,7 +26,7 @@ const GenerationProgressModal: React.FC<GenerationProgressModalProps> = ({ stage
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 transition-opacity duration-300 ease-in-out">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 transition-opacity duration-300 ease-in-out">
       <div className="cosmic-card border-0 cosmic-glow p-6 md:p-8 rounded-xl shadow-2xl w-full max-w-lg transform transition-all duration-300 ease-in-out scale-100">
         <div className="text-center mb-6">
           <h2 className="text-xl md:text-2xl font-bold text-white">Crafting Your Content...</h2>

@@ -31,6 +31,7 @@ import {
   extractAndUploadLastFrame,
   MediaFile,
 } from '@/services/mediaStudioService';
+import GenerationErrorDialog, { GenerationError } from '@/components/media/GenerationErrorDialog';
 import { MediaType } from '@/contexts/MediaStudioContext';
 import {
   getUserCredits,
@@ -87,6 +88,10 @@ const MediaStudioContent = () => {
   // State for video continuation feature
   const [isContinuingVideo, setIsContinuingVideo] = useState(false);
   const [continueVideoProgress, setContinueVideoProgress] = useState('');
+
+  // State for error dialog
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [generationError, setGenerationError] = useState<GenerationError | string | null>(null);
 
   // Calculate generation cost based on current settings
   const generationCost = calculateMediaStudioCredits(
@@ -218,15 +223,28 @@ const MediaStudioContent = () => {
         resetGeneration(); // Close the modal immediately
 
         const errorMessage = result.error || 'Something went wrong. Please try again.';
-        const isHelpfulError = errorMessage.includes("couldn't generate") ||
-                               errorMessage.includes("💡 Tip:");
 
-        toast({
-          title: isHelpfulError ? 'Need More Details' : 'Generation Failed',
-          description: errorMessage,
-          variant: 'destructive',
-          duration: isHelpfulError ? 8000 : 5000,
-        });
+        // Check if this is a structured error from Google API or a serious error
+        const isStructuredError = errorMessage.includes('GOOGLE_API_ERROR') ||
+                                  errorMessage.includes('Internal error') ||
+                                  errorMessage.includes('Service') ||
+                                  errorMessage.includes('Timeout');
+
+        if (isStructuredError) {
+          // Show the beautiful error dialog for serious/API errors
+          setGenerationError(errorMessage);
+          setShowErrorDialog(true);
+        } else {
+          // Show toast for simpler errors (like prompt issues)
+          const isHelpfulError = errorMessage.includes("couldn't generate") ||
+                                 errorMessage.includes("Tip:");
+          toast({
+            title: isHelpfulError ? 'Need More Details' : 'Generation Failed',
+            description: errorMessage,
+            variant: 'destructive',
+            duration: isHelpfulError ? 8000 : 5000,
+          });
+        }
         return;
       }
 
@@ -264,12 +282,25 @@ const MediaStudioContent = () => {
 
       const errorMessage = error?.message || 'Network error. Please check your connection and try again.';
 
-      toast({
-        title: 'Connection Error',
-        description: errorMessage,
-        variant: 'destructive',
-        duration: 5000,
-      });
+      // Check if this looks like a Google API error or network issue
+      const isStructuredError = errorMessage.includes('GOOGLE_API_ERROR') ||
+                                errorMessage.includes('Internal error') ||
+                                errorMessage.includes('network') ||
+                                errorMessage.includes('fetch');
+
+      if (isStructuredError || errorMessage.length > 100) {
+        // Show the beautiful error dialog for serious errors
+        setGenerationError(errorMessage);
+        setShowErrorDialog(true);
+      } else {
+        // Show toast for simple errors
+        toast({
+          title: 'Connection Error',
+          description: errorMessage,
+          variant: 'destructive',
+          duration: 5000,
+        });
+      }
     },
   });
 
@@ -731,6 +762,24 @@ const MediaStudioContent = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Generation Error Dialog */}
+      <GenerationErrorDialog
+        open={showErrorDialog}
+        onClose={() => {
+          setShowErrorDialog(false);
+          setGenerationError(null);
+        }}
+        onRetry={() => {
+          setShowErrorDialog(false);
+          setGenerationError(null);
+          // Small delay before retrying to ensure dialog closes
+          setTimeout(() => {
+            handleGenerate();
+          }, 100);
+        }}
+        error={generationError}
+      />
     </div>
   );
 };

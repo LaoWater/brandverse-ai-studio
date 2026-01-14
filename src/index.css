@@ -448,12 +448,12 @@
   }
 
   /* DROPDOWN MENU FIXES - Enhanced specificity to override yellow/brown colors */
+  /* Note: Only target specific dropdown/menu elements, not dialogs */
   [data-radix-popper-content-wrapper],
   [data-radix-dropdown-menu-content],
   [data-radix-select-content],
   [role="listbox"],
   [role="menu"],
-  [data-state="open"],
   .dropdown-content {
     background-color: rgb(15 15 25) !important;
     border: 1px solid rgba(91, 95, 238, 0.25) !important;
@@ -878,6 +878,23 @@
     background-color: rgb(255 255 255) !important;
   }
 
+  /* Dialog content uses bg-card/95 */
+  html.light .bg-card\/95 {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+  }
+
+  /* Dialog content text should be dark in light mode */
+  html.light [role="dialog"] {
+    color: rgb(15 15 23) !important;
+  }
+
+  html.light [role="dialog"] h2,
+  html.light [role="dialog"] p,
+  html.light [role="dialog"] span,
+  html.light [role="dialog"] button {
+    color: rgb(15 15 23) !important;
+  }
+
   html.light .bg-background\/50 {
     background-color: rgba(255, 255, 255, 0.5) !important;
   }
@@ -998,10 +1015,10 @@
     background-image: linear-gradient(to bottom right, var(--tw-gradient-stops)) !important;
   }
 
-  /* Ensure page wrapper has light gradient */
-  html.light body > div,
+  /* Ensure page wrapper has light gradient - exclude fixed overlays (dialog portals) */
+  html.light body > div:not(.fixed),
   html.light #root,
-  html.light [class*="min-h-screen"][class*="bg-gradient"] {
+  html.light [class*="min-h-screen"][class*="bg-gradient"]:not(.fixed) {
     background: linear-gradient(135deg, #FAFBFC 0%, #F0F4FF 50%, #E8F0FE 100%) !important;
     background-attachment: fixed !important;
   }
@@ -2018,19 +2035,21 @@
     }
   }
 
-  /* Dialog/Modal Backdrop */
+  /* Dialog/Modal Backdrop - Semi-transparent to show background */
   [data-radix-dialog-overlay],
   [data-radix-alert-dialog-overlay] {
-    background: rgba(0, 0, 0, 0.85) !important;
-    backdrop-filter: blur(8px) !important;
+    background: rgba(0, 0, 0, 0.4) !important;
+    backdrop-filter: blur(2px) !important;
     animation: overlay-fade-in 0.3s ease !important;
   }
 
-  /* Light Mode Dialog Backdrop */
+  /* Light Mode Dialog Backdrop - NO blur to prevent wash-out */
+  html.light [data-radix-dialog-overlay],
+  html.light [data-radix-alert-dialog-overlay],
   .light [data-radix-dialog-overlay],
   .light [data-radix-alert-dialog-overlay] {
-    background: rgba(15, 15, 23, 0.5) !important;
-    backdrop-filter: blur(12px) !important;
+    background: rgba(0, 0, 0, 0.25) !important;
+    backdrop-filter: none !important;
   }
 
   @keyframes overlay-fade-in {
