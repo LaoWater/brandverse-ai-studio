@@ -25,9 +25,19 @@ interface MediaLibraryProps {
   onCreateNew: () => void;
   isStudioContext?: boolean; // Determines if this is Studio (show all by default) or Post library (show current company only)
   onUseForGeneration?: (media: MediaFile, targetType: MediaType) => void; // Callback when user wants to use image for generation
+  onContinueVideo?: (media: MediaFile) => void; // Callback when user wants to continue a video
+  isContinuingVideo?: boolean; // Whether video continuation is in progress
+  continueVideoProgress?: string; // Progress message for video continuation
 }
 
-const MediaLibrary = ({ onCreateNew, isStudioContext = true, onUseForGeneration }: MediaLibraryProps) => {
+const MediaLibrary = ({
+  onCreateNew,
+  isStudioContext = true,
+  onUseForGeneration,
+  onContinueVideo,
+  isContinuingVideo = false,
+  continueVideoProgress = '',
+}: MediaLibraryProps) => {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
@@ -331,6 +341,9 @@ const MediaLibrary = ({ onCreateNew, isStudioContext = true, onUseForGeneration 
             ? (media) => onUseForGeneration(media, 'video')
             : undefined
         }
+        onContinueVideo={onContinueVideo}
+        isContinuingVideo={isContinuingVideo}
+        continueVideoProgress={continueVideoProgress}
       />
     </div>
   );

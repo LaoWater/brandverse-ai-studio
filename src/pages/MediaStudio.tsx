@@ -28,6 +28,7 @@ import {
   generateMediaWithProgress,
   uploadReferenceImage,
   uploadVideoFrameImage,
+  extractAndUploadLastFrame,
   MediaFile,
 } from '@/services/mediaStudioService';
 import { MediaType } from '@/contexts/MediaStudioContext';
@@ -78,6 +79,10 @@ const MediaStudioContent = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [showLibrary, setShowLibrary] = useState(false);
+
+  // State for video continuation feature
+  const [isContinuingVideo, setIsContinuingVideo] = useState(false);
+  const [continueVideoProgress, setContinueVideoProgress] = useState('');
 
   // Calculate generation cost based on current settings
   const generationCost = calculateMediaStudioCredits(
@@ -313,6 +318,62 @@ const MediaStudioContent = () => {
     }
   };
 
+  // Handler for continuing a video (extract last frame and use for new video)
+  const handleContinueVideo = async (media: MediaFile) => {
+    if (!user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please sign in to continue videos.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsContinuingVideo(true);
+    setContinueVideoProgress('Preparing...');
+
+    try {
+      // Extract and upload the last frame
+      const result = await extractAndUploadLastFrame(
+        media.public_url,
+        user.id,
+        media.id,
+        (stage) => setContinueVideoProgress(stage)
+      );
+
+      if (!result.success || !result.frameUrl) {
+        throw new Error(result.error || 'Failed to extract frame');
+      }
+
+      // Clear existing video frames and set the extracted frame as input
+      clearVideoFrames();
+      await setInputVideoImageFromUrl(result.frameUrl, `continuation_from_${media.file_name}`);
+
+      // Switch to video mode with image-to-video
+      setMediaType('video');
+      setVideoGenerationMode('image-to-video');
+
+      // Switch to create view
+      setShowLibrary(false);
+
+      toast({
+        title: 'Ready to Continue',
+        description: 'Last frame extracted! Enter a prompt to continue this video.',
+        className: 'bg-accent/90 border-accent text-white',
+      });
+    } catch (error: any) {
+      console.error('Failed to continue video:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to extract frame from video. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsContinuingVideo(false);
+      setContinueVideoProgress('');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-background/95">
       <Navigation />
@@ -529,6 +590,9 @@ const MediaStudioContent = () => {
             <MediaLibrary
               onCreateNew={() => setShowLibrary(false)}
               onUseForGeneration={handleUseForGeneration}
+              onContinueVideo={handleContinueVideo}
+              isContinuingVideo={isContinuingVideo}
+              continueVideoProgress={continueVideoProgress}
             />
           </div>
         )}

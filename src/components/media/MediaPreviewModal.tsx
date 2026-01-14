@@ -16,6 +16,8 @@ import {
   Check,
   Wand2,
   Film,
+  FastForward,
+  Loader2,
 } from 'lucide-react';
 import { MediaFile } from '@/services/mediaStudioService';
 import { Button } from '@/components/ui/button';
@@ -32,6 +34,9 @@ interface MediaPreviewModalProps {
   onDownload: (media: MediaFile) => void;
   onUseForImageGeneration?: (media: MediaFile) => void;
   onUseForVideoGeneration?: (media: MediaFile) => void;
+  onContinueVideo?: (media: MediaFile) => void;
+  isContinuingVideo?: boolean;
+  continueVideoProgress?: string;
 }
 
 const MediaPreviewModal = ({
@@ -43,6 +48,9 @@ const MediaPreviewModal = ({
   onDownload,
   onUseForImageGeneration,
   onUseForVideoGeneration,
+  onContinueVideo,
+  isContinuingVideo = false,
+  continueVideoProgress = '',
 }: MediaPreviewModalProps) => {
   const [copied, setCopied] = useState(false);
 
@@ -273,6 +281,39 @@ const MediaPreviewModal = ({
                             </Button>
                           )}
                         </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Continue Video - Only for videos */}
+                  {isVideo && onContinueVideo && (
+                    <>
+                      <Separator className="bg-primary/20" />
+                      <div className="space-y-3">
+                        <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                          <FastForward className="w-4 h-4 text-accent" />
+                          Continue Video
+                        </h3>
+                        <p className="text-xs text-gray-400">
+                          Extract the last frame and use it to generate a continuation of this video.
+                        </p>
+                        <Button
+                          onClick={() => onContinueVideo(media)}
+                          disabled={isContinuingVideo}
+                          className="w-full bg-gradient-to-r from-accent to-primary hover:from-accent/90 hover:to-primary/90 text-white"
+                        >
+                          {isContinuingVideo ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              {continueVideoProgress || 'Processing...'}
+                            </>
+                          ) : (
+                            <>
+                              <FastForward className="w-4 h-4 mr-2" />
+                              Continue This Video
+                            </>
+                          )}
+                        </Button>
                       </div>
                     </>
                   )}

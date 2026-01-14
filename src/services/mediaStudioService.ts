@@ -711,3 +711,163 @@ export const generateMediaWithProgress = async (
 ): Promise<GenerationResult> => {
   return generateMedia(config, onProgress);
 };
+
+/**
+ * Extract the last frame from a video as a Blob
+ * Uses HTML5 Canvas API to capture the frame
+ */
+export const extractLastFrameFromVideo = (
+  videoUrl: string,
+  onProgress?: (stage: string) => void
+): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    onProgress?.('Loading video...');
+
+    // Create video element
+    const video = document.createElement('video');
+    video.crossOrigin = 'anonymous'; // Required for CORS
+    video.muted = true; // Mute to allow autoplay policies
+    video.playsInline = true;
+
+    // Create canvas for frame extraction
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+      reject(new Error('Could not get canvas context'));
+      return;
+    }
+
+    let hasExtracted = false;
+
+    const extractFrame = () => {
+      if (hasExtracted) return;
+      hasExtracted = true;
+
+      onProgress?.('Extracting frame...');
+
+      // Set canvas dimensions to match video
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      // Draw the current frame to canvas
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Convert to blob
+      canvas.toBlob(
+        (blob) => {
+          // Cleanup
+          video.pause();
+          video.src = '';
+          video.load();
+
+          if (blob) {
+            onProgress?.('Frame extracted!');
+            resolve(blob);
+          } else {
+            reject(new Error('Failed to create blob from canvas'));
+          }
+        },
+        'image/png',
+        1.0 // Maximum quality
+      );
+    };
+
+    // Handle video metadata loaded
+    video.onloadedmetadata = () => {
+      onProgress?.('Seeking to last frame...');
+      // Seek to near the end (0.1 seconds before end to ensure we get a frame)
+      const seekTime = Math.max(0, video.duration - 0.1);
+      video.currentTime = seekTime;
+    };
+
+    // Handle seek complete
+    video.onseeked = () => {
+      // Small delay to ensure frame is rendered
+      setTimeout(extractFrame, 100);
+    };
+
+    // Handle errors
+    video.onerror = () => {
+      const errorMessage = video.error?.message || 'Unknown video error';
+      reject(new Error(`Failed to load video: ${errorMessage}`));
+    };
+
+    // Start loading the video
+    video.src = videoUrl;
+    video.load();
+  });
+};
+
+/**
+ * Upload an extracted video frame to Supabase storage
+ * Returns the public URL of the uploaded image
+ */
+export const uploadExtractedFrame = async (
+  frameBlob: Blob,
+  userId: string,
+  sourceVideoId?: string
+): Promise<string | null> => {
+  try {
+    // Create a unique filename
+    const timestamp = Date.now();
+    const fileName = `${userId}/${timestamp}_extracted_frame${sourceVideoId ? `_from_${sourceVideoId.slice(0, 8)}` : ''}.png`;
+
+    const { data, error } = await supabase.storage
+      .from('media-studio-images')
+      .upload(fileName, frameBlob, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: 'image/png'
+      });
+
+    if (error) {
+      console.error('Error uploading extracted frame:', error);
+      return null;
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('media-studio-images')
+      .getPublicUrl(data.path);
+
+    console.log('Extracted frame uploaded successfully:', publicUrl);
+    return publicUrl;
+  } catch (error) {
+    console.error('Error in uploadExtractedFrame:', error);
+    return null;
+  }
+};
+
+/**
+ * Extract last frame from video and upload to storage
+ * Combined utility for video continuation feature
+ */
+export const extractAndUploadLastFrame = async (
+  videoUrl: string,
+  userId: string,
+  sourceVideoId?: string,
+  onProgress?: (stage: string) => void
+): Promise<{ success: boolean; frameUrl?: string; error?: string }> => {
+  try {
+    onProgress?.('Extracting last frame from video...');
+
+    // Extract the frame
+    const frameBlob = await extractLastFrameFromVideo(videoUrl, onProgress);
+
+    onProgress?.('Uploading frame to storage...');
+
+    // Upload to Supabase
+    const frameUrl = await uploadExtractedFrame(frameBlob, userId, sourceVideoId);
+
+    if (!frameUrl) {
+      return { success: false, error: 'Failed to upload extracted frame' };
+    }
+
+    onProgress?.('Frame ready!');
+    return { success: true, frameUrl };
+  } catch (error: any) {
+    console.error('Error in extractAndUploadLastFrame:', error);
+    return { success: false, error: error.message || 'Failed to extract frame from video' };
+  }
+};
