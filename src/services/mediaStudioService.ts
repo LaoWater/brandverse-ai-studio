@@ -131,6 +131,35 @@ export interface VideoGenerationAPIPayload {
   source_video_gcs_uri?: string;    // GCS URI of Veo-generated video to extend (720p, 8s, <2 days old)
   user_id?: string;
   company_id?: string;
+  // Async mode - returns immediately with operation name for client-side polling
+  async_mode?: boolean;
+}
+
+// Response from async video generation start
+export interface AsyncVideoStartResponse {
+  success: boolean;
+  status: 'processing' | 'completed' | 'failed' | 'error';
+  operation_name?: string;
+  model?: string;
+  message?: string;
+  request_data?: {
+    user_id: string;
+    company_id?: string;
+    prompt: string;
+    aspect_ratio: string;
+    resolution: string;
+    duration: number;
+    mode: string;
+    negative_prompt?: string;
+    input_image_url?: string;
+  };
+  // For completed status
+  video_url?: string;
+  thumbnail_url?: string;
+  storage_path?: string;
+  gcs_uri?: string;
+  metadata?: any;
+  error?: string;
 }
 
 // Supabase imports
@@ -269,24 +298,201 @@ export const prepareVideoAPIPayload = (config: GenerationConfig): VideoGeneratio
 };
 
 /**
+ * Start async video generation - returns immediately with operation name
+ * Use pollVideoStatus to check for completion
+ */
+export const startAsyncVideoGeneration = async (
+  config: GenerationConfig,
+  onProgress?: (progress: number, stage: string) => void
+): Promise<AsyncVideoStartResponse> => {
+  const payload = prepareVideoAPIPayload(config);
+  payload.async_mode = true; // Enable async mode
+
+  console.log('=== ASYNC VIDEO GENERATION START ===');
+  console.log(JSON.stringify(payload, null, 2));
+
+  onProgress?.(10, 'Initializing video generation...');
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    throw new Error("Not authenticated");
+  }
+
+  onProgress?.(20, 'Sending request to AI...');
+
+  const response = await fetch(`${SUPABASE_FUNCTION_URL}/generate-media-video`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: "Video generation failed." }));
+    throw new Error(errorData?.error || `Server error: ${response.status}`);
+  }
+
+  const result: AsyncVideoStartResponse = await response.json();
+
+  if (!result.success) {
+    throw new Error(result.error || "Failed to start video generation.");
+  }
+
+  console.log('=== ASYNC VIDEO GENERATION STARTED ===', result);
+  return result;
+};
+
+/**
+ * Poll video generation status
+ * Returns status: 'processing' | 'completed' | 'failed'
+ */
+export const pollVideoStatus = async (
+  operationName: string,
+  model: string,
+  requestData: AsyncVideoStartResponse['request_data']
+): Promise<AsyncVideoStartResponse> => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    throw new Error("Not authenticated");
+  }
+
+  const response = await fetch(`${SUPABASE_FUNCTION_URL}/check-video-status`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({
+      operation_name: operationName,
+      model: model,
+      ...requestData,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: "Status check failed." }));
+    throw new Error(errorData?.error || `Server error: ${response.status}`);
+  }
+
+  return await response.json();
+};
+
+/**
+ * Generate video with async polling pattern
+ * Starts generation, then polls for completion
+ * Handles long-running generations that exceed Supabase timeout
+ */
+export const generateVideoAsync = async (
+  config: GenerationConfig,
+  onProgress?: (progress: number, stage: string) => void
+): Promise<GenerationResult> => {
+  try {
+    // Start the generation
+    const startResult = await startAsyncVideoGeneration(config, onProgress);
+
+    if (!startResult.operation_name || !startResult.model || !startResult.request_data) {
+      throw new Error("Invalid response from video generation start");
+    }
+
+    onProgress?.(30, 'Video generation in progress...');
+
+    // Poll for completion
+    const maxPolls = 60; // 5 minutes max (60 * 5 seconds)
+    const pollInterval = 5000; // 5 seconds
+
+    for (let i = 0; i < maxPolls; i++) {
+      // Update progress (30-90% range during polling)
+      const pollProgress = 30 + Math.min(60, (i / maxPolls) * 60);
+      const elapsedSeconds = i * 5;
+      const minutes = Math.floor(elapsedSeconds / 60);
+      const seconds = elapsedSeconds % 60;
+      const timeStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+      onProgress?.(pollProgress, `Generating video... (${timeStr})`);
+
+      // Wait before polling
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
+
+      try {
+        const statusResult = await pollVideoStatus(
+          startResult.operation_name,
+          startResult.model,
+          startResult.request_data
+        );
+
+        console.log(`[Poll ${i + 1}/${maxPolls}]`, statusResult.status);
+
+        if (statusResult.status === 'completed') {
+          onProgress?.(95, 'Video ready! Finalizing...');
+
+          return {
+            success: true,
+            mediaUrl: statusResult.video_url || '',
+            thumbnailUrl: statusResult.thumbnail_url || statusResult.video_url || '',
+            metadata: statusResult.metadata || {
+              model: config.model,
+              prompt: config.prompt,
+              aspectRatio: config.aspectRatio,
+              duration: config.videoDuration,
+            },
+          };
+        }
+
+        if (statusResult.status === 'failed' || statusResult.status === 'error') {
+          throw new Error(statusResult.error || "Video generation failed.");
+        }
+
+        // Status is 'processing' - continue polling
+      } catch (pollError: any) {
+        // If polling fails, log but continue (could be transient network issue)
+        console.warn(`Poll ${i + 1} failed:`, pollError.message);
+        // After 3 consecutive failures, throw
+        if (i > 3) {
+          throw pollError;
+        }
+      }
+    }
+
+    // Timeout after max polls
+    throw new Error("Video generation timed out. The video may still be processing - check your library in a few minutes.");
+
+  } catch (error: any) {
+    console.error("Error during async video generation:", error);
+    return {
+      success: false,
+      mediaUrl: '',
+      error: error.message || "An unexpected error occurred during video generation.",
+      metadata: {
+        model: config.model,
+        prompt: config.prompt,
+        aspectRatio: config.aspectRatio,
+      },
+    };
+  }
+};
+
+/**
  * Generate media using Supabase Edge Function
  * Routes to image or video generation based on mediaType
+ * For video: uses async pattern with polling to handle long generations
  */
 export const generateMedia = async (
   config: GenerationConfig,
   onProgress?: (progress: number, stage: string) => void
 ): Promise<GenerationResult> => {
   try {
-    // Prepare API payload based on media type
-    const payload = config.mediaType === 'video'
-      ? prepareVideoAPIPayload(config)
-      : prepareMediaAPIPayload(config);
+    // VIDEO: Use async pattern with client-side polling
+    // This handles long-running generations that exceed Supabase's 150s timeout
+    if (config.mediaType === 'video') {
+      console.log('=== USING ASYNC VIDEO GENERATION ===');
+      return await generateVideoAsync(config, onProgress);
+    }
 
-    const endpointName = config.mediaType === 'video'
-      ? 'generate-media-video'
-      : 'generate-media-image';
+    // IMAGE: Use standard sync pattern (fast enough to not timeout)
+    const payload = prepareMediaAPIPayload(config);
 
-    console.log(`=== MEDIA STUDIO ${config.mediaType.toUpperCase()} GENERATION PAYLOAD ===`);
+    console.log('=== MEDIA STUDIO IMAGE GENERATION PAYLOAD ===');
     console.log(JSON.stringify(payload, null, 2));
     console.log("======================================================================");
 
@@ -303,7 +509,7 @@ export const generateMedia = async (
     onProgress?.(30, 'Sending request to AI...');
 
     // Call Supabase Edge Function
-    const response = await fetch(`${SUPABASE_FUNCTION_URL}/${endpointName}`, {
+    const response = await fetch(`${SUPABASE_FUNCTION_URL}/generate-media-image`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -330,13 +536,11 @@ export const generateMedia = async (
 
     onProgress?.(100, 'Complete!');
 
-    // Return result with appropriate media URL field
-    const mediaUrl = config.mediaType === 'video' ? result.video_url : result.image_url;
-
+    // Return result (image only since video uses async path)
     return {
       success: true,
-      mediaUrl: mediaUrl,
-      thumbnailUrl: result.thumbnail_url || mediaUrl,
+      mediaUrl: result.image_url,
+      thumbnailUrl: result.thumbnail_url || result.image_url,
       metadata: {
         model: config.model,
         prompt: config.prompt,
@@ -345,15 +549,14 @@ export const generateMedia = async (
         imageSize: config.imageSize,
         seed: config.seed,
         referenceImageUrls: config.referenceImageUrls,
-        duration: config.videoDuration,
       },
     };
   } catch (error: any) {
-    console.error("Error during media generation:", error);
+    console.error("Error during image generation:", error);
     return {
       success: false,
       mediaUrl: '',
-      error: error.message || "An unexpected error occurred during media generation.",
+      error: error.message || "An unexpected error occurred during image generation.",
       metadata: {
         model: config.model,
         prompt: config.prompt,

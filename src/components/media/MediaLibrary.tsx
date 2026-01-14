@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Image, Video, Heart, Grid3x3, Loader2 } from 'lucide-react';
+import { Image, Video, Heart, Grid3x3, Loader2, Link2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +18,7 @@ import { MediaType } from '@/contexts/MediaStudioContext';
 import MediaGrid from './MediaGrid';
 import MediaFiltersComponent from './MediaFilters';
 import MediaPreviewModal from './MediaPreviewModal';
+import ImportVideoDialog from './ImportVideoDialog';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -54,6 +55,7 @@ const MediaLibrary = ({
   const [selectedMedia, setSelectedMedia] = useState<MediaFile | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [showAllCompanies, setShowAllCompanies] = useState(isStudioContext); // Default to true for Studio, false for Post
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
 
   // Infinite scroll state
   const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
@@ -261,6 +263,19 @@ const MediaLibrary = ({
               <Video className="w-4 h-4 mr-2" />
               Videos ({counts.videos})
             </TabsTrigger>
+            {/* Import button - only visible when on videos tab */}
+            {activeTab === 'videos' && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsImportDialogOpen(true);
+                }}
+                className="ml-1 p-1.5 rounded-md hover:bg-primary/20 text-gray-400 hover:text-primary transition-colors"
+                title="Import external video"
+              >
+                <Link2 className="w-4 h-4" />
+              </button>
+            )}
             <TabsTrigger
               value="favorites"
               className="data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300"
@@ -347,6 +362,21 @@ const MediaLibrary = ({
         onExtendVideo={onExtendVideo}
         isContinuingVideo={isContinuingVideo}
         continueVideoProgress={continueVideoProgress}
+      />
+
+      {/* Import Video Dialog */}
+      <ImportVideoDialog
+        open={isImportDialogOpen}
+        onClose={() => setIsImportDialogOpen(false)}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['mediaLibrary'] });
+          toast({
+            title: 'Video Imported',
+            description: 'Video has been added to your library.',
+            className: 'bg-green-600/90 border-green-600 text-white',
+          });
+        }}
+        companyId={selectedCompany?.id}
       />
     </div>
   );

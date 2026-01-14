@@ -65,6 +65,10 @@ interface VideoGenerationRequest {
   // Tracking
   user_id?: string;
   company_id?: string;
+
+  // Async mode - returns immediately with operation name for client-side polling
+  // Required for long-running generations that exceed Supabase's 150s timeout
+  async_mode?: boolean;
 }
 
 interface VideoGenerationResponse {
@@ -218,6 +222,150 @@ async function getAccessToken(): Promise<string> {
 interface VeoGenerationResult {
   videoBlob: Blob;
   gcsUri: string; // Store this to enable video extension later (valid for 2 days)
+}
+
+// Result from async video generation start - returns operation name for polling
+interface VeoOperationResult {
+  operationName: string;
+  model: string;
+}
+
+// Start video generation and return operation name for async polling
+// This function does NOT wait for completion - use for async mode
+async function startVideoGeneration(request: VideoGenerationRequest): Promise<VeoOperationResult> {
+  const projectId = Deno.env.get("GOOGLE_CLOUD_PROJECT_ID") || "creators-multi-verse";
+  const location = "us-central1";
+  const gcsBucket = Deno.env.get("GCS_BUCKET_NAME") || "creatorsm-media-bucket";
+
+  const resolution = request.resolution || '720p';
+  const hasReferenceImages = request.reference_image_urls && request.reference_image_urls.length > 0;
+  const isHighRes = resolution === '1080p' || resolution === '4k';
+  const isImageMode = request.mode === 'image-to-video' || request.mode === 'interpolation';
+
+  if ((isHighRes || hasReferenceImages) && request.duration !== 8) {
+    throw new Error(`Duration must be 8 seconds when using ${isHighRes ? resolution : 'reference images'}`);
+  }
+
+  if (hasReferenceImages && request.reference_image_urls!.length > 3) {
+    throw new Error("Veo 3.1 supports a maximum of 3 reference images");
+  }
+
+  const personGeneration = request.person_generation || (isImageMode ? 'allow_adult' : 'allow_all');
+
+  logStep("Starting async video generation", {
+    model: request.model,
+    mode: request.mode,
+    prompt: request.prompt.substring(0, 50),
+    resolution,
+    duration: request.duration,
+  });
+
+  const accessToken = await getAccessToken();
+  const modelId = request.model;
+  const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predictLongRunning`;
+
+  const timestamp = Date.now();
+  const outputPath = `gs://${gcsBucket}/veo-videos/${request.user_id}/${timestamp}/`;
+
+  let instances: any[] = [];
+  let parameters: any = {
+    storageUri: outputPath,
+    sampleCount: 1,
+    durationSeconds: request.duration,
+    aspectRatio: request.aspect_ratio,
+    resolution: resolution,
+    personGeneration: personGeneration,
+    generateAudio: request.generate_audio ?? true,
+  };
+
+  if (request.negative_prompt) {
+    parameters.negativePrompt = request.negative_prompt;
+  }
+
+  switch (request.mode) {
+    case 'text-to-video': {
+      const instance: any = { prompt: request.prompt };
+      if (hasReferenceImages) {
+        const referenceImages = [];
+        for (const url of request.reference_image_urls!) {
+          const { data, mimeType } = await fetchImageAsBase64(url);
+          referenceImages.push({
+            referenceImage: { bytesBase64Encoded: data, mimeType: mimeType },
+            referenceType: "REFERENCE_TYPE_STYLE"
+          });
+        }
+        instance.referenceImages = referenceImages;
+      }
+      instances = [instance];
+      break;
+    }
+    case 'image-to-video': {
+      if (!request.input_image_url) throw new Error("input_image_url is required for image-to-video mode");
+      const { data, mimeType } = await fetchImageAsBase64(request.input_image_url);
+      instances = [{ prompt: request.prompt, image: { bytesBase64Encoded: data, mimeType: mimeType } }];
+      parameters.resizeMode = "pad";
+      break;
+    }
+    case 'interpolation': {
+      const startImageUrl = request.image_url || request.first_frame_url;
+      if (!startImageUrl || !request.last_frame_url) {
+        throw new Error("image_url and last_frame_url are required for interpolation mode");
+      }
+      const [startImage, endImage] = await Promise.all([
+        fetchImageAsBase64(startImageUrl),
+        fetchImageAsBase64(request.last_frame_url)
+      ]);
+      instances = [{
+        prompt: request.prompt,
+        image: { bytesBase64Encoded: startImage.data, mimeType: startImage.mimeType },
+        lastFrame: { bytesBase64Encoded: endImage.data, mimeType: endImage.mimeType }
+      }];
+      parameters.resizeMode = "pad";
+      break;
+    }
+    case 'extend-video': {
+      if (!request.source_video_gcs_uri) throw new Error("source_video_gcs_uri is required for extend-video mode");
+      if (resolution !== '720p') throw new Error("Video extension only supports 720p resolution");
+      if (request.duration !== 8) throw new Error("Video extension requires 8 second duration");
+      instances = [{ prompt: request.prompt, video: { gcsUri: request.source_video_gcs_uri } }];
+      break;
+    }
+    default:
+      throw new Error(`Unsupported video generation mode: ${request.mode}`);
+  }
+
+  const payload = { instances, parameters };
+
+  logStep("Veo API Payload (async)", { endpoint, mode: request.mode, outputPath });
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    logStep("Veo API Error", { status: response.status, error });
+    throw new Error(`Veo API error: ${error}`);
+  }
+
+  const data = await response.json();
+
+  if (!data.name) {
+    logStep("No operation name in response", { response: JSON.stringify(data, null, 2) });
+    throw new Error("Invalid Veo API response: no operation name");
+  }
+
+  logStep("Async operation started", { operationName: data.name });
+
+  return {
+    operationName: data.name,
+    model: request.model
+  };
 }
 
 // Generate video using Google Veo 3.1 (Vertex AI)
@@ -855,9 +1003,42 @@ serve(async (req) => {
       duration: request.duration,
       negativePrompt: request.negative_prompt ? 'yes' : 'no',
       referenceImages: request.reference_image_urls?.length || 0,
-      generate_audio: request.generate_audio
+      generate_audio: request.generate_audio,
+      async_mode: request.async_mode || false
     });
 
+    // ASYNC MODE: Start generation and return immediately with operation name
+    // Frontend will poll check-video-status endpoint for completion
+    if (request.async_mode) {
+      const { operationName, model } = await startVideoGeneration(request);
+
+      logStep("Returning async operation for frontend polling");
+
+      return new Response(JSON.stringify({
+        success: true,
+        status: "processing",
+        operation_name: operationName,
+        model: model,
+        message: "Video generation started. Poll check-video-status endpoint for completion.",
+        // Include request data for status polling
+        request_data: {
+          user_id: user.id,
+          company_id: request.company_id,
+          prompt: request.prompt,
+          aspect_ratio: request.aspect_ratio,
+          resolution: request.resolution || '720p',
+          duration: request.duration,
+          mode: request.mode,
+          negative_prompt: request.negative_prompt,
+          input_image_url: request.input_image_url,
+        }
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // SYNC MODE (legacy): Wait for completion (may timeout for long generations)
     // Generate video
     const { videoBlob, gcsUri } = await generateVideoWithVeo(request);
 

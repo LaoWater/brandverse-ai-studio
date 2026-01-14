@@ -66,11 +66,20 @@ const parseError = (error: GenerationError | string | null): GenerationError => 
       };
     }
 
-    if (error.includes('timeout') || error.includes('Timeout')) {
+    if (error.includes('timeout') || error.includes('Timeout') || error.includes('timed out')) {
       return {
-        title: "Request Timeout",
-        message: "The generation took too long to complete.",
-        suggestion: "Try with a shorter duration or simpler prompt.",
+        title: "Generation Taking Longer Than Expected",
+        message: "The video is still being generated but took longer than expected.",
+        suggestion: "Your video may still be processing. Check your library in a few minutes, or try again with a shorter duration.",
+        retryable: true,
+      };
+    }
+
+    if (error.includes('502') || error.includes('Bad Gateway') || error.includes('Failed to fetch')) {
+      return {
+        title: "Connection Interrupted",
+        message: "The connection to the server was interrupted during generation.",
+        suggestion: "Your video may still be processing in the background. Check your library in a few minutes, or try again.",
         retryable: true,
       };
     }
