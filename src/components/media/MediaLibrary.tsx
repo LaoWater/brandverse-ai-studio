@@ -14,6 +14,7 @@ import {
   MediaFile,
   MediaFilters as Filters,
 } from '@/services/mediaStudioService';
+import { MediaType } from '@/contexts/MediaStudioContext';
 import MediaGrid from './MediaGrid';
 import MediaFiltersComponent from './MediaFilters';
 import MediaPreviewModal from './MediaPreviewModal';
@@ -23,9 +24,10 @@ const ITEMS_PER_PAGE = 10;
 interface MediaLibraryProps {
   onCreateNew: () => void;
   isStudioContext?: boolean; // Determines if this is Studio (show all by default) or Post library (show current company only)
+  onUseForGeneration?: (media: MediaFile, targetType: MediaType) => void; // Callback when user wants to use image for generation
 }
 
-const MediaLibrary = ({ onCreateNew, isStudioContext = true }: MediaLibraryProps) => {
+const MediaLibrary = ({ onCreateNew, isStudioContext = true, onUseForGeneration }: MediaLibraryProps) => {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
@@ -319,6 +321,16 @@ const MediaLibrary = ({ onCreateNew, isStudioContext = true }: MediaLibraryProps
         onToggleFavorite={handleToggleFavorite}
         onDelete={handleDelete}
         onDownload={handleDownload}
+        onUseForImageGeneration={
+          onUseForGeneration
+            ? (media) => onUseForGeneration(media, 'image')
+            : undefined
+        }
+        onUseForVideoGeneration={
+          onUseForGeneration
+            ? (media) => onUseForGeneration(media, 'video')
+            : undefined
+        }
       />
     </div>
   );

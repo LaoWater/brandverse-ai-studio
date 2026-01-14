@@ -28,7 +28,9 @@ import {
   generateMediaWithProgress,
   uploadReferenceImage,
   uploadVideoFrameImage,
+  MediaFile,
 } from '@/services/mediaStudioService';
+import { MediaType } from '@/contexts/MediaStudioContext';
 import {
   getUserCredits,
   deductCredits,
@@ -62,6 +64,12 @@ const MediaStudioContent = () => {
     updateGenerationProgress,
     completeGeneration,
     resetGeneration,
+    setMediaType,
+    setVideoGenerationMode,
+    addReferenceImageFromUrl,
+    setInputVideoImageFromUrl,
+    clearReferenceImages,
+    clearVideoFrames,
   } = useMediaStudio();
 
   const { user } = useAuth();
@@ -263,6 +271,46 @@ const MediaStudioContent = () => {
 
     startGeneration();
     generateMutation.mutate();
+  };
+
+  // Handler for using a library image for new generation
+  const handleUseForGeneration = async (media: MediaFile, targetType: MediaType) => {
+    try {
+      if (targetType === 'image') {
+        // Clear existing reference images and add the new one
+        clearReferenceImages();
+        await addReferenceImageFromUrl(media.public_url, media.file_name);
+        setMediaType('image');
+
+        toast({
+          title: 'Image Added',
+          description: 'Image added as reference. Enter a prompt to generate variations.',
+          className: 'bg-primary/90 border-primary text-white',
+        });
+      } else {
+        // For video generation: set as input image and switch to image-to-video mode
+        clearVideoFrames();
+        await setInputVideoImageFromUrl(media.public_url, media.file_name);
+        setMediaType('video');
+        setVideoGenerationMode('image-to-video');
+
+        toast({
+          title: 'Image Added',
+          description: 'Image set for video generation. Enter a prompt to animate it.',
+          className: 'bg-accent/90 border-accent text-white',
+        });
+      }
+
+      // Switch to create view
+      setShowLibrary(false);
+    } catch (error) {
+      console.error('Failed to load image for generation:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load image. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -478,7 +526,10 @@ const MediaStudioContent = () => {
         ) : (
           /* Library View */
           <div className="max-w-7xl mx-auto">
-            <MediaLibrary onCreateNew={() => setShowLibrary(false)} />
+            <MediaLibrary
+              onCreateNew={() => setShowLibrary(false)}
+              onUseForGeneration={handleUseForGeneration}
+            />
           </div>
         )}
       </div>

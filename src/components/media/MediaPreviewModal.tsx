@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -12,6 +12,10 @@ import {
   Eye,
   Image as ImageIcon,
   Video,
+  Copy,
+  Check,
+  Wand2,
+  Film,
 } from 'lucide-react';
 import { MediaFile } from '@/services/mediaStudioService';
 import { Button } from '@/components/ui/button';
@@ -26,6 +30,8 @@ interface MediaPreviewModalProps {
   onToggleFavorite: (id: string, isFavorite: boolean) => void;
   onDelete: (id: string) => void;
   onDownload: (media: MediaFile) => void;
+  onUseForImageGeneration?: (media: MediaFile) => void;
+  onUseForVideoGeneration?: (media: MediaFile) => void;
 }
 
 const MediaPreviewModal = ({
@@ -35,7 +41,19 @@ const MediaPreviewModal = ({
   onToggleFavorite,
   onDelete,
   onDownload,
+  onUseForImageGeneration,
+  onUseForVideoGeneration,
 }: MediaPreviewModalProps) => {
+  const [copied, setCopied] = useState(false);
+
+  const copyPrompt = async () => {
+    if (media?.prompt) {
+      await navigator.clipboard.writeText(media.prompt);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   // Close on Escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -112,9 +130,9 @@ const MediaPreviewModal = ({
               <X className="w-6 h-6" />
             </Button>
 
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] h-full max-h-[95vh]">
-              {/* Left: Media Preview */}
-              <div className="relative bg-black flex items-center justify-center p-8">
+            <div className="flex flex-col lg:flex-row h-full max-h-[95vh]">
+              {/* Media Preview - Takes priority, always fully visible */}
+              <div className="relative bg-black flex items-center justify-center flex-1 min-h-[50vh] lg:min-h-0 p-4 lg:p-8">
                 {/* Animated background gradient */}
                 <div className="absolute inset-0 opacity-20">
                   <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/40 rounded-full blur-[150px] animate-cosmic-drift" />
@@ -124,27 +142,27 @@ const MediaPreviewModal = ({
                   />
                 </div>
 
-                {/* Media display */}
-                <div className="relative z-10 max-w-full max-h-full">
+                {/* Media display - centered and constrained to fit fully */}
+                <div className="relative z-10 w-full h-full flex items-center justify-center">
                   {isVideo ? (
                     <video
                       src={media.public_url}
                       controls
-                      className="max-w-full max-h-[calc(95vh-4rem)] rounded-lg shadow-2xl"
+                      className="max-w-full max-h-full rounded-lg shadow-2xl object-contain"
                       autoPlay
                     />
                   ) : (
                     <img
                       src={media.public_url}
                       alt={media.custom_title || media.prompt}
-                      className="max-w-full max-h-[calc(95vh-4rem)] rounded-lg shadow-2xl object-contain"
+                      className="max-w-full max-h-full rounded-lg shadow-2xl object-contain"
                     />
                   )}
                 </div>
               </div>
 
-              {/* Right: Details & Actions */}
-              <div className="bg-background/95 backdrop-blur-sm overflow-y-auto">
+              {/* Details & Actions - Fixed width sidebar, scrollable */}
+              <div className="w-full lg:w-[400px] lg:min-w-[400px] bg-background/95 backdrop-blur-sm overflow-y-auto max-h-[45vh] lg:max-h-[95vh]">
                 <div className="p-6 space-y-6">
                   {/* Type badge */}
                   <div className="flex items-center gap-2">
@@ -165,12 +183,31 @@ const MediaPreviewModal = ({
 
                   {/* Title */}
                   <div>
-                    <h2 className="text-2xl font-bold text-white mb-2">
+                    <h2 className="text-xl font-bold text-white mb-3">
                       {media.custom_title || 'Generated Media'}
                     </h2>
-                    <p className="text-gray-300 leading-relaxed">
-                      {media.prompt}
-                    </p>
+
+                    {/* Prompt - Scrollable box with copy functionality */}
+                    <div className="relative group">
+                      <div className="bg-black/30 border border-primary/20 rounded-lg p-3 max-h-32 overflow-y-auto">
+                        <p className="text-gray-300 text-sm leading-relaxed pr-8">
+                          {media.prompt}
+                        </p>
+                      </div>
+                      <Button
+                        onClick={copyPrompt}
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-2 right-2 h-7 w-7 opacity-60 hover:opacity-100 transition-opacity bg-black/50 hover:bg-black/70"
+                        title="Copy prompt"
+                      >
+                        {copied ? (
+                          <Check className="w-3.5 h-3.5 text-green-400" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
 
                   <Separator className="bg-primary/20" />
@@ -198,6 +235,47 @@ const MediaPreviewModal = ({
                       {media.is_favorite ? 'Unfavorite' : 'Favorite'}
                     </Button>
                   </div>
+
+                  {/* Use for Generation - Only for images */}
+                  {!isVideo && (onUseForImageGeneration || onUseForVideoGeneration) && (
+                    <>
+                      <Separator className="bg-primary/20" />
+                      <div className="space-y-3">
+                        <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                          <Wand2 className="w-4 h-4 text-accent" />
+                          Use for Generation
+                        </h3>
+                        <div className="grid grid-cols-2 gap-3">
+                          {onUseForImageGeneration && (
+                            <Button
+                              onClick={() => {
+                                onUseForImageGeneration(media);
+                                onClose();
+                              }}
+                              variant="outline"
+                              className="w-full border-primary/30 hover:border-primary/50 hover:bg-primary/10"
+                            >
+                              <ImageIcon className="w-4 h-4 mr-2" />
+                              New Image
+                            </Button>
+                          )}
+                          {onUseForVideoGeneration && (
+                            <Button
+                              onClick={() => {
+                                onUseForVideoGeneration(media);
+                                onClose();
+                              }}
+                              variant="outline"
+                              className="w-full border-accent/30 hover:border-accent/50 hover:bg-accent/10"
+                            >
+                              <Film className="w-4 h-4 mr-2" />
+                              New Video
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   <Separator className="bg-primary/20" />
 

@@ -121,6 +121,10 @@ interface MediaStudioContextType extends MediaStudioState {
 
   // Helper function to get model from quality tier
   getModelFromQualityTier: (tier: QualityTier) => ImageModel;
+
+  // Library image loading - fetch image from URL and add to generation
+  addReferenceImageFromUrl: (url: string, fileName?: string) => Promise<void>;
+  setInputVideoImageFromUrl: (url: string, fileName?: string) => Promise<void>;
 }
 
 const MediaStudioContext = createContext<MediaStudioContextType | undefined>(undefined);
@@ -361,6 +365,32 @@ export const MediaStudioProvider: React.FC<{ children: ReactNode }> = ({ childre
     }));
   };
 
+  // Fetch image from URL and add as reference image (for image generation)
+  const addReferenceImageFromUrl = async (url: string, fileName?: string): Promise<void> => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const file = new File([blob], fileName || 'library-image.png', { type: blob.type });
+      addReferenceImage(file);
+    } catch (error) {
+      console.error('Failed to load image from URL:', error);
+      throw error;
+    }
+  };
+
+  // Fetch image from URL and set as input video image (for image-to-video)
+  const setInputVideoImageFromUrl = async (url: string, fileName?: string): Promise<void> => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const file = new File([blob], fileName || 'library-image.png', { type: blob.type });
+      setInputVideoImage(file);
+    } catch (error) {
+      console.error('Failed to load image from URL:', error);
+      throw error;
+    }
+  };
+
   const startGeneration = () => {
     setState(prev => ({
       ...prev,
@@ -441,6 +471,8 @@ export const MediaStudioProvider: React.FC<{ children: ReactNode }> = ({ childre
     resetGeneration,
     clearAll,
     getModelFromQualityTier,
+    addReferenceImageFromUrl,
+    setInputVideoImageFromUrl,
   };
 
   return (
