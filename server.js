@@ -6,13 +6,8 @@ const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.join(__dirname, 'dist');
 
-// CORS headers required for SharedArrayBuffer (used by FFmpeg.wasm in video editor)
-// This enables multi-threaded video processing in the browser
-app.use((req, res, next) => {
-  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
-  next();
-});
+// Note: SharedArrayBuffer headers (COOP/COEP) removed to allow cross-origin resources
+// FFmpeg.wasm will use single-threaded mode, which is acceptable for video editing
 
 // Serve static files from the dist directory
 app.use(express.static(distDir));

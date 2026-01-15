@@ -1,5 +1,6 @@
-import { useCallback, useRef, useState, useEffect } from 'react';
-import { Film, GripVertical, Scissors } from 'lucide-react';
+import { useCallback, useRef, useState, useEffect, useMemo } from 'react';
+import { Film, GripVertical, Scissors, SplitSquareHorizontal, Trash2, Undo2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { EditorClip } from '@/types/editor';
 import { getEffectiveDuration, getClipEndTime } from '@/types/editor';
 
@@ -9,7 +10,12 @@ interface EditorTimelineProps {
   totalDuration: number;
   onSeek: (time: number) => void;
   onChange: (clips: EditorClip[]) => void;
+  onDragStart?: () => void; // Called when drag/resize starts - save state for undo
+  onDragEnd?: () => void; // Called when drag/resize ends - commit to history
   onDeleteClip: (clipId: string) => void;
+  onSplitClip?: (clipId: string) => void;
+  onUndo?: () => void;
+  canUndo?: boolean;
 }
 
 export const EditorTimeline = ({
@@ -18,13 +24,19 @@ export const EditorTimeline = ({
   totalDuration,
   onSeek,
   onChange,
+  onDragStart,
+  onDragEnd,
   onDeleteClip,
+  onSplitClip,
+  onUndo,
+  canUndo,
 }: EditorTimelineProps) => {
   const timelineRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragClipId, setDragClipId] = useState<string | null>(null);
   const [resizeClipId, setResizeClipId] = useState<string | null>(null);
   const [resizeEdge, setResizeEdge] = useState<'start' | 'end' | null>(null);
+  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
 
   // Scale: pixels per second (adjustable for zoom)
   const [scale, setScale] = useState(50);
@@ -60,17 +72,19 @@ export const EditorTimeline = ({
   // Handle clip drag start
   const handleClipDragStart = useCallback((e: React.MouseEvent, clipId: string) => {
     e.stopPropagation();
+    onDragStart?.(); // Save state before drag for undo
     setDragClipId(clipId);
     setIsDragging(true);
-  }, []);
+  }, [onDragStart]);
 
   // Handle resize handle drag start
   const handleResizeStart = useCallback((e: React.MouseEvent, clipId: string, edge: 'start' | 'end') => {
     e.stopPropagation();
+    onDragStart?.(); // Save state before resize for undo
     setResizeClipId(clipId);
     setResizeEdge(edge);
     setIsDragging(true);
-  }, []);
+  }, [onDragStart]);
 
   // Global mouse move handler
   useEffect(() => {
@@ -111,8 +125,27 @@ export const EditorTimeline = ({
           }
         }));
       } else if (dragClipId) {
-        // Handle clip dragging (reorder)
-        // For now, just update position - could add reorder logic
+        // Handle clip dragging - calculate drop target index
+        const sortedClips = [...clips].sort((a, b) => a.startTime - b.startTime);
+        let targetIndex = sortedClips.length; // Default to end
+
+        for (let i = 0; i < sortedClips.length; i++) {
+          const clipMidpoint = sortedClips[i].startTime + getEffectiveDuration(sortedClips[i]) / 2;
+          if (time < clipMidpoint) {
+            targetIndex = i;
+            break;
+          }
+        }
+
+        // Don't show drop indicator at clip's own position or adjacent positions
+        const dragClipIndex = sortedClips.findIndex(c => c.id === dragClipId);
+        if (targetIndex === dragClipIndex || targetIndex === dragClipIndex + 1) {
+          setDropTargetIndex(null);
+        } else {
+          setDropTargetIndex(targetIndex);
+        }
+
+        // Update clip position for visual feedback
         onChange(clips.map(clip => {
           if (clip.id !== dragClipId) return clip;
           return {
@@ -127,22 +160,53 @@ export const EditorTimeline = ({
     };
 
     const handleMouseUp = () => {
+      const wasDragging = dragClipId || resizeClipId;
+
       if (dragClipId) {
-        // Snap clips together after drag
+        // Reorder clips based on drop position
         const sortedClips = [...clips].sort((a, b) => a.startTime - b.startTime);
-        let currentStart = 0;
-        const snappedClips = sortedClips.map(clip => {
-          const newClip = { ...clip, startTime: currentStart };
-          currentStart += getEffectiveDuration(clip);
-          return newClip;
-        });
-        onChange(snappedClips);
+        const draggedClip = sortedClips.find(c => c.id === dragClipId);
+
+        if (draggedClip && dropTargetIndex !== null) {
+          // Remove dragged clip from current position
+          const otherClips = sortedClips.filter(c => c.id !== dragClipId);
+          // Insert at new position
+          const newClips = [
+            ...otherClips.slice(0, dropTargetIndex > sortedClips.indexOf(draggedClip) ? dropTargetIndex - 1 : dropTargetIndex),
+            draggedClip,
+            ...otherClips.slice(dropTargetIndex > sortedClips.indexOf(draggedClip) ? dropTargetIndex - 1 : dropTargetIndex),
+          ];
+
+          // Recalculate start times
+          let currentStart = 0;
+          const reorderedClips = newClips.map(clip => {
+            const newClip = { ...clip, startTime: currentStart };
+            currentStart += getEffectiveDuration(clip);
+            return newClip;
+          });
+          onChange(reorderedClips);
+        } else {
+          // No valid drop target - snap back to sorted order
+          let currentStart = 0;
+          const snappedClips = sortedClips.map(clip => {
+            const newClip = { ...clip, startTime: currentStart };
+            currentStart += getEffectiveDuration(clip);
+            return newClip;
+          });
+          onChange(snappedClips);
+        }
       }
 
       setIsDragging(false);
       setDragClipId(null);
       setResizeClipId(null);
       setResizeEdge(null);
+      setDropTargetIndex(null);
+
+      // Signal drag/resize completed - commit to history
+      if (wasDragging) {
+        onDragEnd?.();
+      }
     };
 
     document.addEventListener('mousemove', handleMouseMove);
@@ -161,6 +225,22 @@ export const EditorTimeline = ({
     timeMarkers.push(t);
   }
 
+  // Find the clip that's currently under the playhead
+  const clipUnderPlayhead = useMemo(() => {
+    return clips.find(clip => {
+      const clipEnd = getClipEndTime(clip);
+      return currentTime >= clip.startTime && currentTime < clipEnd;
+    });
+  }, [clips, currentTime]);
+
+  // Check if split is possible (playhead not at clip boundaries)
+  const canSplit = useMemo(() => {
+    if (!clipUnderPlayhead) return false;
+    const clipLocalTime = currentTime - clipUnderPlayhead.startTime;
+    const effectiveDuration = getEffectiveDuration(clipUnderPlayhead);
+    return clipLocalTime > 0.1 && clipLocalTime < effectiveDuration - 0.1;
+  }, [clipUnderPlayhead, currentTime]);
+
   // Format time for markers
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -172,7 +252,48 @@ export const EditorTimeline = ({
     <div className="space-y-2">
       {/* Timeline Header with zoom controls */}
       <div className="flex items-center justify-between text-sm">
-        <span className="text-gray-400">Timeline</span>
+        <div className="flex items-center gap-3">
+          <span className="text-gray-400">Timeline</span>
+          {/* Split button - only show when a clip is under the playhead */}
+          {onSplitClip && clipUnderPlayhead && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onSplitClip(clipUnderPlayhead.id)}
+              disabled={!canSplit}
+              className={`h-7 px-2 text-xs ${canSplit ? 'border-accent text-accent hover:bg-accent/20' : 'opacity-50'}`}
+            >
+              <SplitSquareHorizontal className="w-3.5 h-3.5 mr-1" />
+              Split
+            </Button>
+          )}
+          {/* Delete button - only show when a clip is under the playhead */}
+          {clipUnderPlayhead && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onDeleteClip(clipUnderPlayhead.id)}
+              className="h-7 px-2 text-xs border-destructive/50 text-destructive hover:bg-destructive/20"
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1" />
+              Delete
+            </Button>
+          )}
+          {/* Undo button */}
+          {onUndo && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onUndo}
+              disabled={!canUndo}
+              className="h-7 px-2 text-xs border-white/20 text-gray-300 hover:bg-white/10 disabled:opacity-30"
+              title="Undo (Ctrl+Z)"
+            >
+              <Undo2 className="w-3.5 h-3.5 mr-1" />
+              Undo
+            </Button>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setScale(s => Math.max(20, s - 10))}
@@ -222,24 +343,64 @@ export const EditorTimeline = ({
               </div>
             )}
 
+            {/* Drop zone indicators */}
+            {dragClipId && clips.length > 0 && (() => {
+              const sortedClips = [...clips].sort((a, b) => a.startTime - b.startTime);
+              const dropZones: JSX.Element[] = [];
+
+              // Add drop zone at the beginning
+              if (dropTargetIndex === 0) {
+                dropZones.push(
+                  <div
+                    key="drop-0"
+                    className="absolute top-2 h-16 w-1 bg-primary rounded-full animate-pulse shadow-lg shadow-primary/50"
+                    style={{ left: 0 }}
+                  />
+                );
+              }
+
+              // Add drop zones between clips
+              sortedClips.forEach((clip, idx) => {
+                if (clip.id === dragClipId) return;
+                const clipEnd = getClipEndTime(clip);
+                const isDropTarget = dropTargetIndex === idx + 1;
+
+                if (isDropTarget) {
+                  dropZones.push(
+                    <div
+                      key={`drop-${idx + 1}`}
+                      className="absolute top-2 h-16 w-1 bg-primary rounded-full animate-pulse shadow-lg shadow-primary/50"
+                      style={{ left: timeToPixel(clipEnd) }}
+                    />
+                  );
+                }
+              });
+
+              return dropZones;
+            })()}
+
             {/* Clips */}
             {clips.map((clip, index) => {
               const effectiveDuration = getEffectiveDuration(clip);
               const clipLeft = timeToPixel(clip.startTime);
               const clipWidth = timeToPixel(effectiveDuration);
-              const isActive = dragClipId === clip.id || resizeClipId === clip.id;
+              const isBeingDragged = dragClipId === clip.id;
+              const isActive = isBeingDragged || resizeClipId === clip.id;
 
               return (
                 <div
                   key={clip.id}
-                  className={`absolute top-2 h-16 rounded-md border-2 transition-colors overflow-hidden ${
-                    isActive
+                  className={`absolute top-2 h-16 rounded-md border-2 transition-all overflow-hidden ${
+                    isBeingDragged
+                      ? 'border-primary bg-primary/30 z-20 opacity-70 shadow-xl shadow-primary/30'
+                      : isActive
                       ? 'border-primary bg-primary/30 z-10'
                       : 'border-accent/50 bg-accent/20 hover:border-accent'
                   }`}
                   style={{
                     left: clipLeft,
                     width: Math.max(clipWidth, 40),
+                    transform: isBeingDragged ? 'scale(1.02)' : undefined,
                   }}
                 >
                   {/* Drag handle */}
@@ -316,6 +477,12 @@ export const EditorTimeline = ({
         <span>Drag edges to trim</span>
         <span>•</span>
         <span>Click timeline to seek</span>
+        {onSplitClip && (
+          <>
+            <span>•</span>
+            <span>Click Split to divide clip at playhead</span>
+          </>
+        )}
       </div>
     </div>
   );

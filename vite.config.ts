@@ -8,11 +8,8 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    // Headers required for SharedArrayBuffer (used by FFmpeg.wasm in video editor)
-    headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp',
-    },
+    // Note: SharedArrayBuffer headers removed to allow cross-origin resources (Supabase images/videos)
+    // FFmpeg.wasm will fall back to single-threaded mode, which is fine for our use case
   },
   plugins: [
     react(),

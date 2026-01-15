@@ -1,13 +1,14 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Check, Film, X, Play, Volume2, VolumeX } from 'lucide-react';
+import { Check, Film, Play, Volume2, VolumeX } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useQuery } from '@tanstack/react-query';
 import { getUserMediaLibrary, MediaFile } from '@/services/mediaStudioService';
+import { cn } from '@/lib/utils';
 
-// Video thumbnail card with hover preview
+// Video thumbnail card - matching MediaCard approach from MediaLibrary
 interface VideoThumbnailCardProps {
   video: MediaFile;
   isSelected: boolean;
@@ -17,22 +18,27 @@ interface VideoThumbnailCardProps {
 
 const VideoThumbnailCard = ({ video, isSelected, onToggle, formatDuration }: VideoThumbnailCardProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [isHovering, setIsHovering] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [isHovered, setIsHovered] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
-  const [hasError, setHasError] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
 
-  // Play video on hover
+  // Play/pause on hover
   useEffect(() => {
     if (!videoRef.current) return;
 
-    if (isHovering && !hasError) {
-      videoRef.current.currentTime = 0;
-      videoRef.current.play().catch(() => setHasError(true));
+    if (isHovered) {
+      videoRef.current.play().catch(() => {
+        // Ignore autoplay errors
+      });
     } else {
       videoRef.current.pause();
-      videoRef.current.currentTime = 0;
+      // Reset to beginning when not hovered
+      if (videoRef.current.readyState > 0) {
+        videoRef.current.currentTime = 0;
+      }
     }
-  }, [isHovering, hasError]);
+  }, [isHovered]);
 
   const handleMuteToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -44,50 +50,52 @@ const VideoThumbnailCard = ({ video, isSelected, onToggle, formatDuration }: Vid
 
   return (
     <div
+      ref={cardRef}
       onClick={onToggle}
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
-      className={`relative aspect-video rounded-lg overflow-hidden cursor-pointer transition-all ${
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={cn(
+        'relative aspect-video rounded-lg overflow-hidden cursor-pointer transition-all',
         isSelected
           ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-[0.98]'
           : 'hover:ring-1 hover:ring-white/30'
-      }`}
+      )}
     >
-      {/* Video element - always rendered for preview */}
+      {/* Loading skeleton */}
+      {!videoLoaded && (
+        <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+      )}
+
+      {/* Video element - same approach as MediaCard */}
       <video
         ref={videoRef}
         src={video.public_url}
-        className="w-full h-full object-cover"
-        muted={isMuted}
         loop
+        muted={isMuted}
         playsInline
-        crossOrigin="anonymous"
-        poster={video.thumbnail_url || undefined}
-        onError={() => setHasError(true)}
+        preload="metadata"
+        className={cn(
+          'w-full h-full object-cover transition-opacity duration-300',
+          videoLoaded ? 'opacity-100' : 'opacity-0'
+        )}
+        onLoadedData={() => setVideoLoaded(true)}
       />
 
-      {/* Fallback if video fails */}
-      {hasError && (
-        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-          <Film className="w-8 h-8 text-gray-500" />
-        </div>
-      )}
-
-      {/* Play icon when not hovering */}
-      {!isHovering && !hasError && (
+      {/* Play icon overlay when not hovered */}
+      {!isHovered && videoLoaded && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/30">
           <Play className="w-10 h-10 text-white/80" />
         </div>
       )}
 
-      {/* Overlay gradient */}
+      {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
 
       {/* Mute button - visible on hover */}
-      {isHovering && !hasError && (
+      {isHovered && (
         <button
           onClick={handleMuteToggle}
-          className="absolute top-2 left-2 p-1.5 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+          className="absolute top-2 left-2 p-1.5 rounded-full bg-black/50 hover:bg-black/70 transition-colors z-10"
         >
           {isMuted ? (
             <VolumeX className="w-4 h-4 text-white" />
@@ -104,11 +112,12 @@ const VideoThumbnailCard = ({ video, isSelected, onToggle, formatDuration }: Vid
 
       {/* Selection checkbox */}
       <div
-        className={`absolute top-2 right-2 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+        className={cn(
+          'absolute top-2 right-2 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors',
           isSelected
             ? 'bg-primary border-primary'
             : 'border-white/50 bg-black/30'
-        }`}
+        )}
       >
         {isSelected && <Check className="w-4 h-4 text-white" />}
       </div>
