@@ -498,7 +498,7 @@ const MediaStudioContent = () => {
                 onClick={() => setCurrentView('create')}
                 className={`relative z-10 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200 flex items-center gap-2 ${
                   currentView === 'create'
-                    ? 'text-white'
+                    ? 'text-white force-text-white'
                     : 'text-gray-400 hover:text-gray-200'
                 }`}
               >
@@ -511,7 +511,7 @@ const MediaStudioContent = () => {
                 onClick={() => setCurrentView('library')}
                 className={`relative z-10 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200 flex items-center gap-2 ${
                   currentView === 'library'
-                    ? 'text-white'
+                    ? 'text-white force-text-white'
                     : 'text-gray-400 hover:text-gray-200'
                 }`}
               >
@@ -524,7 +524,7 @@ const MediaStudioContent = () => {
                 onClick={() => setCurrentView('editor')}
                 className={`relative z-10 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200 flex items-center gap-2 ${
                   currentView === 'editor'
-                    ? 'text-white'
+                    ? 'text-white force-text-white'
                     : 'text-gray-400 hover:text-gray-200'
                 }`}
               >
@@ -615,7 +615,7 @@ const MediaStudioContent = () => {
                       <Button
                         onClick={handleGenerate}
                         disabled={isGenerating || !prompt.trim()}
-                        className="w-full cosmic-button text-white font-semibold py-6 text-lg rounded-xl group"
+                        className="w-full cosmic-button text-white font-semibold py-6 text-lg rounded-xl group force-text-white"
                       >
                         {isGenerating ? (
                           <>

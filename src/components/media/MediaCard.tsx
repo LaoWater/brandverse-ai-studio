@@ -182,7 +182,7 @@ const MediaCard = ({
               Video
             </Badge>
             {media.duration && (
-              <Badge className="bg-black/60 text-white border-0 flex items-center gap-1">
+              <Badge className="bg-black/60 text-white force-text-white border-0 flex items-center gap-1">
                 <Clock className="w-3 h-3" />
                 {formatDuration(media.duration)}
               </Badge>

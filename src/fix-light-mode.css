@@ -1,0 +1,50 @@
+/* ROBUST LIGHT MODE FIXES */
+/* This file contains overrides that must win against all other styles */
+
+/* 1. Force white text on specific elements in light mode */
+html.light .force-text-white,
+html.light .force-text-white *,
+html.light .cosmic-button,
+html.light .cosmic-button *,
+html.light [class*="cosmic-button"],
+html.light [class*="cosmic-button"] * {
+  color: white !important;
+}
+
+/* 2. Toast Notification Fix for Light Mode */
+/* Target Radix UI Toast root element explicitly */
+html.light [data-radix-toast-root],
+html.light .group.toast,
+html.light .group.toaster {
+  background-color: rgb(15 15 23) !important;
+  color: white !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Ensure toast text content is white */
+html.light [data-radix-toast-title],
+html.light [data-radix-toast-description],
+html.light .group.toast .text-muted-foreground,
+html.light .group.toast p,
+html.light .group.toast span, 
+html.light .group.toast div {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Ensure toast buttons are white */
+html.light [data-radix-toast-close],
+html.light [data-radix-toast-action],
+html.light .group.toast button {
+  color: white !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+html.light [data-radix-toast-close]:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 3. Fix for seconds/duration badge in Media Card */
+html.light .badge.force-text-white,
+html.light .badge.force-text-white * {
+  color: white !important;
+}

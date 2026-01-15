@@ -79,7 +79,7 @@ const MediaGrid = ({
         </p>
 
         {onCreateNew && (
-          <Button onClick={onCreateNew} className="cosmic-button gap-2 button-press-effect">
+          <Button onClick={onCreateNew} className="cosmic-button gap-2 button-press-effect force-text-white">
             <Sparkles className="w-5 h-5" />
             Create Your First Media
           </Button>

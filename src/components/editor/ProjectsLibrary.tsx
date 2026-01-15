@@ -250,7 +250,7 @@ export const ProjectsLibrary = ({ onOpenProject, onCreateNew }: ProjectsLibraryP
             {projects?.length || 0} project{projects?.length !== 1 ? 's' : ''}
           </p>
         </div>
-        <Button onClick={onCreateNew} className="cosmic-button">
+        <Button onClick={onCreateNew} className="cosmic-button force-text-white">
           <Film className="w-4 h-4 mr-2" />
           New Project
         </Button>
@@ -268,7 +268,7 @@ export const ProjectsLibrary = ({ onOpenProject, onCreateNew }: ProjectsLibraryP
           <p className="text-gray-400 mb-6">
             Start editing videos and your projects will appear here.
           </p>
-          <Button onClick={onCreateNew} className="cosmic-button">
+          <Button onClick={onCreateNew} className="cosmic-button force-text-white">
             Create Your First Project
           </Button>
         </Card>

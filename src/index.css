@@ -2980,7 +2980,7 @@
   }
 
   /* GLOBAL: Convert all text-white to dark in light mode */
-  .light .text-white:not(.cosmic-button):not(.cosmic-button *):not(.moon-icon) {
+  .light .text-white:not(.cosmic-button):not(.cosmic-button *):not(.moon-icon):not(.force-text-white) {
     color: rgb(15 15 23) !important;
   }
 
@@ -3400,5 +3400,71 @@ html.light .settings-tab-nav button.text-white,
 /* Settings Tab - all child elements white when active */
 html.light .settings-tab-nav button.text-white *,
 .settings-tab-nav button.text-white * {
+  color: white !important;
+}
+
+/* ============================================ */
+/* ROBUST LIGHT MODE FIXES - MUST BE AT THE END */
+/* ============================================ */
+
+/* 1. Force white text on specific elements in light mode */
+html.light .force-text-white,
+html.light .force-text-white *,
+html.light .force-text-white svg,
+html.light .force-text-white path,
+html.light .cosmic-button,
+html.light .cosmic-button *,
+html.light .cosmic-button svg,
+html.light .cosmic-button path,
+html.light [class*="cosmic-button"],
+html.light [class*="cosmic-button"] *,
+html.light [class*="cosmic-button"] svg,
+html.light [class*="cosmic-button"] path {
+  color: white !important;
+  -webkit-text-fill-color: white !important; /* Force override of any gradient text clips */
+}
+
+/* 2. Toast Notification Fix for Light Mode - Comprehensive */
+html.light [data-radix-toast-root],
+html.light .group.toast,
+html.light .group.toaster,
+html.light [data-sonner-toast],
+html.light [data-sonner-toast] > div {
+  background-color: rgb(15 15 23) !important;
+  background: rgb(15 15 23) !important;
+  color: white !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Ensure toast text content is white */
+html.light [data-radix-toast-title],
+html.light [data-radix-toast-description],
+html.light .group.toast .text-muted-foreground,
+html.light .group.toast p,
+html.light .group.toast span, 
+html.light .group.toast div,
+html.light [data-sonner-toast] [data-title],
+html.light [data-sonner-toast] [data-description],
+html.light [data-sonner-toast] [data-icon] {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Ensure toast buttons are white */
+html.light [data-radix-toast-close],
+html.light [data-radix-toast-action],
+html.light .group.toast button,
+html.light [data-sonner-toast] button {
+  color: white !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+html.light [data-radix-toast-close]:hover,
+html.light [data-sonner-toast] button:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 3. Fix for seconds/duration badge in Media Card */
+html.light .badge.force-text-white,
+html.light .badge.force-text-white * {
   color: white !important;
 }

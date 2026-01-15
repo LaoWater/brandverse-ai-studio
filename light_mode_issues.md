@@ -13,6 +13,7 @@ Need a blue-ish background for this without affecting anything else.
 
 II. Media Studio - 
 "Create New", "Library" - buttons are black text - ONLY ON SELECTED BUTTON it is crucial we have WHITE text
+More buttons which are not selectable but click-able: "New Project", "Create your first project", "Generate Video" - we need all of this - but be careful - we need a way to isolate this and not break the whole page/site - as a last resort go for f*kin text identification or html element - the issue is JUST IN LIGHT MODE
 Coming From 
 .light .text-white:not(.cosmic-button):not(.cosmic-button *):not(.moon-icon) {
     color: rgb(15 15 23) !important;
@@ -23,3 +24,8 @@ We need a surgical minimum invasive way of achieving this.
 Also - affected by this is the seconds indicator in Library - which ends up in light mode as - black text on black bg - which is un-readable.
 
 Maybe we can change the bg if changing the rule breaks everything
+
+
+----------
+
+please try to grasp the computed css cascades and all that so we can begin fixing things without breaking existing logic.
