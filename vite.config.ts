@@ -8,8 +8,8 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    // Note: SharedArrayBuffer headers removed to allow cross-origin resources (Supabase images/videos)
-    // FFmpeg.wasm will fall back to single-threaded mode, which is fine for our use case
+    // No COOP/COEP headers - they break cross-origin Supabase resources
+    // FFmpeg.wasm will work in single-threaded mode
   },
   plugins: [
     react(),

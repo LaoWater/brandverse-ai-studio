@@ -89,8 +89,8 @@ const Features = () => {
               </div>
 
               <p className="text-xl md:text-2xl text-gray-300 max-w-4xl mx-auto leading-relaxed">
-                Your product deserves to be seen. Get the AI-powered visibility tools that help startups
-                break through the noise — on every platform where customers make decisions.
+                Your product deserves to be seen. AI tools that <span className="text-accent font-semibold">accelerate</span> your marketing expertise —
+                not replace it. The quality of output depends on the knowledge you bring.
               </p>
 
               <div className="flex justify-center items-center space-x-12 my-16">
@@ -167,6 +167,54 @@ const Features = () => {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Acceleration Philosophy Section */}
+          <div className="cosmic-card mb-16 relative overflow-hidden">
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent"></div>
+              <div className="absolute bottom-0 right-0 w-full h-1 bg-gradient-to-r from-transparent via-accent to-transparent"></div>
+            </div>
+
+            <div className="relative z-10 p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 rounded-full bg-gradient-to-br from-primary/20 to-accent/10 border border-primary/30">
+                  <Sparkles className="w-6 h-6 text-accent" />
+                </div>
+                <h3 className="text-2xl font-bold text-white">
+                  Acceleration, Not <span className="text-cosmic font-serif">Replacement</span>
+                </h3>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <p className="text-gray-300 leading-relaxed">
+                    We're not building tools to replace marketers, creators, video editors, or image editors.
+                    A small business founder wears all these hats — and that's exactly why they need acceleration, not automation.
+                  </p>
+                  <p className="text-gray-300 leading-relaxed">
+                    <span className="text-white font-medium">The output of AI is highly dependent on the knowledge and skill level of the one using it.</span> Our tools amplify your expertise, turning hours of repetitive work into minutes while you maintain creative control.
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3 p-4 rounded-lg bg-primary/10 border border-primary/20">
+                    <div className="w-2 h-2 bg-accent rounded-full mt-2 flex-shrink-0"></div>
+                    <div>
+                      <p className="text-white font-medium">AI Accelerates</p>
+                      <p className="text-gray-400 text-sm">Content generation, platform optimization, SEO analysis, scheduling</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-4 rounded-lg bg-accent/10 border border-accent/20">
+                    <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
+                    <div>
+                      <p className="text-white font-medium">You Lead</p>
+                      <p className="text-gray-400 text-sm">Strategy, brand voice, creative direction, authentic messaging, final decisions</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="cosmic-card text-center mb-16 relative overflow-hidden">

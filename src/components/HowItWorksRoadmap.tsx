@@ -230,6 +230,20 @@ export function HowItWorksRoadmap() {
           >
             Four steps to take your startup from invisible to undeniable — across every platform where your customers make decisions.
           </motion.p>
+
+          {/* Philosophy Callout */}
+          <motion.div
+            className="mt-6 sm:mt-8 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20"
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            viewport={{ once: true }}
+          >
+            <Sparkles className="w-4 h-4 text-accent" />
+            <span className="text-sm text-foreground/80 dark:text-gray-300">
+              You're the strategist. <span className="text-accent font-medium">AI is your accelerator.</span>
+            </span>
+          </motion.div>
         </div>
 
         <div ref={roadmapRef} className="relative max-w-5xl mx-auto"> {/* Using max-w-5xl for wider layout */}

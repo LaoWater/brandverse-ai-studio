@@ -1007,7 +1007,6 @@
   html.light .icon-gradient-container svg,
   html.light .icon-gradient-container .text-white {
     color: #ffffff !important;
-    fill: currentColor !important;
   }
 
   /* Force social media platform icons to keep their gradients */
@@ -2808,7 +2807,6 @@
   .light .hero-section-page section [class*="bg-gradient"] svg,
   .light .hero-section-page section .rounded-full[class*="bg-"] svg {
     color: #ffffff !important;
-    fill: currentColor !important;
   }
 
   /* Text labels for the circles and publishing section */
@@ -3158,7 +3156,6 @@
   .light .hero-section-page [class*="from-accent"] svg,
   .light .hero-section-page [class*="bg-[#"] svg {
     color: #ffffff !important;
-    fill: currentColor !important;
   }
 
   /* Social media platform icons - rounded-full specific - HERO SECTION ONLY */
@@ -3166,7 +3163,6 @@
   .light .hero-section-page .rounded-full[class*="bg-black"] svg,
   .light .hero-section-page .rounded-full[class*="bg-gradient"] svg {
     color: #ffffff !important;
-    fill: currentColor !important;
   }
 
   .light [class*="roadmap"] .text-gray-300,
@@ -3421,6 +3417,7 @@ html.light [class*="cosmic-button"] *,
 html.light [class*="cosmic-button"] svg,
 html.light [class*="cosmic-button"] path {
   color: white !important;
+  stroke: white !important;
   -webkit-text-fill-color: white !important; /* Force override of any gradient text clips */
 }
 

@@ -63,6 +63,7 @@ export type ExportStage =
   | 'trimming'
   | 'concatenating'
   | 'finalizing'
+  | 'uploading'
   | 'complete'
   | 'error';
 

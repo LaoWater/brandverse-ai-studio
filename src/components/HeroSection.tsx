@@ -67,8 +67,9 @@ const HeroSection = () => {
 
             <p className="text-base sm:text-lg md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed px-2">
               You built something great. Now make sure the world sees it.
-              AI-powered content, SEO optimization, and multi-platform distribution —
-              all in one place for founders who refuse to stay invisible.
+              <br className="hidden sm:block" />
+              <span className="text-white">AI-powered tools that <span className="text-accent font-semibold">accelerate</span> your expertise</span> —
+              not replace it. Your vision, amplified everywhere that matters.
             </p>
 
             {/* Visual concept representation - 3D Holographic Cards */}
@@ -88,7 +89,7 @@ const HeroSection = () => {
 
                       {/* Icon container - boosted vibrant colors */}
                       <div className="icon-gradient-container relative bg-gradient-to-br from-sky-600 to-indigo-700 rounded-2xl p-3 sm:p-4 shadow-2xl transform hover:rotate-12 hover:scale-110 transition-all duration-300">
-                        <Rocket className="w-7 h-7 sm:w-9 sm:h-9 text-white drop-shadow-2xl" />
+                        <Rocket className="w-7 h-7 sm:w-9 sm:h-9 text-white force-text-white drop-shadow-2xl " />
                       </div>
                     </div>
 
@@ -122,7 +123,7 @@ const HeroSection = () => {
 
                       {/* Icon container - vibrant in light mode with hardcoded colors */}
                       <div className="icon-gradient-container relative bg-gradient-to-br from-[#5B5FEE] to-[#00D4FF] rounded-2xl p-3 sm:p-4 shadow-2xl transform hover:-rotate-12 hover:scale-110 transition-all duration-300">
-                        <Globe className="w-7 h-7 sm:w-9 sm:h-9 text-white drop-shadow-2xl" />
+                        <Globe className="w-7 h-7 sm:w-9 sm:h-9 text-white force-text-white drop-shadow-2xl" />
                       </div>
                     </div>
 
@@ -289,8 +290,8 @@ const HeroSection = () => {
                 Focus on <span className="text-cosmic font-serif">Building</span>
               </h2>
               <p className="text-base sm:text-xl text-gray-300 leading-relaxed">
-                You have a product to perfect and customers to serve. Let our AI handle the visibility game —
-                content creation, SEO analysis, and multi-platform distribution on autopilot.
+                You have a product to perfect and customers to serve. Our AI accelerates the visibility work —
+                content creation, SEO analysis, and multi-platform distribution — while you stay in the driver's seat.
               </p>
               <Button
                 asChild

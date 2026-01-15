@@ -496,33 +496,33 @@ const MediaStudioContent = () => {
               {/* Create New Button */}
               <button
                 onClick={() => setCurrentView('create')}
-                className={`relative z-10 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200 flex items-center gap-2 ${
+                className={`relative z-10 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200 flex items-center justify-center w-32 gap-2 ${
                   currentView === 'create'
                     ? 'text-white force-text-white'
                     : 'text-gray-400 hover:text-gray-200'
                 }`}
               >
                 <Plus className="w-4 h-4" />
-                Create New
+                Create
               </button>
 
               {/* My Library Button */}
               <button
                 onClick={() => setCurrentView('library')}
-                className={`relative z-10 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200 flex items-center gap-2 ${
+                className={`relative z-10 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200 flex items-center justify-center w-32 gap-2 ${
                   currentView === 'library'
                     ? 'text-white force-text-white'
                     : 'text-gray-400 hover:text-gray-200'
                 }`}
               >
                 <Library className="w-4 h-4" />
-                My Library
+                Library
               </button>
 
               {/* Editor Button */}
               <button
                 onClick={() => setCurrentView('editor')}
-                className={`relative z-10 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200 flex items-center gap-2 ${
+                className={`relative z-10 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200 flex items-center justify-center w-32 gap-2 ${
                   currentView === 'editor'
                     ? 'text-white force-text-white'
                     : 'text-gray-400 hover:text-gray-200'

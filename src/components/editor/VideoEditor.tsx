@@ -13,7 +13,8 @@ import { ClipSelector } from './ClipSelector';
 import { EditorTimeline } from './EditorTimeline';
 import { ExportModal } from './ExportModal';
 import { ProjectsLibrary } from './ProjectsLibrary';
-import { exportProject, downloadBlob } from '@/services/videoEditorService';
+import { exportProject, downloadBlob, saveExportToLibrary } from '@/services/videoEditorService';
+import type { ExportDestination } from './ExportModal';
 import {
   createProject,
   updateProject,
@@ -695,8 +696,8 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
     });
   }, []);
 
-  // Handle export
-  const handleExport = useCallback(async () => {
+  // Open export modal (shows options first)
+  const handleExport = useCallback(() => {
     if (clips.length === 0) {
       toast({
         title: 'No Clips',
@@ -706,7 +707,20 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
       return;
     }
 
+    // Reset export state and show options
+    setExportState({
+      exporting: false,
+      progress: 0,
+      stage: 'idle',
+      error: null,
+    });
     setShowExportModal(true);
+  }, [clips, toast]);
+
+  // Start the actual export process
+  const handleStartExport = useCallback(async (destination: ExportDestination) => {
+    console.log('[VideoEditor] Starting export with destination:', destination);
+
     setExportState({
       exporting: true,
       progress: 0,
@@ -716,34 +730,66 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
 
     try {
       const blob = await exportProject(clips, (progress, stage, message) => {
+        console.log('[VideoEditor] Export progress:', progress, stage, message);
         setExportState(prev => ({
           ...prev,
-          progress,
+          progress: stage === 'uploading' ? 95 : progress,
           stage,
           error: null,
         }));
       });
 
+      console.log('[VideoEditor] Export blob created, size:', blob.size);
+
       // Generate filename
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-      const filename = `edited_video_${timestamp}.mp4`;
+      const filename = `${projectName.replace(/[^a-z0-9]/gi, '_')}_${timestamp}.mp4`;
 
-      // Download the file
-      downloadBlob(blob, filename);
+      // Handle download
+      if (destination === 'download' || destination === 'both') {
+        console.log('[VideoEditor] Downloading file:', filename);
+        downloadBlob(blob, filename);
+      }
+
+      // Handle save to library
+      if ((destination === 'library' || destination === 'both') && user) {
+        setExportState(prev => ({
+          ...prev,
+          progress: 95,
+          stage: 'uploading',
+        }));
+
+        console.log('[VideoEditor] Saving to library...');
+        await saveExportToLibrary(
+          blob,
+          user.id,
+          selectedCompany?.id || null,
+          projectName,
+          totalDuration,
+          (msg) => console.log('[VideoEditor] Upload:', msg)
+        );
+      }
 
       setExportState(prev => ({
         ...prev,
+        exporting: false,
         progress: 100,
         stage: 'complete',
       }));
 
+      const successMessage = destination === 'download'
+        ? 'Your video has been downloaded.'
+        : destination === 'library'
+        ? 'Your video has been saved to your library.'
+        : 'Your video has been downloaded and saved to your library.';
+
       toast({
         title: 'Export Complete!',
-        description: 'Your video has been downloaded.',
+        description: successMessage,
         className: 'bg-green-600/90 border-green-600 text-white',
       });
     } catch (error: any) {
-      console.error('Export failed:', error);
+      console.error('[VideoEditor] Export failed:', error);
       setExportState(prev => ({
         ...prev,
         exporting: false,
@@ -757,7 +803,7 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
         variant: 'destructive',
       });
     }
-  }, [clips, toast]);
+  }, [clips, user, selectedCompany, projectName, totalDuration, toast]);
 
   // Format time as MM:SS
   const formatTime = (seconds: number): string => {
@@ -1142,6 +1188,8 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
           }
         }}
         exportState={exportState}
+        showOptions={true}
+        onStartExport={handleStartExport}
       />
     </div>
   );
