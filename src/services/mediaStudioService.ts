@@ -440,7 +440,26 @@ export const generateVideoAsync = async (
         }
 
         if (statusResult.status === 'failed' || statusResult.status === 'error') {
-          throw new Error(statusResult.error || "Video generation failed.");
+          // Parse structured error from backend if available
+          let errorMessage = "Video generation failed.";
+          if (statusResult.error) {
+            try {
+              const parsedError = JSON.parse(statusResult.error);
+              if (parsedError.title && parsedError.message) {
+                // Use friendly error format: "Title: Message. Suggestion"
+                errorMessage = `${parsedError.title}: ${parsedError.message}`;
+                if (parsedError.suggestion) {
+                  errorMessage += ` ${parsedError.suggestion}`;
+                }
+              } else {
+                errorMessage = statusResult.error;
+              }
+            } catch {
+              // Not JSON, use as-is
+              errorMessage = statusResult.error;
+            }
+          }
+          throw new Error(errorMessage);
         }
 
         // Status is 'processing' - continue polling

@@ -13,7 +13,7 @@ import { ClipSelector } from './ClipSelector';
 import { EditorTimeline } from './EditorTimeline';
 import { ExportModal } from './ExportModal';
 import { ProjectsLibrary } from './ProjectsLibrary';
-import { exportProject, downloadBlob, saveExportToLibrary } from '@/services/videoEditorService';
+import { exportProject, downloadBlob } from '@/services/videoEditorService';
 import type { ExportDestination } from './ExportModal';
 import {
   createProject,
@@ -729,46 +729,37 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
     });
 
     try {
-      const blob = await exportProject(clips, (progress, stage, message) => {
-        console.log('[VideoEditor] Export progress:', progress, stage, message);
-        setExportState(prev => ({
-          ...prev,
-          progress: stage === 'uploading' ? 95 : progress,
-          stage,
-          error: null,
-        }));
-      });
+      // Server-side export: always saves to library, returns blob for download
+      const blob = await exportProject(
+        clips,
+        (progress, stage, message) => {
+          console.log('[VideoEditor] Export progress:', progress, stage, message);
+          setExportState(prev => ({
+            ...prev,
+            progress,
+            stage,
+            error: null,
+          }));
+        },
+        user?.id,
+        selectedCompany?.id || null,
+        projectName
+      );
 
-      console.log('[VideoEditor] Export blob created, size:', blob.size);
+      console.log('[VideoEditor] Export complete, blob size:', blob.size, 'bytes');
 
-      // Generate filename
+      // Generate filename for download
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
       const filename = `${projectName.replace(/[^a-z0-9]/gi, '_')}_${timestamp}.mp4`;
 
-      // Handle download
+      // Handle download (server already saved to library)
       if (destination === 'download' || destination === 'both') {
         console.log('[VideoEditor] Downloading file:', filename);
         downloadBlob(blob, filename);
       }
 
-      // Handle save to library
-      if ((destination === 'library' || destination === 'both') && user) {
-        setExportState(prev => ({
-          ...prev,
-          progress: 95,
-          stage: 'uploading',
-        }));
-
-        console.log('[VideoEditor] Saving to library...');
-        await saveExportToLibrary(
-          blob,
-          user.id,
-          selectedCompany?.id || null,
-          projectName,
-          totalDuration,
-          (msg) => console.log('[VideoEditor] Upload:', msg)
-        );
-      }
+      // Note: Server-side export already saves to library automatically
+      // No need to upload again for 'library' or 'both' destinations
 
       setExportState(prev => ({
         ...prev,
@@ -778,7 +769,7 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
       }));
 
       const successMessage = destination === 'download'
-        ? 'Your video has been downloaded.'
+        ? 'Your video has been downloaded (and saved to library).'
         : destination === 'library'
         ? 'Your video has been saved to your library.'
         : 'Your video has been downloaded and saved to your library.';
@@ -803,7 +794,7 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
         variant: 'destructive',
       });
     }
-  }, [clips, user, selectedCompany, projectName, totalDuration, toast]);
+  }, [clips, user, selectedCompany, projectName, toast]);
 
   // Format time as MM:SS
   const formatTime = (seconds: number): string => {

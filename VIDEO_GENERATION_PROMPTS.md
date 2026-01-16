@@ -48,14 +48,14 @@ Cinematic 4K, shallow depth of field, anamorphic lens characteristics with subtl
 lens flares. Film grain texture. Color palette: desaturated blues, cold whites from laptop
 screen, deep shadows.
 
-Scene: Extreme close-up of a founder's exhausted face, illuminated only by cold blue laptop
+Scene: Extreme close-up of the founder's exhausted, illuminated only by cold blue laptop
 glow. Eyes bloodshot, slight bags underneath. Camera holds for 2 seconds, then slowly pulls
 back on a dolly track revealing: cluttered desk with 4 empty coffee cups, sticky notes
 everywhere, multiple browser tabs reflected in their glasses. The founder types frantically
-on keyboard, pauses, selects all, deletes. Types again. Their shoulders are tense, hunched.
+on keyboard, pauses, selects all, deletes. Types again.
 
-Wide shot reveals: small apartment at night, only light source is the laptop. Clock on wall
-shows 2:47 AM. City lights twinkle through window, distant and unreachable. The founder is
+Wide shot reveals: small apartment at night. Clock on wall shows 2:47 AM. 
+City lights twinkle through window, distant and unreachable. The founder is
 isolated in their pool of blue light. They slump slightly, rub their eyes, then force
 themselves to continue typing.
 
@@ -69,8 +69,8 @@ synth pad fades in underneath - barely audible, creating sense of vast empty spa
 the founder. 70 BPM implied pulse from subtle sub-bass. Key of D minor.
 
 Sound Design: Keyboard clicks - mechanical, isolated, echoing slightly as if in empty room.
-Clock ticking (old analog clock, not digital). Distant city hum - traffic, sirens far away.
-AC unit white noise. The sounds emphasize silence between them. Large reverb tail on all
+Clock ticking (old analog clock, not digital). Distant city hum - traffic, sirens far away. 
+The sounds emphasize silence between them. Large reverb tail on all
 sounds. Everything feels 3AM lonely.
 
 Voice: None in this segment. Silence speaks.
@@ -87,17 +87,17 @@ Voice: None in this segment. Silence speaks.
 [VISUAL]
 Cinematic 4K, shallow depth of field transitioning to deep focus for surreal sequence.
 Anamorphic lens flares. Color palette: transitions from cold blue laptop glow to cosmic
-purples and cyans. Deep space blacks. Electric cyan (#00D4FF) accents.
+purples and cyans. Deep space blacks. Electric cyan accents.
 
 Scene: Opens on founder at desk from previous segment. Camera pushes slowly toward laptop
-screen holographs on top of laptop, as we're seeing it from behind - we see social media dashboards, analytics, content calendars. 
+screen, holographs on top of laptop, as we're seeing it from behind - we see social media dashboards, analytics, content calendars. 
 Push continues INTO the holographs becoming chaotic - glass ripple effect as we transition through.
 
-SURREAL TRANSITION: Founder now stands in cosmic void at the base of an impossibly tall
-mountain. The mountain is constructed from floating, glowing social media elements:
+SURREAL TRANSITION: Founder now stands in cosmic void at the base of an impossibly tall realistic
+mountain. The mountain is constructed from floating, social media elements:
 Instagram posts, TikTok videos, LinkedIn articles, hashtags, analytics graphs, follower
 counts - all swirling upward infinitely. Platform logos (Instagram, TikTok, YouTube,
-LinkedIn, Twitter, Reddit) orbit the mountain like planets.
+LinkedIn, Twitter, Reddit) orbit the mountain like planets. Smooth motion and not too bright.
 
 Text fragments float past the founder: "post daily", "optimize keywords", "engage
 followers", "beat the algorithm", "create reels", "trending sounds" - overwhelming,
@@ -123,10 +123,6 @@ howling (processed, ethereal). Digital whispers - overlapping notification sound
 typing, app alerts - creating wall of overwhelming digital noise. Sub-bass pulse
 intensifies. Each floating text fragment has subtle glass chime when it passes.
 Cathedral-scale reverb. Growing cacophony.
-
-Voice: Whispered fragments in the wind (barely audible, more texture than words):
-"...never enough..." "...keep posting..." "...they're not seeing you..."
-Male whisper, mid-30s, processed with heavy reverb and delay.
 ```
 
 **STARTING IMAGE FOR NEXT SEGMENT:** Close-up of founder's outstretched hand, fingers spread, cosmic mountain behind them
