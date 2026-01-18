@@ -3,6 +3,91 @@
 // For the Media Studio video editor feature
 // ============================================
 
+// ============================================
+// TEXT OVERLAY TYPES
+// ============================================
+
+/**
+ * Available font families for text overlays
+ * These must match fonts bundled in the media processing service
+ */
+export type FontFamily =
+  | 'Inter'
+  | 'Montserrat'
+  | 'Roboto'
+  | 'Playfair Display'
+  | 'Oswald'
+  | 'Open Sans'
+  | 'Lato'
+  | 'Poppins';
+
+/**
+ * Text style configuration
+ */
+export interface TextStyle {
+  fontFamily: FontFamily;
+  fontSize: number;         // 12-120px
+  fontWeight: 'normal' | 'bold' | 'light';
+  color: string;            // Hex '#FFFFFF'
+  backgroundColor?: string; // Optional background color
+  backgroundPadding?: number; // Padding around text when background is set
+  textAlign: 'left' | 'center' | 'right';
+  opacity: number;          // 0-1
+}
+
+/**
+ * Default text style
+ */
+export const DEFAULT_TEXT_STYLE: TextStyle = {
+  fontFamily: 'Inter',
+  fontSize: 32,
+  fontWeight: 'normal',
+  color: '#FFFFFF',
+  textAlign: 'center',
+  opacity: 1,
+};
+
+/**
+ * Text overlay interface
+ * Represents a text element that appears on the video
+ */
+export interface TextOverlay {
+  id: string;
+  type: 'text';
+  startTime: number;        // When text appears (seconds)
+  duration: number;         // How long it shows (seconds)
+  text: string;             // Multi-line supported
+  position: { x: number; y: number };  // Percentages 0-100
+  style: TextStyle;
+}
+
+/**
+ * Create a new text overlay with default values
+ */
+export const createTextOverlay = (
+  startTime: number = 0,
+  duration: number = 3
+): TextOverlay => ({
+  id: `text_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+  type: 'text',
+  startTime,
+  duration,
+  text: 'New Text',
+  position: { x: 50, y: 50 }, // Centered
+  style: { ...DEFAULT_TEXT_STYLE },
+});
+
+/**
+ * Check if a text overlay is visible at a given time
+ */
+export const isTextOverlayVisible = (overlay: TextOverlay, time: number): boolean => {
+  return time >= overlay.startTime && time < overlay.startTime + overlay.duration;
+};
+
+// ============================================
+// VIDEO CLIP TYPES
+// ============================================
+
 /**
  * Represents a video clip on the editor timeline
  */

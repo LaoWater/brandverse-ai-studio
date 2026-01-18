@@ -1,8 +1,9 @@
 import { useCallback, useRef, useState, useEffect, useMemo } from 'react';
-import { Film, GripVertical, Scissors, SplitSquareHorizontal, Trash2, Undo2 } from 'lucide-react';
+import { Film, GripVertical, Scissors, SplitSquareHorizontal, Trash2, Undo2, Type } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { EditorClip } from '@/types/editor';
+import type { EditorClip, TextOverlay } from '@/types/editor';
 import { getEffectiveDuration, getClipEndTime } from '@/types/editor';
+import { TextTimelineTrack } from './text-overlay';
 
 interface EditorTimelineProps {
   clips: EditorClip[];
@@ -16,6 +17,11 @@ interface EditorTimelineProps {
   onSplitClip?: (clipId: string) => void;
   onUndo?: () => void;
   canUndo?: boolean;
+  // Text overlay props
+  textOverlays?: TextOverlay[];
+  selectedTextId?: string | null;
+  onSelectText?: (id: string | null) => void;
+  onUpdateText?: (id: string, updates: Partial<TextOverlay>) => void;
 }
 
 export const EditorTimeline = ({
@@ -30,6 +36,10 @@ export const EditorTimeline = ({
   onSplitClip,
   onUndo,
   canUndo,
+  textOverlays = [],
+  selectedTextId,
+  onSelectText,
+  onUpdateText,
 }: EditorTimelineProps) => {
   const timelineRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -314,7 +324,9 @@ export const EditorTimeline = ({
       {/* Timeline Container */}
       <div
         ref={timelineRef}
-        className="relative h-32 bg-black/30 rounded-lg overflow-x-auto overflow-y-hidden cursor-pointer"
+        className={`relative bg-black/30 rounded-lg overflow-x-auto overflow-y-hidden cursor-pointer ${
+          textOverlays.length > 0 ? 'h-44' : 'h-32'
+        }`}
         onClick={handleTimelineClick}
         style={{ minWidth: '100%' }}
       >
@@ -333,8 +345,8 @@ export const EditorTimeline = ({
             ))}
           </div>
 
-          {/* Track Area */}
-          <div className="absolute top-6 left-0 right-0 bottom-0 p-2">
+          {/* Video Track Area */}
+          <div className="absolute top-6 left-0 right-0 h-20 p-2">
             {/* Empty state */}
             {clips.length === 0 && (
               <div className="h-full flex items-center justify-center text-gray-500 text-sm">
@@ -453,6 +465,22 @@ export const EditorTimeline = ({
               );
             })}
           </div>
+
+          {/* Text Track Area */}
+          {textOverlays.length > 0 && onSelectText && onUpdateText && (
+            <div className="absolute top-[6.5rem] left-0 right-0 h-12 border-t border-white/10">
+              <TextTimelineTrack
+                overlays={textOverlays}
+                selectedOverlayId={selectedTextId ?? null}
+                onSelectOverlay={onSelectText}
+                onUpdateOverlay={onUpdateText}
+                scale={scale}
+                timelineWidth={timelineWidth}
+                onDragStart={onDragStart}
+                onDragEnd={onDragEnd}
+              />
+            </div>
+          )}
 
           {/* Playhead */}
           <div

@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Film, Plus, Download, Trash2, Play, Pause, SkipBack, Volume2, VolumeX, Save, FolderOpen, Cloud, CloudOff, Pencil, ArrowLeft, Scissors, Undo2, Redo2 } from 'lucide-react';
+import { Film, Plus, Download, Trash2, Play, Pause, SkipBack, Volume2, VolumeX, Save, FolderOpen, Cloud, CloudOff, Pencil, ArrowLeft, Scissors, Undo2, Redo2, Type, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
@@ -7,12 +7,13 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
-import type { EditorClip, PlaybackState, ExportState } from '@/types/editor';
-import { getEffectiveDuration, getClipEndTime } from '@/types/editor';
+import type { EditorClip, PlaybackState, ExportState, TextOverlay } from '@/types/editor';
+import { getEffectiveDuration, getClipEndTime, createTextOverlay } from '@/types/editor';
 import { ClipSelector } from './ClipSelector';
 import { EditorTimeline } from './EditorTimeline';
 import { ExportModal } from './ExportModal';
 import { ProjectsLibrary } from './ProjectsLibrary';
+import { TextOverlayPanel, TextOverlayPreview } from './text-overlay';
 import { exportProject, downloadBlob } from '@/services/videoEditorService';
 import type { ExportDestination } from './ExportModal';
 import {
@@ -20,6 +21,7 @@ import {
   updateProject,
   getProject,
   EditorProject,
+  migrateProjectData,
 } from '@/services/editorProjectService';
 import type { MediaFile } from '@/services/mediaStudioService';
 
@@ -70,8 +72,18 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(1);
 
-  // History state for Undo/Redo
-  const [history, setHistory] = useState<EditorClip[][]>([]);
+  // Text overlay state
+  const [textOverlays, setTextOverlays] = useState<TextOverlay[]>([]);
+  const [selectedTextId, setSelectedTextId] = useState<string | null>(null);
+  const [isTextPanelOpen, setIsTextPanelOpen] = useState(false);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
+
+  // History state for Undo/Redo (includes both clips and textOverlays)
+  interface HistoryState {
+    clips: EditorClip[];
+    textOverlays: TextOverlay[];
+  }
+  const [history, setHistory] = useState<HistoryState[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const isUndoRedoRef = useRef(false); // Flag to prevent history push during undo/redo
   const isDraggingRef = useRef(false); // Flag to track if we're in a drag operation
@@ -85,7 +97,7 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
     }
   }, [initialProjectId]);
 
-  // Push to history when clips change (except during undo/redo)
+  // Push to history when clips or textOverlays change (except during undo/redo)
   useEffect(() => {
     // Skip if this is an undo/redo operation
     if (isUndoRedoRef.current) {
@@ -98,12 +110,15 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
       return;
     }
 
-    // Skip empty state or if clips haven't actually changed
-    if (clips.length === 0 && history.length === 0) return;
+    // Skip empty state
+    if (clips.length === 0 && textOverlays.length === 0 && history.length === 0) return;
 
-    // Check if clips are different from current history position
+    // Create current state snapshot
+    const currentState: HistoryState = { clips: [...clips], textOverlays: [...textOverlays] };
+
+    // Check if state is different from current history position
     const currentHistoryState = history[historyIndex];
-    if (currentHistoryState && JSON.stringify(currentHistoryState) === JSON.stringify(clips)) {
+    if (currentHistoryState && JSON.stringify(currentHistoryState) === JSON.stringify(currentState)) {
       return; // No actual change
     }
 
@@ -112,7 +127,7 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
       // Remove any redo states (everything after current index)
       const newHistory = prev.slice(0, historyIndex + 1);
       // Add current state
-      newHistory.push([...clips]);
+      newHistory.push(currentState);
       // Limit history size
       if (newHistory.length > MAX_HISTORY) {
         newHistory.shift();
@@ -121,7 +136,7 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
       return newHistory;
     });
     setHistoryIndex(prev => Math.min(prev + 1, MAX_HISTORY - 1));
-  }, [clips]);
+  }, [clips, textOverlays]);
 
   // Undo handler
   const handleUndo = useCallback(() => {
@@ -129,7 +144,13 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
 
     isUndoRedoRef.current = true;
     const previousState = history[historyIndex - 1];
-    setClips(previousState ? [...previousState] : []);
+    if (previousState) {
+      setClips([...previousState.clips]);
+      setTextOverlays([...previousState.textOverlays]);
+    } else {
+      setClips([]);
+      setTextOverlays([]);
+    }
     setHistoryIndex(prev => prev - 1);
 
     toast({
@@ -144,7 +165,13 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
 
     isUndoRedoRef.current = true;
     const nextState = history[historyIndex + 1];
-    setClips(nextState ? [...nextState] : []);
+    if (nextState) {
+      setClips([...nextState.clips]);
+      setTextOverlays([...nextState.textOverlays]);
+    } else {
+      setClips([]);
+      setTextOverlays([]);
+    }
     setHistoryIndex(prev => prev + 1);
 
     toast({
@@ -152,31 +179,6 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
       description: 'Restored next state.',
     });
   }, [history, historyIndex, toast]);
-
-  // Keyboard shortcuts for Undo/Redo
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Check for Ctrl+Z (Windows/Linux) or Cmd+Z (Mac)
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-        e.preventDefault();
-        if (e.shiftKey) {
-          // Ctrl+Shift+Z or Cmd+Shift+Z = Redo
-          handleRedo();
-        } else {
-          // Ctrl+Z or Cmd+Z = Undo
-          handleUndo();
-        }
-      }
-      // Ctrl+Y for Redo (Windows alternative)
-      if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
-        e.preventDefault();
-        handleRedo();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleUndo, handleRedo]);
 
   // Check if undo/redo are available
   const canUndo = historyIndex > 0;
@@ -188,18 +190,29 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
     if (project) {
       setCurrentProject(project);
       setProjectName(project.name);
-      setClips(project.project_data.clips || []);
+
+      // Project data is already migrated by getProject
+      const projectData = project.project_data;
+      setClips(projectData.clips || []);
+      setTextOverlays(projectData.textOverlays || []);
       setLastSaved(new Date(project.updated_at));
       setHasUnsavedChanges(false);
       setEditorMode('editing');
 
       // Reset history for loaded project
-      setHistory([project.project_data.clips || []]);
+      setHistory([{
+        clips: projectData.clips || [],
+        textOverlays: projectData.textOverlays || [],
+      }]);
       setHistoryIndex(0);
 
+      // Reset text overlay selection
+      setSelectedTextId(null);
+      setIsTextPanelOpen(false);
+
       // Load first clip into video player
-      if (project.project_data.clips?.length > 0 && videoRef.current) {
-        const firstClip = project.project_data.clips[0];
+      if (projectData.clips?.length > 0 && videoRef.current) {
+        const firstClip = projectData.clips[0];
         videoRef.current.src = firstClip.sourceUrl;
         videoRef.current.load();
         setPlayback({
@@ -222,6 +235,9 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
     setCurrentProject(null);
     setProjectName('Untitled Project');
     setClips([]);
+    setTextOverlays([]);
+    setSelectedTextId(null);
+    setIsTextPanelOpen(false);
     setPlayback({
       playing: false,
       currentTime: 0,
@@ -241,9 +257,9 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
     setEditorMode('projects');
   };
 
-  // Auto-save when clips change (debounced)
+  // Auto-save when clips or textOverlays change (debounced)
   useEffect(() => {
-    if (!user || clips.length === 0) return;
+    if (!user || (clips.length === 0 && textOverlays.length === 0)) return;
 
     setHasUnsavedChanges(true);
 
@@ -262,11 +278,11 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
         clearTimeout(autoSaveTimeoutRef.current);
       }
     };
-  }, [clips, user]);
+  }, [clips, textOverlays, user]);
 
   // Save project to database
   const saveProject = async () => {
-    if (!user || clips.length === 0) return;
+    if (!user || (clips.length === 0 && textOverlays.length === 0)) return;
 
     setIsSaving(true);
 
@@ -276,6 +292,7 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
         const updated = await updateProject(currentProject.id, {
           name: projectName,
           clips,
+          textOverlays,
         });
         if (updated) {
           setCurrentProject(updated);
@@ -288,7 +305,8 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
           user.id,
           selectedCompany?.id || null,
           projectName,
-          clips
+          clips,
+          textOverlays
         );
         if (created) {
           setCurrentProject(created);
@@ -340,6 +358,66 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
   const totalDuration = clips.length > 0
     ? Math.max(...clips.map(clip => getClipEndTime(clip)))
     : 0;
+
+  // Add text overlay handler (must be after totalDuration is defined)
+  const handleAddTextOverlay = useCallback(() => {
+    const duration = Math.min(3, Math.max(0.5, totalDuration - playback.currentTime));
+    const newOverlay = createTextOverlay(playback.currentTime, duration > 0 ? duration : 3);
+    setTextOverlays(prev => [...prev, newOverlay]);
+    setSelectedTextId(newOverlay.id);
+    setIsTextPanelOpen(true);
+  }, [playback.currentTime, totalDuration]);
+
+  // Keyboard shortcuts for Undo/Redo and Add Text
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Escape to deselect text and close panel
+      if (e.key === 'Escape') {
+        setSelectedTextId(null);
+        setIsTextPanelOpen(false);
+        return;
+      }
+
+      // Delete selected text overlay
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedTextId) {
+        // Don't delete if user is typing in an input
+        if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') {
+          return;
+        }
+        e.preventDefault();
+        setTextOverlays(prev => prev.filter(t => t.id !== selectedTextId));
+        setSelectedTextId(null);
+        return;
+      }
+
+      // Check for Ctrl+T or Cmd+T for adding text
+      if ((e.ctrlKey || e.metaKey) && e.key === 't') {
+        e.preventDefault();
+        handleAddTextOverlay();
+        return;
+      }
+
+      // Check for Ctrl+Z (Windows/Linux) or Cmd+Z (Mac)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          // Ctrl+Shift+Z or Cmd+Shift+Z = Redo
+          handleRedo();
+        } else {
+          // Ctrl+Z or Cmd+Z = Undo
+          handleUndo();
+        }
+      }
+      // Ctrl+Y for Redo (Windows alternative)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleUndo, handleRedo, handleAddTextOverlay, selectedTextId]);
 
   // Find which clip is active at current time
   const findActiveClip = useCallback((time: number): EditorClip | null => {
@@ -686,15 +764,49 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
     }));
   }, []);
 
-  // Clear all clips
+  // Clear all clips and text overlays
   const handleClearAll = useCallback(() => {
     setClips([]);
+    setTextOverlays([]);
+    setSelectedTextId(null);
+    setIsTextPanelOpen(false);
     setPlayback({
       playing: false,
       currentTime: 0,
       activeClipId: null,
     });
   }, []);
+
+  // Text overlay handlers
+  const handleUpdateTextOverlay = useCallback((id: string, updates: Partial<TextOverlay>) => {
+    setTextOverlays(prev => prev.map(overlay =>
+      overlay.id === id ? { ...overlay, ...updates } : overlay
+    ));
+  }, []);
+
+  const handleDeleteTextOverlay = useCallback((id: string) => {
+    setTextOverlays(prev => prev.filter(overlay => overlay.id !== id));
+    if (selectedTextId === id) {
+      setSelectedTextId(null);
+    }
+  }, [selectedTextId]);
+
+  const handleDuplicateTextOverlay = useCallback((id: string) => {
+    const overlay = textOverlays.find(o => o.id === id);
+    if (!overlay) return;
+
+    const newOverlay: TextOverlay = {
+      ...overlay,
+      id: `text_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      startTime: overlay.startTime + overlay.duration, // Place after original
+      position: {
+        x: Math.min(overlay.position.x + 5, 100), // Slight offset
+        y: Math.min(overlay.position.y + 5, 100),
+      },
+    };
+    setTextOverlays(prev => [...prev, newOverlay]);
+    setSelectedTextId(newOverlay.id);
+  }, [textOverlays]);
 
   // Open export modal (shows options first)
   const handleExport = useCallback(() => {
@@ -729,6 +841,50 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
     });
 
     try {
+      // Get the actual rendered video dimensions for proper text scaling
+      // The video element with object-contain shows the actual video size
+      let previewDimensions = { width: 400, height: 711 }; // Fallback for 9:16 aspect ratio
+
+      if (videoRef.current && previewContainerRef.current) {
+        const video = videoRef.current;
+        const container = previewContainerRef.current;
+
+        // Get the actual video dimensions
+        const videoNaturalWidth = video.videoWidth || 1080;
+        const videoNaturalHeight = video.videoHeight || 1920;
+        const videoAspectRatio = videoNaturalWidth / videoNaturalHeight;
+
+        // Get container dimensions
+        const containerWidth = container.offsetWidth;
+        const containerHeight = container.offsetHeight;
+        const containerAspectRatio = containerWidth / containerHeight;
+
+        // Calculate the actual rendered video size within the container (object-contain)
+        let renderedWidth: number;
+        let renderedHeight: number;
+
+        if (videoAspectRatio > containerAspectRatio) {
+          // Video is wider than container - width-constrained
+          renderedWidth = containerWidth;
+          renderedHeight = containerWidth / videoAspectRatio;
+        } else {
+          // Video is taller than container - height-constrained
+          renderedHeight = containerHeight;
+          renderedWidth = containerHeight * videoAspectRatio;
+        }
+
+        previewDimensions = {
+          width: Math.round(renderedWidth),
+          height: Math.round(renderedHeight),
+        };
+
+        console.log('[VideoEditor] Video natural size:', videoNaturalWidth, 'x', videoNaturalHeight);
+        console.log('[VideoEditor] Container size:', containerWidth, 'x', containerHeight);
+        console.log('[VideoEditor] Rendered video size:', previewDimensions.width, 'x', previewDimensions.height);
+      }
+
+      console.log('[VideoEditor] Preview dimensions for export:', previewDimensions);
+
       // Server-side export: always saves to library, returns blob for download
       const blob = await exportProject(
         clips,
@@ -743,7 +899,9 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
         },
         user?.id,
         selectedCompany?.id || null,
-        projectName
+        projectName,
+        textOverlays,
+        previewDimensions
       );
 
       console.log('[VideoEditor] Export complete, blob size:', blob.size, 'bytes');
@@ -951,6 +1109,32 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
             Add Clips
           </Button>
 
+          {/* Add Text button */}
+          <Button
+            onClick={handleAddTextOverlay}
+            className="bg-purple-600/20 hover:bg-purple-600/30 text-purple-400"
+            title="Add Text (Cmd+T)"
+          >
+            <Type className="w-4 h-4 mr-2" />
+            Add Text
+          </Button>
+
+          {/* Text Panel Toggle */}
+          {textOverlays.length > 0 && (
+            <Button
+              onClick={() => setIsTextPanelOpen(!isTextPanelOpen)}
+              variant="outline"
+              className={`border-purple-500/50 ${isTextPanelOpen ? 'bg-purple-600/20 text-purple-400' : 'text-purple-400'}`}
+              title="Toggle Text Panel"
+            >
+              {isTextPanelOpen ? (
+                <PanelRightClose className="w-4 h-4" />
+              ) : (
+                <PanelRightOpen className="w-4 h-4" />
+              )}
+            </Button>
+          )}
+
           {clips.length > 0 && (
             <>
               <Button
@@ -979,7 +1163,10 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
         {/* Preview Section */}
         <Card className="cosmic-card border-0 overflow-hidden">
-          <div className="aspect-video bg-black/50 relative flex items-center justify-center">
+          <div
+            ref={previewContainerRef}
+            className="aspect-video bg-black/50 relative flex items-center justify-center"
+          >
             {clips.length === 0 ? (
               <div className="text-center text-gray-400">
                 <Film className="w-16 h-16 mx-auto mb-4 opacity-50" />
@@ -999,6 +1186,21 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
                   <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                     <p className="text-gray-400">No clip at current position</p>
                   </div>
+                )}
+
+                {/* Text Overlay Preview */}
+                {textOverlays.length > 0 && (
+                  <TextOverlayPreview
+                    overlays={textOverlays}
+                    currentTime={playback.currentTime}
+                    selectedOverlayId={selectedTextId}
+                    onSelectOverlay={(id) => {
+                      setSelectedTextId(id);
+                      if (id) setIsTextPanelOpen(true);
+                    }}
+                    onUpdateOverlay={handleUpdateTextOverlay}
+                    videoRef={videoRef}
+                  />
                 )}
               </>
             )}
@@ -1154,6 +1356,13 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
           onSplitClip={handleSplitClip}
           onUndo={handleUndo}
           canUndo={canUndo}
+          textOverlays={textOverlays}
+          selectedTextId={selectedTextId}
+          onSelectText={(id) => {
+            setSelectedTextId(id);
+            if (id) setIsTextPanelOpen(true);
+          }}
+          onUpdateText={handleUpdateTextOverlay}
         />
       </Card>
 
@@ -1181,6 +1390,24 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
         exportState={exportState}
         showOptions={true}
         onStartExport={handleStartExport}
+      />
+
+      {/* Text Overlay Panel (Drawer) */}
+      <TextOverlayPanel
+        isOpen={isTextPanelOpen}
+        onClose={() => setIsTextPanelOpen(false)}
+        overlays={textOverlays}
+        selectedOverlayId={selectedTextId}
+        onSelectOverlay={setSelectedTextId}
+        onAddOverlay={(overlay) => {
+          setTextOverlays(prev => [...prev, overlay]);
+          setSelectedTextId(overlay.id);
+        }}
+        onUpdateOverlay={handleUpdateTextOverlay}
+        onDeleteOverlay={handleDeleteTextOverlay}
+        onDuplicateOverlay={handleDuplicateTextOverlay}
+        currentTime={playback.currentTime}
+        totalDuration={totalDuration}
       />
     </div>
   );

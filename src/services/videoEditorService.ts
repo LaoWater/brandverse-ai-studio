@@ -4,7 +4,7 @@
 // Uses Cloud Run media-processing-service for lossless FFmpeg operations
 // ============================================
 
-import type { EditorClip, ExportStage } from '@/types/editor';
+import type { EditorClip, ExportStage, TextOverlay, TextStyle } from '@/types/editor';
 import { getEffectiveDuration } from '@/types/editor';
 
 /**
@@ -20,6 +20,18 @@ const MEDIA_PROCESSING_SERVICE_URL = import.meta.env.VITE_MEDIA_PROCESSING_URL |
 export type ProgressCallback = (progress: number, stage: ExportStage, message?: string) => void;
 
 /**
+ * Text overlay export format for the media processing service
+ */
+interface TextOverlayExport {
+  id: string;
+  startTime: number;
+  duration: number;
+  text: string;
+  position: { x: number; y: number };
+  style: TextStyle;
+}
+
+/**
  * Export request payload for the media processing service
  */
 interface ExportRequest {
@@ -31,6 +43,8 @@ interface ExportRequest {
     trimStart: number;
     trimEnd: number;
   }[];
+  textOverlays?: TextOverlayExport[];
+  previewDimensions?: { width: number; height: number }; // Dimensions of preview container in web editor
   userId: string;
   companyId?: string;
   projectName?: string;
@@ -58,9 +72,11 @@ export const exportProject = async (
   onProgress?: ProgressCallback,
   userId?: string,
   companyId?: string | null,
-  projectName?: string
+  projectName?: string,
+  textOverlays?: TextOverlay[],
+  previewDimensions?: { width: number; height: number }
 ): Promise<Blob> => {
-  console.log('[VideoEditor] Starting server-side export with', clips.length, 'clips');
+  console.log('[VideoEditor] Starting server-side export with', clips.length, 'clips and', textOverlays?.length || 0, 'text overlays');
 
   if (clips.length === 0) {
     throw new Error('No clips to export');
@@ -76,6 +92,22 @@ export const exportProject = async (
   onProgress?.(5, 'preparing', 'Preparing export request...');
 
   try {
+    // Build text overlays export format
+    const textOverlaysExport: TextOverlayExport[] | undefined = textOverlays?.map(overlay => {
+      console.log('[VideoEditor] Exporting overlay:', overlay.id);
+      console.log('[VideoEditor]   Text:', overlay.text);
+      console.log('[VideoEditor]   Position:', overlay.position);
+      console.log('[VideoEditor]   Style:', JSON.stringify(overlay.style, null, 2));
+      return {
+        id: overlay.id,
+        startTime: overlay.startTime,
+        duration: overlay.duration,
+        text: overlay.text,
+        position: overlay.position,
+        style: overlay.style,
+      };
+    });
+
     // Build request payload
     const request: ExportRequest = {
       clips: sortedClips.map(clip => ({
@@ -86,10 +118,14 @@ export const exportProject = async (
         trimStart: clip.trimStart,
         trimEnd: clip.trimEnd,
       })),
+      textOverlays: textOverlaysExport,
+      previewDimensions: previewDimensions,
       userId: userId || 'anonymous',
       companyId: companyId || undefined,
       projectName: projectName || 'Exported Video',
     };
+
+    console.log('[VideoEditor] Preview dimensions:', previewDimensions);
 
     console.log('[VideoEditor] Sending export request to:', MEDIA_PROCESSING_SERVICE_URL);
     onProgress?.(10, 'downloading-videos', 'Sending to processing server...');

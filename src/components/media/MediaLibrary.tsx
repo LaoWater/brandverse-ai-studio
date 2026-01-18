@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Image, Video, Heart, Grid3x3, Loader2, Link2 } from 'lucide-react';
+import { Image, Video, Heart, Grid3x3, Loader2, Link2, X, Trash2, CheckSquare } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +19,8 @@ import MediaGrid from './MediaGrid';
 import MediaFiltersComponent from './MediaFilters';
 import MediaPreviewModal from './MediaPreviewModal';
 import ImportVideoDialog from './ImportVideoDialog';
+import { Button } from '@/components/ui/button';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -56,6 +58,10 @@ const MediaLibrary = ({
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [showAllCompanies, setShowAllCompanies] = useState(isStudioContext); // Default to true for Studio, false for Post
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+
+  // Multi-select state
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Infinite scroll state
   const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
@@ -169,6 +175,37 @@ const MediaLibrary = ({
     },
   });
 
+  // Bulk delete mutation
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (mediaIds: string[]) => {
+      const mediaToDelete = allMedia.filter((m) => mediaIds.includes(m.id));
+      const results = await Promise.all(
+        mediaToDelete.map((media) =>
+          deleteMediaFile(media.id, media.storage_path, media.file_type)
+        )
+      );
+      const successCount = results.filter((r) => r.success).length;
+      return { successCount, totalCount: mediaIds.length };
+    },
+    onSuccess: ({ successCount, totalCount }) => {
+      queryClient.invalidateQueries({ queryKey: ['mediaLibrary'] });
+      setSelectedIds(new Set());
+      setIsSelectionMode(false);
+      toast({
+        title: 'Deleted',
+        description: `Successfully deleted ${successCount} of ${totalCount} items`,
+        className: 'bg-green-600/90 border-green-600 text-white',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete some media',
+        variant: 'destructive',
+      });
+    },
+  });
+
   // Handlers
   const handleToggleFavorite = (id: string, isFavorite: boolean) => {
     favoriteMutation.mutate({ id, isFavorite });
@@ -226,6 +263,37 @@ const MediaLibrary = ({
 
   const handleFiltersChange = (newFilters: Filters) => {
     setFilters(newFilters);
+  };
+
+  // Selection handlers
+  const handleToggleSelection = (id: string) => {
+    setSelectedIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIds.size === filteredMedia.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredMedia.map((m) => m.id)));
+    }
+  };
+
+  const handleCancelSelection = () => {
+    setSelectedIds(new Set());
+    setIsSelectionMode(false);
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedIds.size === 0) return;
+    bulkDeleteMutation.mutate(Array.from(selectedIds));
   };
 
   // Get counts for tabs
@@ -303,6 +371,73 @@ const MediaLibrary = ({
           resultsCount={filteredMedia.length}
         />
 
+        {/* Selection Toolbar */}
+        <AnimatePresence>
+          {isSelectionMode && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="flex items-center justify-between gap-4 p-4 mb-4 rounded-lg bg-primary/10 border border-primary/30"
+            >
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-white">
+                  <strong>{selectedIds.size}</strong> of {filteredMedia.length} selected
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSelectAll}
+                  className="text-primary hover:text-primary hover:bg-primary/20"
+                >
+                  <CheckSquare className="w-4 h-4 mr-2" />
+                  {selectedIds.size === filteredMedia.length ? 'Deselect All' : 'Select All'}
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleBulkDelete}
+                  disabled={selectedIds.size === 0 || bulkDeleteMutation.isPending}
+                  className="gap-2"
+                >
+                  {bulkDeleteMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
+                  Delete ({selectedIds.size})
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCancelSelection}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <X className="w-4 h-4 mr-1" />
+                  Cancel
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Select Mode Toggle Button - shown when not in selection mode */}
+        {!isSelectionMode && filteredMedia.length > 0 && (
+          <div className="flex justify-end mb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsSelectionMode(true)}
+              className="border-primary/30 text-gray-300 hover:text-white hover:bg-primary/20"
+            >
+              <CheckSquare className="w-4 h-4 mr-2" />
+              Select
+            </Button>
+          </div>
+        )}
+
         {/* Content */}
         <TabsContent value={activeTab} className="mt-6 card-enter">
           <MediaGrid
@@ -313,6 +448,9 @@ const MediaLibrary = ({
             onDownload={handleDownload}
             onView={handleView}
             onCreateNew={onCreateNew}
+            isSelectionMode={isSelectionMode}
+            selectedIds={selectedIds}
+            onToggleSelection={handleToggleSelection}
           />
 
           {/* Infinite scroll sentinel & loading indicator */}

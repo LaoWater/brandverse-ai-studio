@@ -12,6 +12,9 @@ interface MediaGridProps {
   onDownload: (media: MediaFile) => void;
   onView: (media: MediaFile) => void;
   onCreateNew?: () => void;
+  isSelectionMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelection?: (id: string) => void;
 }
 
 const MediaGrid = ({
@@ -22,6 +25,9 @@ const MediaGrid = ({
   onDownload,
   onView,
   onCreateNew,
+  isSelectionMode = false,
+  selectedIds = new Set(),
+  onToggleSelection,
 }: MediaGridProps) => {
   // Loading skeleton
   if (isLoading) {
@@ -121,6 +127,9 @@ const MediaGrid = ({
               onDelete={onDelete}
               onDownload={onDownload}
               onView={onView}
+              isSelectionMode={isSelectionMode}
+              isSelected={selectedIds.has(item.id)}
+              onToggleSelection={onToggleSelection}
             />
           </motion.div>
         ))}

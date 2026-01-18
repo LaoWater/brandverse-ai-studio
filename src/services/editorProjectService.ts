@@ -4,19 +4,50 @@
 // ============================================
 
 import { supabase } from '@/integrations/supabase/client';
-import type { EditorClip } from '@/types/editor';
+import type { EditorClip, TextOverlay } from '@/types/editor';
+
+/**
+ * Current project data schema version
+ * Increment when making breaking changes to ProjectData structure
+ */
+const CURRENT_PROJECT_VERSION = 2;
 
 /**
  * Project data structure stored in JSONB
+ * Version 2: Added textOverlays support
  */
 export interface ProjectData {
   clips: EditorClip[];
+  textOverlays: TextOverlay[];  // Added in v2
   settings?: {
     aspectRatio?: string;
     resolution?: string;
   };
-  version: number; // Schema version for future migrations
+  version: number; // Schema version for migrations
 }
+
+/**
+ * Migrate project data to current version
+ * Handles backwards compatibility for older project formats
+ */
+export const migrateProjectData = (data: any): ProjectData => {
+  // Handle null or undefined
+  if (!data) {
+    return {
+      clips: [],
+      textOverlays: [],
+      version: CURRENT_PROJECT_VERSION,
+    };
+  }
+
+  // Version 1 -> 2: Add textOverlays array
+  if (!data.version || data.version < 2) {
+    data.textOverlays = [];
+    data.version = 2;
+  }
+
+  return data as ProjectData;
+};
 
 /**
  * Editor project record from database
@@ -45,12 +76,14 @@ export const createProject = async (
   userId: string,
   companyId: string | null,
   name: string = 'Untitled Project',
-  clips: EditorClip[] = []
+  clips: EditorClip[] = [],
+  textOverlays: TextOverlay[] = []
 ): Promise<EditorProject | null> => {
   try {
     const projectData: ProjectData = {
       clips,
-      version: 1,
+      textOverlays,
+      version: CURRENT_PROJECT_VERSION,
     };
 
     const totalDuration = clips.reduce((sum, clip) => {
@@ -96,6 +129,7 @@ export const updateProject = async (
     name?: string;
     description?: string;
     clips?: EditorClip[];
+    textOverlays?: TextOverlay[];
     status?: 'draft' | 'exported' | 'archived';
     thumbnailUrl?: string | null;
   }
@@ -119,24 +153,36 @@ export const updateProject = async (
       updateData.thumbnail_url = updates.thumbnailUrl;
     }
 
-    if (updates.clips !== undefined) {
+    // Handle clips and/or textOverlays updates
+    if (updates.clips !== undefined || updates.textOverlays !== undefined) {
+      // Fetch current project data to merge with updates
+      const { data: currentProject } = await supabase
+        .from('editor_projects')
+        .select('project_data')
+        .eq('id', projectId)
+        .single();
+
+      const currentData = migrateProjectData(currentProject?.project_data);
+
       const projectData: ProjectData = {
-        clips: updates.clips,
-        version: 1,
+        clips: updates.clips ?? currentData.clips,
+        textOverlays: updates.textOverlays ?? currentData.textOverlays,
+        version: CURRENT_PROJECT_VERSION,
       };
 
-      const totalDuration = updates.clips.reduce((sum, clip) => {
+      const clips = projectData.clips;
+      const totalDuration = clips.reduce((sum, clip) => {
         const effectiveDuration = clip.sourceDuration - clip.trimStart - clip.trimEnd;
         return sum + effectiveDuration;
       }, 0);
 
       updateData.project_data = projectData;
       updateData.total_duration = totalDuration;
-      updateData.clip_count = updates.clips.length;
+      updateData.clip_count = clips.length;
 
       // Update thumbnail from first clip if not explicitly set
-      if (updates.thumbnailUrl === undefined && updates.clips.length > 0) {
-        updateData.thumbnail_url = updates.clips[0].thumbnailUrl;
+      if (updates.thumbnailUrl === undefined && clips.length > 0) {
+        updateData.thumbnail_url = clips[0].thumbnailUrl;
       }
     }
 
@@ -181,7 +227,11 @@ export const getProject = async (projectId: string): Promise<EditorProject | nul
       .update({ last_opened_at: new Date().toISOString() })
       .eq('id', projectId);
 
-    return data as EditorProject;
+    // Migrate project data to current version
+    const project = data as EditorProject;
+    project.project_data = migrateProjectData(project.project_data);
+
+    return project;
   } catch (error) {
     console.error('Error in getProject:', error);
     return null;
@@ -306,7 +356,8 @@ export const duplicateProject = async (
       userId,
       original.company_id,
       name,
-      original.project_data.clips
+      original.project_data.clips,
+      original.project_data.textOverlays
     );
   } catch (error) {
     console.error('Error in duplicateProject:', error);

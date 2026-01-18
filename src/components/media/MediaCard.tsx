@@ -10,6 +10,7 @@ import {
   Image as ImageIcon,
   Clock,
   Sparkles,
+  Check,
 } from 'lucide-react';
 import { MediaFile } from '@/services/mediaStudioService';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,9 @@ interface MediaCardProps {
   onDelete: (id: string) => void;
   onDownload: (media: MediaFile) => void;
   onView: (media: MediaFile) => void;
+  isSelectionMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelection?: (id: string) => void;
 }
 
 const MediaCard = ({
@@ -37,6 +41,9 @@ const MediaCard = ({
   onDelete,
   onDownload,
   onView,
+  isSelectionMode = false,
+  isSelected = false,
+  onToggleSelection,
 }: MediaCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -103,6 +110,14 @@ const MediaCard = ({
     return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
   };
 
+  const handleCardClick = () => {
+    if (isSelectionMode && onToggleSelection) {
+      onToggleSelection(media.id);
+    } else {
+      onView(media);
+    }
+  };
+
   return (
     <motion.div
       ref={cardRef}
@@ -116,12 +131,13 @@ const MediaCard = ({
       className={cn(
         'group relative rounded-lg overflow-hidden transition-all duration-300',
         'media-card-gradient cursor-pointer',
-        'hover:shadow-2xl hover:shadow-primary/30'
+        'hover:shadow-2xl hover:shadow-primary/30',
+        isSelected && 'ring-2 ring-primary ring-offset-2 ring-offset-background'
       )}
     >
       {/* Thumbnail/Preview */}
       <div
-        onClick={() => onView(media)}
+        onClick={handleCardClick}
         className="relative aspect-video bg-background/50 overflow-hidden"
       >
         {/* Loading skeleton */}
@@ -176,7 +192,10 @@ const MediaCard = ({
 
         {/* Video indicator */}
         {isVideo && (
-          <div className="absolute top-3 left-3 flex items-center gap-2">
+          <div className={cn(
+            "absolute top-3 flex items-center gap-2",
+            isSelectionMode ? "left-12" : "left-3"
+          )}>
             <Badge className="bg-accent/90 text-white border-0 flex items-center gap-1">
               <Video className="w-3 h-3" />
               Video
@@ -191,12 +210,37 @@ const MediaCard = ({
         )}
 
         {!isVideo && (
-          <div className="absolute top-3 left-3">
+          <div className={cn(
+            "absolute top-3",
+            isSelectionMode ? "left-12" : "left-3"
+          )}>
             <Badge className="bg-primary/90 text-white border-0 flex items-center gap-1">
               <ImageIcon className="w-3 h-3" />
               Image
             </Badge>
           </div>
+        )}
+
+        {/* Selection checkbox - shown in selection mode */}
+        {isSelectionMode && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleSelection?.(media.id);
+            }}
+            className={cn(
+              'absolute top-3 left-3 z-10 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all',
+              isSelected
+                ? 'bg-primary border-primary text-white'
+                : 'bg-black/60 border-white/60 hover:border-primary'
+            )}
+          >
+            {isSelected && <Check className="w-4 h-4" />}
+          </motion.button>
         )}
 
         {/* Favorite button */}
@@ -207,7 +251,10 @@ const MediaCard = ({
             e.stopPropagation();
             onToggleFavorite(media.id, !media.is_favorite);
           }}
-          className="absolute top-3 right-3 p-2 rounded-full bg-black/60 backdrop-blur-sm hover:bg-black/80 transition-colors"
+          className={cn(
+            "absolute top-3 right-3 p-2 rounded-full bg-black/60 backdrop-blur-sm hover:bg-black/80 transition-colors",
+            isSelectionMode && "opacity-50"
+          )}
         >
           <Heart
             className={cn(
