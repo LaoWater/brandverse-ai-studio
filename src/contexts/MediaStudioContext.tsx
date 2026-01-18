@@ -10,13 +10,31 @@ export type ImageModel =
   | 'imagen-4.0-generate-001'      // Standard - Google Imagen 4
   | 'gpt-image-1.5';               // Ultra - OpenAI GPT Image 1.5
 
-// Video Model Types - Veo 3.1 models
+// Video Model Types - Veo 3.1 and Sora 2 models
 export type VideoModel =
-  | 'veo-3.1-generate-001'         // Standard - High-quality production videos
-  | 'veo-3.1-fast-generate-001';   // Fast - Rapid iterations, A/B testing
+  | 'veo-3.1-generate-001'         // Veo Standard - High-quality production videos
+  | 'veo-3.1-fast-generate-001'    // Veo Fast - Rapid iterations, A/B testing
+  | 'sora-2'                       // Sora 2 - Fast prototyping (max 20s)
+  | 'sora-2-pro';                  // Sora 2 Pro - High-quality with synced audio (max 90s)
 
-// Video Generation Modes (Veo 3.1 official)
-export type VideoGenerationMode = 'text-to-video' | 'image-to-video' | 'interpolation' | 'extend-video';
+// Helper to check if a model is Sora
+export const isSoraModel = (model: VideoModel): boolean =>
+  model === 'sora-2' || model === 'sora-2-pro';
+
+// Helper to check if a model is Veo
+export const isVeoModel = (model: VideoModel): boolean =>
+  model === 'veo-3.1-generate-001' || model === 'veo-3.1-fast-generate-001';
+
+// Video Generation Modes
+// Veo 3.1: text-to-video, image-to-video, interpolation, extend-video
+// Sora 2: text-to-video, image-to-video, remix
+export type VideoGenerationMode = 'text-to-video' | 'image-to-video' | 'interpolation' | 'extend-video' | 'remix';
+
+// Sora-specific resolution type (different from Veo)
+export type SoraResolution = '1280x720' | '720x1280' | '1792x1024' | '1024x1792';
+
+// Sora-specific aspect ratios (derived from resolutions)
+export type SoraAspectRatio = '16:9' | '9:16' | '7:4' | '4:7';
 
 // Video Resolution (Veo 3.1 official)
 export type VideoResolution = '720p' | '1080p' | '4k';
@@ -78,6 +96,13 @@ export interface MediaStudioState {
   sourceVideoGcsUri: string | null; // GCS URI of the video to extend (valid for 2 days)
   sourceVideoPreview: string | null; // Preview URL for UI display
 
+  // Sora-specific settings
+  soraResolution: SoraResolution;    // Sora uses pixel dimensions, not quality names
+  soraDuration: number;              // 4, 8, or 12 seconds (same for both Sora 2 and Sora 2 Pro)
+  // Note: Sora image-to-video uses the existing inputVideoImage field (shared with Veo)
+  soraRemixVideoId: string | null;   // ID of video to remix (Sora-specific feature)
+  soraRemixVideoPreview: string | null; // Preview URL of video being remixed
+
   // Generation state
   isGenerating: boolean;
   generationProgress: number;
@@ -114,6 +139,13 @@ interface MediaStudioContextType extends MediaStudioState {
   // For extend-video mode
   setSourceVideoForExtension: (gcsUri: string, previewUrl: string) => void;
   clearSourceVideo: () => void;
+
+  // Sora-specific setters
+  setSoraResolution: (resolution: SoraResolution) => void;
+  setSoraDuration: (duration: number) => void;
+  // Note: Sora image-to-video uses setInputVideoImage (shared with Veo)
+  setSoraRemixVideo: (videoId: string, previewUrl: string) => void;
+  clearSoraRemixVideo: () => void;
 
   // Common setters
   setPrompt: (prompt: string) => void;
@@ -187,6 +219,13 @@ const initialState: MediaStudioState = {
   videoReferenceImagePreviews: [],
   sourceVideoGcsUri: null,
   sourceVideoPreview: null,
+
+  // Sora-specific settings
+  soraResolution: '1280x720',       // Default to 720p landscape
+  soraDuration: 4,                   // Default to 4 seconds (Sora 2 default)
+  // Note: Sora image-to-video uses inputVideoImage (shared with Veo)
+  soraRemixVideoId: null,
+  soraRemixVideoPreview: null,
 
   // Generation state
   isGenerating: false,
@@ -450,6 +489,42 @@ export const MediaStudioProvider: React.FC<{ children: ReactNode }> = ({ childre
     }));
   };
 
+  // Sora-specific setters
+  const setSoraResolution = (resolution: SoraResolution) => {
+    setState(prev => ({ ...prev, soraResolution: resolution }));
+  };
+
+  const setSoraDuration = (duration: number) => {
+    // Both Sora 2 and Sora 2 Pro: 4, 8, 12 seconds
+    const validDurations = [4, 8, 12];
+
+    // If duration is valid, use it; otherwise use the first valid option
+    const validDuration = validDurations.includes(duration)
+      ? duration
+      : validDurations[0];
+
+    setState(prev => ({ ...prev, soraDuration: validDuration }));
+  };
+
+  const setSoraRemixVideo = (videoId: string, previewUrl: string) => {
+    setState(prev => ({
+      ...prev,
+      soraRemixVideoId: videoId,
+      soraRemixVideoPreview: previewUrl,
+      videoGenerationMode: 'remix', // Auto-switch to remix mode
+    }));
+  };
+
+  const clearSoraRemixVideo = () => {
+    setState(prev => ({
+      ...prev,
+      soraRemixVideoId: null,
+      soraRemixVideoPreview: null,
+    }));
+  };
+
+  // Note: Sora image-to-video uses setInputVideoImage/clearVideoFrames (shared with Veo)
+
   // Fetch image from URL and add as reference image (for image generation)
   const addReferenceImageFromUrl = async (url: string, fileName?: string): Promise<void> => {
     try {
@@ -546,6 +621,11 @@ export const MediaStudioProvider: React.FC<{ children: ReactNode }> = ({ childre
     clearVideoFrames,
     setSourceVideoForExtension,
     clearSourceVideo,
+    setSoraResolution,
+    setSoraDuration,
+    // Note: Sora image-to-video uses setInputVideoImage (shared with Veo)
+    setSoraRemixVideo,
+    clearSoraRemixVideo,
     setPrompt,
     addReferenceImage,
     removeReferenceImage,

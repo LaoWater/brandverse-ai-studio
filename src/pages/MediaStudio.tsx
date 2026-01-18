@@ -3,7 +3,7 @@ import React from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
-import { MediaStudioProvider, useMediaStudio } from '@/contexts/MediaStudioContext';
+import { MediaStudioProvider, useMediaStudio, isSoraModel } from '@/contexts/MediaStudioContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import MediaTypeSwitcher from '@/components/media/MediaTypeSwitcher';
@@ -17,6 +17,7 @@ import ReferenceImageUpload from '@/components/media/ReferenceImageUpload';
 import ReferenceImageLibrary from '@/components/media/ReferenceImageLibrary';
 import KeyframeImageUpload from '@/components/media/KeyframeImageUpload';
 import VideoPromptGuide from '@/components/media/VideoPromptGuide';
+import SoraFormatControls from '@/components/media/SoraFormatControls';
 import MediaLibrary from '@/components/media/MediaLibrary';
 import { VideoEditor } from '@/components/editor';
 import { Button } from '@/components/ui/button';
@@ -64,6 +65,11 @@ const MediaStudioContent = () => {
     lastFrameImage,
     inputVideoImage,
     sourceVideoGcsUri,
+    // Sora-specific state
+    soraResolution,
+    soraDuration,
+    // Note: Sora image-to-video uses inputVideoImage (shared with Veo)
+    soraRemixVideoId,
     isGenerating,
     generationProgress,
     currentStage,
@@ -98,12 +104,19 @@ const MediaStudioContent = () => {
   const [generationError, setGenerationError] = useState<GenerationError | string | null>(null);
 
   // Calculate generation cost based on current settings
+  // For Sora models, use soraDuration; for Veo models, use videoDuration
+  const effectiveVideoDuration = mediaType === 'video' && isSoraModel(selectedVideoModel)
+    ? soraDuration
+    : videoDuration;
+
   const generationCost = calculateMediaStudioCredits(
     mediaType === 'image' ? selectedImageModel : selectedVideoModel,
     imageSize,
     numberOfImages,
     mediaType,
-    videoDuration
+    effectiveVideoDuration,
+    // Pass Sora resolution for Sora 2 Pro pricing (720p vs 1080p)
+    isSoraModel(selectedVideoModel) ? soraResolution : undefined
   );
 
   // Generation mutation
@@ -143,48 +156,66 @@ const MediaStudioContent = () => {
           }
         }
       } else {
-        // Upload frame images for video generation based on mode
-        if (videoGenerationMode === 'image-to-video' && inputVideoImage && user) {
-          console.log('[MediaStudio] Uploading input image for image-to-video...');
-          inputImageUrl = await uploadVideoFrameImage(inputVideoImage, user.id, 'input');
-          if (!inputImageUrl) {
-            throw new Error('Failed to upload input image. Please try again.');
-          }
-          console.log('[MediaStudio] Input image uploaded:', inputImageUrl);
-        } else if (videoGenerationMode === 'interpolation' && user) {
-          // Interpolation mode: upload both first and last frames
-          if (firstFrameImage) {
-            console.log('[MediaStudio] Uploading start image for interpolation...');
-            firstFrameUrl = await uploadVideoFrameImage(firstFrameImage, user.id, 'first');
-            if (!firstFrameUrl) {
-              throw new Error('Failed to upload start image. Please try again.');
-            }
-            console.log('[MediaStudio] Start image uploaded:', firstFrameUrl);
-          }
-          if (lastFrameImage) {
-            console.log('[MediaStudio] Uploading end image for interpolation...');
-            lastFrameUrl = await uploadVideoFrameImage(lastFrameImage, user.id, 'last');
-            if (!lastFrameUrl) {
-              throw new Error('Failed to upload end image. Please try again.');
-            }
-            console.log('[MediaStudio] End image uploaded:', lastFrameUrl);
-          }
-        }
+        // Check if this is a Sora model
+        const usingSora = isSoraModel(selectedVideoModel);
 
-        // Upload video reference images (Veo 3.1 exclusive feature, max 3)
-        if (videoReferenceImages.length > 0 && user) {
-          console.log('[MediaStudio] Uploading video reference images...', videoReferenceImages.length);
-          for (const image of videoReferenceImages) {
-            const uploadedUrl = await uploadReferenceImage(image, user.id);
-            console.log('[MediaStudio] Video reference image uploaded:', uploadedUrl);
-            if (uploadedUrl) {
-              referenceImageUrls.push(uploadedUrl);
+        if (usingSora) {
+          // Sora-specific: Upload input image for image-to-video mode (uses shared inputVideoImage field)
+          if (videoGenerationMode === 'image-to-video' && inputVideoImage && user) {
+            console.log('[MediaStudio] Uploading Sora input image (from shared inputVideoImage)...');
+            inputImageUrl = await uploadVideoFrameImage(inputVideoImage, user.id, 'input');
+            if (!inputImageUrl) {
+              throw new Error('Failed to upload input image. Please try again.');
+            }
+            console.log('[MediaStudio] Sora input image uploaded:', inputImageUrl);
+          }
+        } else {
+          // Veo-specific: Upload frame images based on mode
+          if (videoGenerationMode === 'image-to-video' && inputVideoImage && user) {
+            console.log('[MediaStudio] Uploading input image for image-to-video...');
+            inputImageUrl = await uploadVideoFrameImage(inputVideoImage, user.id, 'input');
+            if (!inputImageUrl) {
+              throw new Error('Failed to upload input image. Please try again.');
+            }
+            console.log('[MediaStudio] Input image uploaded:', inputImageUrl);
+          } else if (videoGenerationMode === 'interpolation' && user) {
+            // Interpolation mode: upload both first and last frames
+            if (firstFrameImage) {
+              console.log('[MediaStudio] Uploading start image for interpolation...');
+              firstFrameUrl = await uploadVideoFrameImage(firstFrameImage, user.id, 'first');
+              if (!firstFrameUrl) {
+                throw new Error('Failed to upload start image. Please try again.');
+              }
+              console.log('[MediaStudio] Start image uploaded:', firstFrameUrl);
+            }
+            if (lastFrameImage) {
+              console.log('[MediaStudio] Uploading end image for interpolation...');
+              lastFrameUrl = await uploadVideoFrameImage(lastFrameImage, user.id, 'last');
+              if (!lastFrameUrl) {
+                throw new Error('Failed to upload end image. Please try again.');
+              }
+              console.log('[MediaStudio] End image uploaded:', lastFrameUrl);
+            }
+          }
+
+          // Upload video reference images (Veo 3.1 exclusive feature, max 3)
+          if (videoReferenceImages.length > 0 && user) {
+            console.log('[MediaStudio] Uploading video reference images...', videoReferenceImages.length);
+            for (const image of videoReferenceImages) {
+              const uploadedUrl = await uploadReferenceImage(image, user.id);
+              console.log('[MediaStudio] Video reference image uploaded:', uploadedUrl);
+              if (uploadedUrl) {
+                referenceImageUrls.push(uploadedUrl);
+              }
             }
           }
         }
       }
 
       console.log(`[MediaStudio] Calling generateMediaWithProgress for ${mediaType}...`);
+
+      // Check if using Sora for video
+      const usingSora = mediaType === 'video' && isSoraModel(selectedVideoModel);
 
       // Generate media with progress
       const result = await generateMediaWithProgress(
@@ -197,19 +228,24 @@ const MediaStudioContent = () => {
           numberOfImages: mediaType === 'image' ? numberOfImages : undefined,
           imageSize: mediaType === 'image' ? imageSize : undefined,
           seed: mediaType === 'image' ? seed : undefined,
-          negativePrompt: mediaType === 'image' ? negativePrompt : (mediaType === 'video' ? videoNegativePrompt : undefined),
+          negativePrompt: mediaType === 'image' ? negativePrompt : (mediaType === 'video' && !usingSora ? videoNegativePrompt : undefined),
           enhancePrompt: mediaType === 'image' ? enhancePrompt : undefined,
           referenceImageUrls: referenceImageUrls.length > 0 ? referenceImageUrls : undefined,
-          // Video-specific (Veo 3.1 official params)
+          // Video-specific (Veo 3.1 official params) - only for Veo models
           videoMode: mediaType === 'video' ? videoGenerationMode : undefined,
-          videoDuration: mediaType === 'video' ? videoDuration : undefined,
-          videoResolution: mediaType === 'video' ? videoResolution : undefined,
-          generateAudio: mediaType === 'video' ? generateAudio : undefined,
-          inputImageUrl: mediaType === 'video' ? inputImageUrl : undefined,
-          firstFrameUrl: mediaType === 'video' ? firstFrameUrl : undefined,
-          lastFrameUrl: mediaType === 'video' ? lastFrameUrl : undefined,
-          // For extend-video mode
-          sourceVideoGcsUri: mediaType === 'video' && videoGenerationMode === 'extend-video' ? sourceVideoGcsUri || undefined : undefined,
+          videoDuration: mediaType === 'video' && !usingSora ? videoDuration : undefined,
+          videoResolution: mediaType === 'video' && !usingSora ? videoResolution : undefined,
+          generateAudio: mediaType === 'video' && !usingSora ? generateAudio : undefined,
+          inputImageUrl: mediaType === 'video' && !usingSora ? inputImageUrl : undefined,
+          firstFrameUrl: mediaType === 'video' && !usingSora ? firstFrameUrl : undefined,
+          lastFrameUrl: mediaType === 'video' && !usingSora ? lastFrameUrl : undefined,
+          // For extend-video mode (Veo only)
+          sourceVideoGcsUri: mediaType === 'video' && !usingSora && videoGenerationMode === 'extend-video' ? sourceVideoGcsUri || undefined : undefined,
+          // Sora-specific parameters
+          soraResolution: usingSora ? soraResolution : undefined,
+          soraDuration: usingSora ? soraDuration : undefined,
+          soraInputReferenceUrl: usingSora ? inputImageUrl : undefined, // Use the uploaded URL
+          soraRemixVideoId: usingSora && videoGenerationMode === 'remix' ? soraRemixVideoId || undefined : undefined,
           // Common
           userId: user.id,
           companyId: selectedCompany?.id,
@@ -559,8 +595,15 @@ const MediaStudioContent = () => {
                 ) : (
                   <>
                     <VideoModelSelector />
-                    <VideoGenerationModeSelector />
-                    <VideoFormatControls />
+                    {/* Show Sora-specific controls for Sora models, Veo controls for Veo models */}
+                    {isSoraModel(selectedVideoModel) ? (
+                      <SoraFormatControls />
+                    ) : (
+                      <>
+                        <VideoGenerationModeSelector />
+                        <VideoFormatControls />
+                      </>
+                    )}
                   </>
                 )}
               </Card>

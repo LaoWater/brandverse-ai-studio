@@ -110,34 +110,55 @@ export const IMAGE_CREDITS = {
 } as const;
 
 // Video generation credits per second by model
+// Base: 1 credit = $0.01, with 25% markup on API costs
 export const VIDEO_CREDITS_PER_SECOND = {
-  // Veo 3.1 Standard: $0.40/sec
-  'veo-3.1-generate-001': 46,
-  // Veo 3.1 Fast: $0.15/sec
-  'veo-3.1-fast-generate-001': 17,
-  // Sora 2: $0.10/sec
-  'sora-2': 12,
-  // Sora 2 Pro: $0.30/sec
-  'sora-2-pro': 35,
-  // Sora 2 Pro Higher Res: $0.50/sec
-  'sora-2-pro-hr': 58,
+  // Veo 3.1 Standard: $0.40/sec × 1.25 = $0.50 → 50 credits/sec
+  'veo-3.1-generate-001': 50,
+  // Veo 3.1 Fast: $0.15/sec × 1.25 = $0.1875 → 19 credits/sec
+  'veo-3.1-fast-generate-001': 19,
+  // Sora 2 (720p only): $0.10/sec × 1.25 = $0.125 → 13 credits/sec
+  'sora-2': 13,
+  // Sora 2 Pro at 720p: $0.30/sec × 1.25 = $0.375 → 38 credits/sec
+  'sora-2-pro': 38,
+  // Sora 2 Pro at 1080p: $0.50/sec × 1.25 = $0.625 → 63 credits/sec
+  'sora-2-pro-1080p': 63,
 } as const;
 
 /**
  * Calculate credits needed for Media Studio generation
  * Based on model, quality/size, number of images, and media type
+ *
+ * @param model - The AI model to use
+ * @param imageSize - Size/quality for images (1K, 2K, 4K)
+ * @param numberOfImages - Number of images to generate
+ * @param mediaType - 'image' or 'video'
+ * @param videoDuration - Duration in seconds (4-8 for Veo, 4/8/12 for Sora)
+ * @param soraResolution - Optional Sora resolution for Pro pricing (720p vs 1080p)
  */
 export const calculateMediaStudioCredits = (
   model: string,
   imageSize: '1K' | '2K' | '4K' = '1K',
   numberOfImages: number = 1,
   mediaType: 'image' | 'video' = 'image',
-  videoDuration: 4 | 6 | 8 = 8
+  videoDuration: number = 8,
+  soraResolution?: string
 ): number => {
   // Handle video generation costs
   if (mediaType === 'video') {
-    const creditsPerSecond = VIDEO_CREDITS_PER_SECOND[model as keyof typeof VIDEO_CREDITS_PER_SECOND]
-      || VIDEO_CREDITS_PER_SECOND['veo-3.1-generate-001'];
+    let creditsPerSecond: number;
+
+    // Special handling for Sora 2 Pro resolution-based pricing
+    if (model === 'sora-2-pro' && soraResolution) {
+      // Check if using 1080p resolution (1792x1024 or 1024x1792)
+      const is1080p = soraResolution === '1792x1024' || soraResolution === '1024x1792';
+      creditsPerSecond = is1080p
+        ? VIDEO_CREDITS_PER_SECOND['sora-2-pro-1080p']
+        : VIDEO_CREDITS_PER_SECOND['sora-2-pro'];
+    } else {
+      creditsPerSecond = VIDEO_CREDITS_PER_SECOND[model as keyof typeof VIDEO_CREDITS_PER_SECOND]
+        || VIDEO_CREDITS_PER_SECOND['veo-3.1-generate-001'];
+    }
+
     return creditsPerSecond * videoDuration;
   }
 

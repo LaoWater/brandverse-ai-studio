@@ -52,7 +52,7 @@ export interface StorageUsage {
 export interface GenerationConfig {
   prompt: string;
   mediaType: 'video' | 'image';
-  model: string;               // API model identifier (e.g., 'gemini-2.5-flash-image', 'veo-3.1-generate-001')
+  model: string;               // API model identifier (e.g., 'gemini-2.5-flash-image', 'veo-3.1-generate-001', 'sora-2-pro')
   aspectRatio: string;         // '1:1', '16:9', '9:16', '3:4', '4:3', '3:2'
 
   // Image-specific
@@ -64,7 +64,7 @@ export interface GenerationConfig {
   referenceImageUrls?: string[]; // Multiple reference images (up to 14 for Gemini 3 Pro, up to 3 for Veo 3.1)
 
   // Video-specific (Veo 3.1 official params)
-  videoMode?: 'text-to-video' | 'image-to-video' | 'interpolation' | 'extend-video';
+  videoMode?: 'text-to-video' | 'image-to-video' | 'interpolation' | 'extend-video' | 'remix';
   videoDuration?: 4 | 6 | 8;   // 8s required for 1080p/4k, reference images, or extension
   videoResolution?: '720p' | '1080p' | '4k'; // 1080p/4k only with 8s duration; 720p ONLY for extension
   generateAudio?: boolean;     // Generate audio with video (default: true)
@@ -73,6 +73,12 @@ export interface GenerationConfig {
   firstFrameUrl?: string;      // For interpolation mode (start frame)
   lastFrameUrl?: string;       // For interpolation mode (end frame)
   sourceVideoGcsUri?: string;  // For extend-video mode (GCS URI of video to extend)
+
+  // Sora-specific settings
+  soraResolution?: '1280x720' | '720x1280' | '1792x1024' | '1024x1792'; // Sora uses pixel dimensions
+  soraDuration?: number;       // 1-20 for sora-2, 1-90 for sora-2-pro
+  soraInputReferenceUrl?: string; // First frame image for Sora image-to-video
+  soraRemixVideoId?: string;   // Video ID to remix (Sora remix feature)
 
   // Common
   userId?: string;             // For tracking
@@ -132,6 +138,20 @@ export interface VideoGenerationAPIPayload {
   user_id?: string;
   company_id?: string;
   // Async mode - returns immediately with operation name for client-side polling
+  async_mode?: boolean;
+}
+
+// API Payload for Sora video generation (OpenAI)
+export interface SoraVideoGenerationAPIPayload {
+  prompt: string;
+  model: 'sora-2' | 'sora-2-pro';
+  mode: 'text-to-video' | 'image-to-video' | 'remix';
+  size: '1280x720' | '720x1280' | '1792x1024' | '1024x1792'; // Sora uses pixel dimensions
+  seconds: number;                  // 1-20 for sora-2, 1-90 for sora-2-pro
+  input_reference_url?: string;     // For image-to-video mode (first frame image URL)
+  remix_video_id?: string;          // For remix mode (ID of video to remix)
+  user_id?: string;
+  company_id?: string;
   async_mode?: boolean;
 }
 
@@ -298,27 +318,94 @@ export const prepareVideoAPIPayload = (config: GenerationConfig): VideoGeneratio
 };
 
 /**
- * Start async video generation - returns immediately with operation name
+ * Helper to check if a model is Sora
+ */
+export const isSoraModel = (model: string): boolean =>
+  model === 'sora-2' || model === 'sora-2-pro';
+
+/**
+ * Prepare API payload for Sora video generation (OpenAI)
+ * Converts frontend config to backend API format
+ * Uses OpenAI's /v1/videos endpoint
+ */
+export const prepareSoraAPIPayload = (config: GenerationConfig): SoraVideoGenerationAPIPayload => {
+  if (!config.videoMode) {
+    throw new Error('Video mode is required for video generation');
+  }
+
+  // Validate mode for Sora (only supports text-to-video, image-to-video, remix)
+  const validSoraModes = ['text-to-video', 'image-to-video', 'remix'];
+  if (!validSoraModes.includes(config.videoMode)) {
+    throw new Error(`Sora only supports modes: ${validSoraModes.join(', ')}`);
+  }
+
+  // Validate and get Sora resolution
+  const size = config.soraResolution || '1280x720';
+  const validSizes = ['1280x720', '720x1280', '1792x1024', '1024x1792'];
+  if (!validSizes.includes(size)) {
+    throw new Error(`Sora only supports resolutions: ${validSizes.join(', ')}`);
+  }
+
+  // Validate duration - both Sora 2 and Sora 2 Pro support 4, 8, 12 seconds
+  const validDurations = [4, 8, 12];
+  const duration = config.soraDuration || 4; // Default to 4 seconds
+
+  if (!validDurations.includes(duration)) {
+    throw new Error(`Duration must be one of ${validDurations.join(', ')} seconds for Sora`);
+  }
+
+  const payload: SoraVideoGenerationAPIPayload = {
+    prompt: config.prompt,
+    model: config.model as 'sora-2' | 'sora-2-pro',
+    mode: config.videoMode as 'text-to-video' | 'image-to-video' | 'remix',
+    size: size as SoraVideoGenerationAPIPayload['size'],
+    seconds: duration,
+  };
+
+  // Image-to-video mode: first frame reference image
+  if (config.videoMode === 'image-to-video' && config.soraInputReferenceUrl) {
+    payload.input_reference_url = config.soraInputReferenceUrl;
+  }
+
+  // Remix mode: video ID to remix
+  if (config.videoMode === 'remix' && config.soraRemixVideoId) {
+    payload.remix_video_id = config.soraRemixVideoId;
+  }
+
+  // Tracking
+  if (config.userId) {
+    payload.user_id = config.userId;
+  }
+
+  if (config.companyId) {
+    payload.company_id = config.companyId;
+  }
+
+  return payload;
+};
+
+/**
+ * Start async video generation for Veo - returns immediately with operation name
  * Use pollVideoStatus to check for completion
  */
-export const startAsyncVideoGeneration = async (
+export const startAsyncVeoGeneration = async (
   config: GenerationConfig,
   onProgress?: (progress: number, stage: string) => void
 ): Promise<AsyncVideoStartResponse> => {
   const payload = prepareVideoAPIPayload(config);
   payload.async_mode = true; // Enable async mode
 
-  console.log('=== ASYNC VIDEO GENERATION START ===');
+  console.log('=== ASYNC VEO GENERATION START ===');
   console.log(JSON.stringify(payload, null, 2));
 
-  onProgress?.(10, 'Initializing video generation...');
+  onProgress?.(10, 'Initializing Veo video generation...');
 
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
     throw new Error("Not authenticated");
   }
 
-  onProgress?.(20, 'Sending request to AI...');
+  onProgress?.(20, 'Sending request to Google AI...');
 
   const response = await fetch(`${SUPABASE_FUNCTION_URL}/generate-media-video`, {
     method: 'POST',
@@ -340,12 +427,75 @@ export const startAsyncVideoGeneration = async (
     throw new Error(result.error || "Failed to start video generation.");
   }
 
-  console.log('=== ASYNC VIDEO GENERATION STARTED ===', result);
+  console.log('=== ASYNC VEO GENERATION STARTED ===', result);
   return result;
 };
 
 /**
+ * Start async video generation for Sora - returns immediately with job ID
+ * Use pollSoraVideoStatus to check for completion
+ */
+export const startAsyncSoraGeneration = async (
+  config: GenerationConfig,
+  onProgress?: (progress: number, stage: string) => void
+): Promise<AsyncVideoStartResponse> => {
+  const payload = prepareSoraAPIPayload(config);
+  (payload as any).async_mode = true; // Enable async mode
+
+  console.log('=== ASYNC SORA GENERATION START ===');
+  console.log(JSON.stringify(payload, null, 2));
+
+  onProgress?.(10, 'Initializing Sora video generation...');
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    throw new Error("Not authenticated");
+  }
+
+  onProgress?.(20, 'Sending request to OpenAI Sora...');
+
+  const response = await fetch(`${SUPABASE_FUNCTION_URL}/generate-sora-video`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: "Sora video generation failed." }));
+    throw new Error(errorData?.error || `Server error: ${response.status}`);
+  }
+
+  const result: AsyncVideoStartResponse = await response.json();
+
+  if (!result.success) {
+    throw new Error(result.error || "Failed to start Sora video generation.");
+  }
+
+  console.log('=== ASYNC SORA GENERATION STARTED ===', result);
+  return result;
+};
+
+/**
+ * Start async video generation - routes to appropriate backend based on model
+ * Use pollVideoStatus to check for completion
+ */
+export const startAsyncVideoGeneration = async (
+  config: GenerationConfig,
+  onProgress?: (progress: number, stage: string) => void
+): Promise<AsyncVideoStartResponse> => {
+  // Route to Sora or Veo based on model
+  if (isSoraModel(config.model)) {
+    return startAsyncSoraGeneration(config, onProgress);
+  }
+  return startAsyncVeoGeneration(config, onProgress);
+};
+
+/**
  * Poll video generation status
+ * Routes to appropriate endpoint based on model (Sora vs Veo)
  * Returns status: 'processing' | 'completed' | 'failed'
  */
 export const pollVideoStatus = async (
@@ -358,7 +508,12 @@ export const pollVideoStatus = async (
     throw new Error("Not authenticated");
   }
 
-  const response = await fetch(`${SUPABASE_FUNCTION_URL}/check-video-status`, {
+  // Route to appropriate status endpoint based on model
+  const endpoint = isSoraModel(model)
+    ? `${SUPABASE_FUNCTION_URL}/check-sora-status`
+    : `${SUPABASE_FUNCTION_URL}/check-video-status`;
+
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
