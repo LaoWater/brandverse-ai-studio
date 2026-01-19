@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Image, Video, Heart, Grid3x3, Loader2, Link2, X, Trash2, CheckSquare } from 'lucide-react';
+import { Image, Video, Heart, Grid3x3, Loader2, Upload, X, Trash2, CheckSquare } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useToast } from '@/hooks/use-toast';
@@ -331,17 +331,17 @@ const MediaLibrary = ({
               <Video className="w-4 h-4 mr-2" />
               Videos ({counts.videos})
             </TabsTrigger>
-            {/* Import button - only visible when on videos tab */}
-            {activeTab === 'videos' && (
+            {/* Import/Upload button - visible on all, images, and videos tabs */}
+            {(activeTab === 'all' || activeTab === 'images' || activeTab === 'videos') && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsImportDialogOpen(true);
                 }}
                 className="ml-1 p-1.5 rounded-md hover:bg-primary/20 text-gray-400 hover:text-primary transition-colors"
-                title="Import external video"
+                title="Upload or import media"
               >
-                <Link2 className="w-4 h-4" />
+                <Upload className="w-4 h-4" />
               </button>
             )}
             <TabsTrigger

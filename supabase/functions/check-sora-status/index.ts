@@ -204,7 +204,9 @@ serve(async (req) => {
     });
 
     // Handle different statuses
-    if (statusData.status === 'queued' || statusData.status === 'processing') {
+    // Sora API returns: 'queued', 'in_progress', 'completed', 'failed'
+    // We normalize 'queued' and 'in_progress' to 'processing' for frontend
+    if (statusData.status === 'queued' || statusData.status === 'processing' || statusData.status === 'in_progress') {
       const response: StatusCheckResponse = {
         success: true,
         status: 'processing',

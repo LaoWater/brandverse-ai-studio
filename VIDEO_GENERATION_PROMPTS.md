@@ -44,36 +44,22 @@ tail, slight delay. Everything feels "floating in a cathedral made of technology
 **FULL VIDEO PROMPT:**
 ```
 [VISUAL]
-Cinematic 4K, shallow depth of field, anamorphic lens characteristics with subtle horizontal
-lens flares. Film grain texture. Color palette: desaturated blues, cold whites from laptop
-screen, deep shadows.
+Cinematic 4K, shallow depth of field, anamorphic lens characteristics with subtle horizontal lens flares. Film grain texture. Color palette: desaturated blues, cold whites from laptop screen, deep shadows.
 
-Scene: Extreme close-up of the founder's exhausted, illuminated only by cold blue laptop
-glow. Eyes bloodshot, slight bags underneath. Camera holds for 2 seconds, then slowly pulls
-back on a dolly track revealing: cluttered desk with 4 empty coffee cups, sticky notes
-everywhere, multiple browser tabs reflected in their glasses. The founder types frantically
-on keyboard, pauses, selects all, deletes. Types again.
+Scene: Extreme close-up of the founder's focused face, illuminated only by cold blue laptop glow. Tired but determined eyes, the look of someone deep in their craft. Camera holds for 2 seconds, then slowly pulls back on a dolly track revealing: cluttered desk with 4 empty coffee cups, sticky notes everywhere, multiple browser tabs reflected in their glasses. 
+The founder types with intensity on keyboard, pauses, selects all, deletes. Types again with renewed purpose.
 
-Wide shot reveals: small apartment at night. Clock on wall shows 2:47 AM. 
-City lights twinkle through window, distant and unreachable. The founder is
-isolated in their pool of blue light. They slump slightly, rub their eyes, then force
-themselves to continue typing.
+Wide shot reveals: small apartment at night. Clock on wall shows 2:47 AM. City lights twinkle through window, a reminder of the world outside. 
+The founder is immersed in their pool of blue light. They pause briefly, stretch their shoulders, then lean back in with focus and continue typing.
 
-Final frame: Wide shot of founder hunched at desk, laptop glow the only light, the weight
-of invisible labor pressing down on them.
+Final frame: Wide shot of founder at desk, laptop glow the only light, fully absorbed in bringing their vision to life.
 
 [AUDIO]
-Music: Single piano note (D3) held with sustain pedal, felt-dampened piano tone. Sparse.
-Lonely. A second note (A3) enters at 4 seconds, creating melancholic interval. Analog
-synth pad fades in underneath - barely audible, creating sense of vast empty space around
-the founder. 70 BPM implied pulse from subtle sub-bass. Key of D minor.
+Music: Single piano note (D3) held with sustain pedal, felt-dampened piano tone. Sparse. Contemplative. A second note (A3) enters at 4 seconds, creating a reflective interval. Analog synth pad fades in underneath - barely audible, creating sense of vast quiet space around the founder. 70 BPM implied pulse from subtle sub-bass. Key of D minor.
 
-Sound Design: Keyboard clicks - mechanical, isolated, echoing slightly as if in empty room.
-Clock ticking (old analog clock, not digital). Distant city hum - traffic, sirens far away. 
-The sounds emphasize silence between them. Large reverb tail on all
-sounds. Everything feels 3AM lonely.
+Sound Design: Keyboard clicks - mechanical, rhythmic, echoing slightly as if in a quiet room. Clock ticking (old analog clock, not digital). Distant city hum - traffic, gentle urban ambiance far away. The sounds emphasize the stillness between them. Large reverb tail on all sounds. Everything feels like a late night creative session.
 
-Voice: None in this segment. Silence speaks.
+Voice: None in this segment. The atmosphere speaks.
 ```
 
 **STARTING IMAGE FOR NEXT SEGMENT:** Wide shot of founder slumped at desk, laptop screen visible, blue glow, 2:47 AM

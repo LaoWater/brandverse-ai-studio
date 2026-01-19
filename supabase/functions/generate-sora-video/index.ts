@@ -15,6 +15,7 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { Image } from "https://deno.land/x/imagescript@1.3.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -78,6 +79,123 @@ const MODEL_SPECS = {
 const VALID_SIZES = ['1280x720', '720x1280', '1792x1024', '1024x1792'];
 
 /**
+ * Parse size string to width and height
+ */
+function parseSize(size: string): { width: number; height: number } {
+  const [width, height] = size.split('x').map(Number);
+  return { width, height };
+}
+
+/**
+ * Resize and crop image to exactly match target dimensions
+ *
+ * Strategy:
+ * 1. Calculate the aspect ratios
+ * 2. If aspect ratios match (within tolerance), just resize
+ * 3. If aspect ratios differ, crop to fit (center crop) then resize
+ *
+ * This ensures the output image exactly matches Sora's required WxH
+ */
+async function resizeImageToTargetSize(
+  imageBlob: Blob,
+  targetSize: string
+): Promise<Blob> {
+  const { width: targetWidth, height: targetHeight } = parseSize(targetSize);
+
+  logStep('Resizing image to target size', {
+    targetWidth,
+    targetHeight,
+    inputSize: imageBlob.size
+  });
+
+  try {
+    // Convert blob to array buffer for ImageScript
+    const arrayBuffer = await imageBlob.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+
+    // Decode the image
+    const image = await Image.decode(uint8Array);
+    const srcWidth = image.width;
+    const srcHeight = image.height;
+
+    logStep('Source image dimensions', { srcWidth, srcHeight });
+
+    // If already exact size, return as-is
+    if (srcWidth === targetWidth && srcHeight === targetHeight) {
+      logStep('Image already at target size, no resize needed');
+      return imageBlob;
+    }
+
+    // Calculate aspect ratios
+    const srcAspect = srcWidth / srcHeight;
+    const targetAspect = targetWidth / targetHeight;
+    const aspectTolerance = 0.05; // 5% tolerance
+
+    let processedImage: typeof image;
+
+    // Check if aspects are similar enough for direct resize
+    if (Math.abs(srcAspect - targetAspect) / targetAspect < aspectTolerance) {
+      // Aspects match - just resize
+      logStep('Aspect ratios match, direct resize');
+      processedImage = image.resize(targetWidth, targetHeight);
+    } else {
+      // Aspects differ - need to crop first, then resize
+      logStep('Aspect ratios differ, will crop then resize', { srcAspect, targetAspect });
+
+      // Calculate crop dimensions to match target aspect ratio
+      let cropWidth: number, cropHeight: number, cropX: number, cropY: number;
+
+      if (srcAspect > targetAspect) {
+        // Source is wider - crop width (letterbox horizontal)
+        cropHeight = srcHeight;
+        cropWidth = Math.round(srcHeight * targetAspect);
+        cropX = Math.round((srcWidth - cropWidth) / 2);
+        cropY = 0;
+      } else {
+        // Source is taller - crop height (letterbox vertical)
+        cropWidth = srcWidth;
+        cropHeight = Math.round(srcWidth / targetAspect);
+        cropX = 0;
+        cropY = Math.round((srcHeight - cropHeight) / 2);
+      }
+
+      logStep('Crop parameters', { cropX, cropY, cropWidth, cropHeight });
+
+      // Crop the image (center crop)
+      const croppedImage = image.crop(cropX, cropY, cropWidth, cropHeight);
+
+      // Resize to exact target dimensions
+      processedImage = croppedImage.resize(targetWidth, targetHeight);
+    }
+
+    logStep('Final image dimensions', {
+      width: processedImage.width,
+      height: processedImage.height
+    });
+
+    // Encode back to JPEG (good balance of quality and size)
+    const outputBuffer = await processedImage.encodeJPEG(90);
+
+    // Create new blob
+    const resizedBlob = new Blob([outputBuffer], { type: 'image/jpeg' });
+
+    logStep('Image resized successfully', {
+      outputSize: resizedBlob.size,
+      compressionRatio: (resizedBlob.size / imageBlob.size * 100).toFixed(1) + '%'
+    });
+
+    return resizedBlob;
+  } catch (error) {
+    logStep('Image resize error', { error: String(error) });
+
+    // Fallback: return original and let Sora API handle it
+    // This provides graceful degradation
+    logStep('Returning original image as fallback');
+    return imageBlob;
+  }
+}
+
+/**
  * Start video generation with Sora API
  * Returns job ID for async polling
  */
@@ -136,16 +254,16 @@ async function startSoraGeneration(
       throw new Error(`Failed to fetch input reference image: ${imageResponse.status}`);
     }
 
-    const imageBlob = await imageResponse.blob();
-    const imageType = imageBlob.type || 'image/jpeg';
+    const originalImageBlob = await imageResponse.blob();
 
-    // Determine file extension from mime type
-    const extMap: Record<string, string> = {
-      'image/jpeg': 'jpeg',
-      'image/png': 'png',
-      'image/webp': 'webp',
-    };
-    const ext = extMap[imageType] || 'jpeg';
+    // IMPORTANT: Resize image to exactly match target size
+    // Sora API requires input_reference to match requested width x height exactly
+    logStep('Resizing input image to match target size', { targetSize: request.size });
+    const imageBlob = await resizeImageToTargetSize(originalImageBlob, request.size);
+
+    // After resize, always use JPEG (the resize function outputs JPEG)
+    const imageType = imageBlob.type || 'image/jpeg';
+    const ext = imageType === 'image/png' ? 'png' : 'jpeg';
 
     // Create FormData for multipart request
     const formData = new FormData();
@@ -205,6 +323,8 @@ async function startSoraGeneration(
 
 /**
  * Poll Sora job status
+ * Sora API returns: 'queued', 'in_progress', 'completed', 'failed'
+ * We normalize to: 'queued', 'processing', 'completed', 'failed'
  */
 async function pollSoraStatus(
   jobId: string,
@@ -230,8 +350,14 @@ async function pollSoraStatus(
 
   const data = await response.json();
 
+  // Normalize 'in_progress' to 'processing' for consistency
+  let normalizedStatus = data.status;
+  if (normalizedStatus === 'in_progress') {
+    normalizedStatus = 'processing';
+  }
+
   return {
-    status: data.status,
+    status: normalizedStatus,
     videoUrl: data.video_url,
     error: data.error?.message,
   };

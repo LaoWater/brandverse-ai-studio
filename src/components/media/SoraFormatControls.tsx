@@ -1,4 +1,4 @@
-import { Monitor, Clock, ImageIcon, Shuffle, X } from 'lucide-react';
+import { Monitor, Clock, ImageIcon, Shuffle, X, Coins } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -9,6 +9,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useMediaStudio, SoraResolution, isSoraModel } from '@/contexts/MediaStudioContext';
+import { calculateMediaStudioCredits } from '@/services/creditsService';
 
 interface ResolutionOption {
   value: SoraResolution;
@@ -254,6 +255,35 @@ const SoraFormatControls = () => {
           </p>
         </div>
       )}
+
+      {/* Credit Cost Summary */}
+      <div className="pt-4 border-t border-green-500/20">
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-sm text-gray-400">Estimated Cost</span>
+            <span className="text-[10px] text-gray-500">
+              {isPro && (soraResolution === '1792x1024' || soraResolution === '1024x1792')
+                ? '1080p rate'
+                : '720p rate'
+              } × {soraDuration}s
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Coins className="w-4 h-4 text-green-400" />
+            <span className="text-xl font-bold text-green-400">
+              {calculateMediaStudioCredits(
+                selectedVideoModel,
+                '1K', // not used for video
+                1,    // not used for video
+                'video',
+                soraDuration,
+                soraResolution
+              )}
+            </span>
+            <span className="text-sm text-gray-400">credits</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

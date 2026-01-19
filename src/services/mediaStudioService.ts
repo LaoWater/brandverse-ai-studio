@@ -617,12 +617,21 @@ export const generateVideoAsync = async (
           throw new Error(errorMessage);
         }
 
-        // Status is 'processing' - continue polling
+        // Status is 'processing' (or 'in_progress' from Sora API) - continue polling
+        // Any other status that's not 'completed' or 'failed' means still processing
       } catch (pollError: any) {
         // If polling fails, log but continue (could be transient network issue)
         console.warn(`Poll ${i + 1} failed:`, pollError.message);
-        // After 3 consecutive failures, throw
-        if (i > 3) {
+
+        // Check if this is an "in_progress" error from un-deployed edge function
+        // Treat it as processing and continue polling
+        if (pollError.message?.includes('in_progress')) {
+          console.log('Status is in_progress, continuing to poll...');
+          continue;
+        }
+
+        // After 5 consecutive failures (not in_progress), throw
+        if (i > 5) {
           throw pollError;
         }
       }
@@ -1060,12 +1069,73 @@ export const incrementViewCount = async (mediaId: string): Promise<void> => {
 };
 
 /**
- * Upload a reference image to storage
+ * Compute a hash of file content for deduplication
+ */
+const computeFileHash = async (file: File): Promise<string> => {
+  const buffer = await file.arrayBuffer();
+  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  // Use first 16 chars of hash for shorter filenames
+  return hashHex.slice(0, 16);
+};
+
+/**
+ * Check if a file with the given hash already exists in storage
+ * Returns the public URL if found, null otherwise
+ */
+const findExistingFileByHash = async (
+  userId: string,
+  hash: string,
+  fileExt: string
+): Promise<string | null> => {
+  try {
+    // List files in user's folder
+    const { data: files, error } = await supabase.storage
+      .from('media-studio-images')
+      .list(userId, { limit: 200 });
+
+    if (error || !files) {
+      return null;
+    }
+
+    // Look for a file that contains this hash in its name
+    const existingFile = files.find(f => f.name.includes(`_${hash}.`));
+
+    if (existingFile) {
+      const { data: { publicUrl } } = supabase.storage
+        .from('media-studio-images')
+        .getPublicUrl(`${userId}/${existingFile.name}`);
+      return publicUrl;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error checking for existing file:', error);
+    return null;
+  }
+};
+
+/**
+ * Upload a reference image to storage with deduplication
+ * Uses content hash to avoid uploading duplicate files
  */
 export const uploadReferenceImage = async (file: File, userId: string): Promise<string | null> => {
   try {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${userId}/${Date.now()}_reference.${fileExt}`;
+    const fileExt = file.name.split('.').pop() || 'png';
+
+    // Compute content hash for deduplication
+    const hash = await computeFileHash(file);
+
+    // Check if this exact file already exists
+    const existingUrl = await findExistingFileByHash(userId, hash, fileExt);
+    if (existingUrl) {
+      console.log('[uploadReferenceImage] File already exists, reusing:', existingUrl);
+      return existingUrl;
+    }
+
+    // Upload with hash in filename for future deduplication
+    const fileName = `${userId}/${Date.now()}_${hash}.${fileExt}`;
 
     const { data, error } = await supabase.storage
       .from('media-studio-images')
@@ -1084,6 +1154,7 @@ export const uploadReferenceImage = async (file: File, userId: string): Promise<
       .from('media-studio-images')
       .getPublicUrl(data.path);
 
+    console.log('[uploadReferenceImage] New file uploaded:', publicUrl);
     return publicUrl;
   } catch (error) {
     console.error('Error in uploadReferenceImage:', error);
@@ -1092,7 +1163,7 @@ export const uploadReferenceImage = async (file: File, userId: string): Promise<
 };
 
 /**
- * Upload a video frame image to storage (for video generation)
+ * Upload a video frame image to storage with deduplication (for video generation)
  */
 export const uploadVideoFrameImage = async (
   file: File,
@@ -1100,8 +1171,20 @@ export const uploadVideoFrameImage = async (
   frameType: 'first' | 'last' | 'input'
 ): Promise<string | null> => {
   try {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${userId}/${Date.now()}_${frameType}_frame.${fileExt}`;
+    const fileExt = file.name.split('.').pop() || 'png';
+
+    // Compute content hash for deduplication
+    const hash = await computeFileHash(file);
+
+    // Check if this exact file already exists
+    const existingUrl = await findExistingFileByHash(userId, hash, fileExt);
+    if (existingUrl) {
+      console.log(`[uploadVideoFrameImage] ${frameType} frame already exists, reusing:`, existingUrl);
+      return existingUrl;
+    }
+
+    // Upload with hash in filename for future deduplication
+    const fileName = `${userId}/${Date.now()}_${frameType}_${hash}.${fileExt}`;
 
     const { data, error } = await supabase.storage
       .from('media-studio-images') // Use same bucket as reference images
@@ -1120,6 +1203,7 @@ export const uploadVideoFrameImage = async (
       .from('media-studio-images')
       .getPublicUrl(data.path);
 
+    console.log(`[uploadVideoFrameImage] New ${frameType} frame uploaded:`, publicUrl);
     return publicUrl;
   } catch (error) {
     console.error(`Error in uploadVideoFrameImage (${frameType}):`, error);
@@ -1222,7 +1306,19 @@ export const extractLastFrameFromVideo = (
 };
 
 /**
- * Upload an extracted video frame to Supabase storage
+ * Compute a hash of blob content for deduplication
+ */
+const computeBlobHash = async (blob: Blob): Promise<string> => {
+  const buffer = await blob.arrayBuffer();
+  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  // Use first 16 chars of hash for shorter filenames
+  return hashHex.slice(0, 16);
+};
+
+/**
+ * Upload an extracted video frame to Supabase storage with deduplication
  * Returns the public URL of the uploaded image
  */
 export const uploadExtractedFrame = async (
@@ -1231,9 +1327,19 @@ export const uploadExtractedFrame = async (
   sourceVideoId?: string
 ): Promise<string | null> => {
   try {
-    // Create a unique filename
+    // Compute content hash for deduplication
+    const hash = await computeBlobHash(frameBlob);
+
+    // Check if this exact frame already exists
+    const existingUrl = await findExistingFileByHash(userId, hash, 'png');
+    if (existingUrl) {
+      console.log('[uploadExtractedFrame] Frame already exists, reusing:', existingUrl);
+      return existingUrl;
+    }
+
+    // Upload with hash in filename for future deduplication
     const timestamp = Date.now();
-    const fileName = `${userId}/${timestamp}_extracted_frame${sourceVideoId ? `_from_${sourceVideoId.slice(0, 8)}` : ''}.png`;
+    const fileName = `${userId}/${timestamp}_extracted_${hash}${sourceVideoId ? `_from_${sourceVideoId.slice(0, 8)}` : ''}.png`;
 
     const { data, error } = await supabase.storage
       .from('media-studio-images')
@@ -1253,7 +1359,7 @@ export const uploadExtractedFrame = async (
       .from('media-studio-images')
       .getPublicUrl(data.path);
 
-    console.log('Extracted frame uploaded successfully:', publicUrl);
+    console.log('[uploadExtractedFrame] New frame uploaded:', publicUrl);
     return publicUrl;
   } catch (error) {
     console.error('Error in uploadExtractedFrame:', error);
