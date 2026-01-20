@@ -43,20 +43,32 @@ interface StatusCheckResponse {
 }
 
 /**
- * Download video and upload to Supabase Storage
+ * Download video from Sora /content endpoint and upload to Supabase Storage
+ * The /content endpoint requires authentication with the OpenAI API key
  */
 async function uploadVideoToStorage(
   supabaseClient: any,
-  videoUrl: string,
+  jobId: string,
   userId: string,
   companyId: string,
-  model: string
+  model: string,
+  openaiApiKey: string
 ): Promise<{ publicUrl: string; storagePath: string; fileSize: number }> {
-  logStep('Downloading completed video from Sora');
+  // Use the /content endpoint which requires authentication
+  const contentUrl = `https://api.openai.com/v1/videos/${jobId}/content`;
+  logStep('Downloading completed video from Sora /content endpoint', { jobId });
 
-  const response = await fetch(videoUrl);
+  const response = await fetch(contentUrl, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${openaiApiKey}`,
+    },
+  });
+
   if (!response.ok) {
-    throw new Error(`Failed to download video: ${response.status}`);
+    const errorText = await response.text().catch(() => 'Unknown error');
+    logStep('Video download failed', { status: response.status, error: errorText });
+    throw new Error(`Failed to download video: ${response.status} - ${errorText}`);
   }
 
   const videoBlob = await response.blob();
@@ -219,6 +231,17 @@ serve(async (req) => {
     }
 
     if (statusData.status === 'failed') {
+      // Clean up pending job record on failure
+      try {
+        await supabaseClient
+          .from('pending_video_jobs')
+          .update({ status: 'failed' })
+          .eq('operation_name', jobId);
+        logStep('Pending job marked as failed', { jobId });
+      } catch (cleanupError) {
+        logStep('Warning: Failed to update pending job status', { error: String(cleanupError) });
+      }
+
       const response: StatusCheckResponse = {
         success: false,
         status: 'failed',
@@ -231,16 +254,17 @@ serve(async (req) => {
       });
     }
 
-    if (statusData.status === 'completed' && statusData.video_url) {
+    if (statusData.status === 'completed') {
       logStep("Video completed, downloading and uploading to storage");
 
-      // Download and upload to our storage
+      // Download and upload to our storage using /content endpoint
       const { publicUrl, storagePath, fileSize } = await uploadVideoToStorage(
         supabaseClient,
-        statusData.video_url,
+        jobId,  // Pass jobId instead of video_url - the function uses /content endpoint
         request.user_id,
         request.company_id || 'default',
-        request.model
+        request.model,
+        openaiApiKey
       );
 
       // Save to database
@@ -254,6 +278,18 @@ serve(async (req) => {
         request,
         jobId
       );
+
+      // Delete the pending job record since video is now saved
+      try {
+        await supabaseClient
+          .from('pending_video_jobs')
+          .delete()
+          .eq('operation_name', jobId);
+        logStep('Pending job record deleted after successful completion', { jobId });
+      } catch (cleanupError) {
+        logStep('Warning: Failed to delete pending job record', { error: String(cleanupError) });
+        // Not critical - video is already saved
+      }
 
       const response: StatusCheckResponse = {
         success: true,

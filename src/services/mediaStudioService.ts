@@ -1399,3 +1399,153 @@ export const extractAndUploadLastFrame = async (
     return { success: false, error: error.message || 'Failed to extract frame from video' };
   }
 };
+
+// ============================================
+// PENDING VIDEO JOBS RECOVERY
+// ============================================
+
+export interface PendingVideoJob {
+  id: string;
+  user_id: string;
+  company_id: string | null;
+  operation_name: string;
+  model: string;
+  mode: string;
+  prompt: string;
+  size: string;
+  seconds: number;
+  input_reference_url: string | null;
+  status: string;
+  created_at: string;
+  expires_at: string;
+}
+
+export interface RecoveryResult {
+  success: boolean;
+  recovered: number;
+  failed: number;
+  stillPending: number;
+  expired: number;
+  details: {
+    jobId: string;
+    status: 'recovered' | 'failed' | 'pending' | 'expired';
+    videoUrl?: string;
+    error?: string;
+  }[];
+  message?: string;
+  error?: string;
+}
+
+/**
+ * Get count of pending video jobs for the current user
+ */
+export const getPendingVideoJobsCount = async (): Promise<number> => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return 0;
+    }
+
+    const { count, error } = await supabase
+      .from('pending_video_jobs')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', session.user.id)
+      .eq('status', 'pending');
+
+    if (error) {
+      console.error('Error fetching pending jobs count:', error);
+      return 0;
+    }
+
+    return count || 0;
+  } catch (error) {
+    console.error('Error in getPendingVideoJobsCount:', error);
+    return 0;
+  }
+};
+
+/**
+ * Get all pending video jobs for the current user
+ */
+export const getPendingVideoJobs = async (): Promise<PendingVideoJob[]> => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from('pending_video_jobs')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching pending jobs:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getPendingVideoJobs:', error);
+    return [];
+  }
+};
+
+/**
+ * Recover pending video jobs by checking OpenAI for completed videos
+ * This calls the recover-pending-videos edge function
+ */
+export const recoverPendingVideos = async (): Promise<RecoveryResult> => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return {
+        success: false,
+        recovered: 0,
+        failed: 0,
+        stillPending: 0,
+        expired: 0,
+        details: [],
+        error: 'Not authenticated',
+      };
+    }
+
+    const response = await fetch(`${SUPABASE_FUNCTION_URL}/recover-pending-videos`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({}),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Recovery failed' }));
+      return {
+        success: false,
+        recovered: 0,
+        failed: 0,
+        stillPending: 0,
+        expired: 0,
+        details: [],
+        error: errorData?.error || `Server error: ${response.status}`,
+      };
+    }
+
+    const result: RecoveryResult = await response.json();
+    return result;
+  } catch (error: any) {
+    console.error('Error in recoverPendingVideos:', error);
+    return {
+      success: false,
+      recovered: 0,
+      failed: 0,
+      stillPending: 0,
+      expired: 0,
+      details: [],
+      error: error.message || 'Network error during recovery',
+    };
+  }
+};

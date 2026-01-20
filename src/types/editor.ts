@@ -85,6 +85,108 @@ export const isTextOverlayVisible = (overlay: TextOverlay, time: number): boolea
 };
 
 // ============================================
+// TRANSITION TYPES
+// ============================================
+
+/**
+ * Available transition types
+ * These map to FFmpeg xfade transition names
+ */
+export type TransitionType =
+  | 'none'
+  | 'fade'
+  | 'fadeblack'
+  | 'fadewhite'
+  | 'dissolve'
+  | 'wipeleft'
+  | 'wiperight'
+  | 'wipeup'
+  | 'wipedown'
+  | 'slideleft'
+  | 'slideright'
+  | 'slideup'
+  | 'slidedown'
+  | 'circlecrop'
+  | 'rectcrop'
+  | 'circleopen'
+  | 'circleclose'
+  | 'pixelize'
+  | 'radial'
+  | 'smoothleft'
+  | 'smoothright'
+  | 'smoothup'
+  | 'smoothdown';
+
+/**
+ * Transition configuration between two clips
+ */
+export interface ClipTransition {
+  type: TransitionType;
+  duration: number; // 0.1 - 2.0 seconds
+}
+
+/**
+ * Default transition settings
+ */
+export const DEFAULT_TRANSITION: ClipTransition = {
+  type: 'fade',
+  duration: 0.5,
+};
+
+/**
+ * Transition type metadata for UI display
+ */
+export interface TransitionTypeInfo {
+  type: TransitionType;
+  label: string;
+  description: string;
+  category: 'basic' | 'wipe' | 'slide' | 'shape' | 'special';
+}
+
+/**
+ * All available transitions with metadata
+ */
+export const TRANSITION_TYPES: TransitionTypeInfo[] = [
+  { type: 'none', label: 'None', description: 'No transition (hard cut)', category: 'basic' },
+  { type: 'fade', label: 'Fade', description: 'Crossfade between clips', category: 'basic' },
+  { type: 'fadeblack', label: 'Fade to Black', description: 'Fade through black', category: 'basic' },
+  { type: 'fadewhite', label: 'Fade to White', description: 'Fade through white', category: 'basic' },
+  { type: 'dissolve', label: 'Dissolve', description: 'Pixel dissolve effect', category: 'basic' },
+  { type: 'wipeleft', label: 'Wipe Left', description: 'Wipe from right to left', category: 'wipe' },
+  { type: 'wiperight', label: 'Wipe Right', description: 'Wipe from left to right', category: 'wipe' },
+  { type: 'wipeup', label: 'Wipe Up', description: 'Wipe from bottom to top', category: 'wipe' },
+  { type: 'wipedown', label: 'Wipe Down', description: 'Wipe from top to bottom', category: 'wipe' },
+  { type: 'slideleft', label: 'Slide Left', description: 'Next clip slides in from right', category: 'slide' },
+  { type: 'slideright', label: 'Slide Right', description: 'Next clip slides in from left', category: 'slide' },
+  { type: 'slideup', label: 'Slide Up', description: 'Next clip slides in from bottom', category: 'slide' },
+  { type: 'slidedown', label: 'Slide Down', description: 'Next clip slides in from top', category: 'slide' },
+  { type: 'circlecrop', label: 'Circle Crop', description: 'Circle reveal transition', category: 'shape' },
+  { type: 'rectcrop', label: 'Rect Crop', description: 'Rectangle reveal transition', category: 'shape' },
+  { type: 'circleopen', label: 'Circle Open', description: 'Expanding circle reveal', category: 'shape' },
+  { type: 'circleclose', label: 'Circle Close', description: 'Shrinking circle reveal', category: 'shape' },
+  { type: 'pixelize', label: 'Pixelize', description: 'Pixelated transition', category: 'special' },
+  { type: 'radial', label: 'Radial', description: 'Radial wipe transition', category: 'special' },
+  { type: 'smoothleft', label: 'Smooth Left', description: 'Smooth slide left', category: 'slide' },
+  { type: 'smoothright', label: 'Smooth Right', description: 'Smooth slide right', category: 'slide' },
+  { type: 'smoothup', label: 'Smooth Up', description: 'Smooth slide up', category: 'slide' },
+  { type: 'smoothdown', label: 'Smooth Down', description: 'Smooth slide down', category: 'slide' },
+];
+
+/**
+ * Get transition info by type
+ */
+export const getTransitionInfo = (type: TransitionType): TransitionTypeInfo | undefined => {
+  return TRANSITION_TYPES.find(t => t.type === type);
+};
+
+/**
+ * Get transitions by category
+ */
+export const getTransitionsByCategory = (category: TransitionTypeInfo['category']): TransitionTypeInfo[] => {
+  return TRANSITION_TYPES.filter(t => t.category === category);
+};
+
+// ============================================
 // VIDEO CLIP TYPES
 // ============================================
 
@@ -105,6 +207,10 @@ export interface EditorClip {
   // Trim points (non-destructive until export)
   trimStart: number;          // Trim from beginning (seconds)
   trimEnd: number;            // Trim from end (seconds)
+
+  // Transition to NEXT clip (outgoing transition)
+  // Applied between this clip and the following clip
+  transitionOut?: ClipTransition;
 }
 
 /**

@@ -90,9 +90,18 @@ class PreviewDimensions(BaseModel):
     height: int
 
 
+class Transition(BaseModel):
+    """Video transition between two clips."""
+    fromClipIndex: int
+    toClipIndex: int
+    type: str  # FFmpeg xfade transition name
+    duration: float  # Transition duration in seconds
+
+
 class VideoExportRequest(BaseModel):
     clips: List[VideoClip]
     textOverlays: Optional[List[TextOverlay]] = None
+    transitions: Optional[List[Transition]] = None  # Transitions between clips
     previewDimensions: Optional[PreviewDimensions] = None  # Preview container size from web editor
     userId: str
     companyId: Optional[str] = None
@@ -209,6 +218,264 @@ def concatenate_videos(input_paths: List[Path], output_path: Path, work_dir: Pat
         "-c", "copy",
         str(output_path)
     ])
+
+
+def get_video_duration_ffprobe(video_path: Path) -> float:
+    """Get video duration using ffprobe."""
+    try:
+        cmd = [
+            "ffprobe",
+            "-v", "error",
+            "-show_entries", "format=duration",
+            "-of", "default=noprint_wrappers=1:nokey=1",
+            str(video_path)
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode == 0:
+            duration = float(result.stdout.strip())
+            print(f"[FFprobe] Video duration: {duration}s")
+            return duration
+    except Exception as e:
+        print(f"[FFprobe] Error getting duration: {e}")
+    return 0.0
+
+
+def concatenate_videos_with_transitions(
+    input_paths: List[Path],
+    clip_durations: List[float],
+    transitions: List[dict],  # List of {fromIndex, toIndex, type, duration}
+    output_path: Path,
+    work_dir: Path
+) -> None:
+    """
+    Concatenate videos with transitions using FFmpeg xfade filter.
+
+    The xfade filter works by:
+    1. Taking two input streams
+    2. Applying a transition effect for a specified duration
+    3. The offset is where the transition starts (end of first clip minus transition duration)
+
+    For multiple clips with transitions, we need to chain xfade filters:
+    [0][1]xfade=...[v01]; [v01][2]xfade=...[v012]; ...
+    """
+    if len(input_paths) == 1:
+        # Single file - just copy
+        shutil.copy(input_paths[0], output_path)
+        return
+
+    if not transitions:
+        # No transitions - use regular concat
+        concatenate_videos(input_paths, output_path, work_dir)
+        return
+
+    # Build transition map: fromIndex -> transition
+    transition_map = {t['fromClipIndex']: t for t in transitions}
+
+    # Check if all clips have transitions between them
+    # If not all clips have transitions, we need a more complex approach
+    has_all_transitions = all(i in transition_map for i in range(len(input_paths) - 1))
+
+    if not has_all_transitions:
+        # Mixed case: some transitions, some hard cuts
+        # For simplicity, we'll process this in segments and then concat
+        print(f"[Transitions] Mixed transitions detected, using segment-based approach")
+        _concatenate_with_mixed_transitions(
+            input_paths, clip_durations, transition_map, output_path, work_dir
+        )
+        return
+
+    # All consecutive clips have transitions - use chained xfade
+    print(f"[Transitions] All clips have transitions, using chained xfade")
+    _concatenate_with_chained_xfade(
+        input_paths, clip_durations, transition_map, output_path, work_dir
+    )
+
+
+def _concatenate_with_chained_xfade(
+    input_paths: List[Path],
+    clip_durations: List[float],
+    transition_map: dict,
+    output_path: Path,
+    work_dir: Path
+) -> None:
+    """
+    Concatenate all clips with xfade transitions between each pair.
+
+    For N clips with transitions between all of them:
+    - Input 0 and 1 get xfade -> v01
+    - v01 and Input 2 get xfade -> v012
+    - etc.
+
+    The offset for each transition is calculated as:
+    - For first transition: duration of clip 0 - transition_duration
+    - For subsequent: accumulated_duration - transition_duration
+    """
+    n = len(input_paths)
+
+    # Build FFmpeg inputs
+    inputs = []
+    for i, path in enumerate(input_paths):
+        inputs.extend(["-i", str(path)])
+
+    # Build filter_complex
+    # For 2 clips: [0:v][1:v]xfade=transition=fade:duration=0.5:offset=4.5[outv]; [0:a][1:a]acrossfade=d=0.5[outa]
+    # For 3 clips: [0:v][1:v]xfade=...:[v01]; [v01][2:v]xfade=...:[v012]
+
+    filter_parts = []
+    audio_filter_parts = []
+
+    # Calculate running offset (accumulated duration minus transitions)
+    running_duration = clip_durations[0]
+
+    for i in range(n - 1):
+        trans = transition_map.get(i)
+        if not trans:
+            trans = {'type': 'fade', 'duration': 0.5}
+
+        trans_type = trans['type']
+        trans_duration = trans['duration']
+
+        # Calculate offset: where transition starts
+        # For first transition: end of clip 0 minus transition duration
+        # For subsequent: running duration minus transition duration
+        if i == 0:
+            offset = clip_durations[0] - trans_duration
+        else:
+            # Accumulated duration (minus previous transitions) minus this transition
+            offset = running_duration - trans_duration
+
+        # Video xfade
+        if i == 0:
+            # First transition: inputs are [0:v] and [1:v]
+            in1 = "[0:v]"
+            in2 = "[1:v]"
+        else:
+            # Subsequent: previous output and next input
+            in1 = f"[v{i-1}]"
+            in2 = f"[{i+1}:v]"
+
+        # Output label
+        if i == n - 2:
+            # Last transition - final output
+            out_label = "[outv]"
+        else:
+            out_label = f"[v{i}]"
+
+        filter_parts.append(
+            f"{in1}{in2}xfade=transition={trans_type}:duration={trans_duration}:offset={offset}{out_label}"
+        )
+
+        # Audio crossfade
+        if i == 0:
+            ain1 = "[0:a]"
+            ain2 = "[1:a]"
+        else:
+            ain1 = f"[a{i-1}]"
+            ain2 = f"[{i+1}:a]"
+
+        if i == n - 2:
+            aout_label = "[outa]"
+        else:
+            aout_label = f"[a{i}]"
+
+        audio_filter_parts.append(
+            f"{ain1}{ain2}acrossfade=d={trans_duration}{aout_label}"
+        )
+
+        # Update running duration: add next clip duration, subtract transition overlap
+        running_duration = running_duration + clip_durations[i + 1] - trans_duration
+
+    # Combine video and audio filters
+    filter_complex = "; ".join(filter_parts + audio_filter_parts)
+
+    print(f"[Transitions] Filter complex: {filter_complex[:500]}...")
+
+    cmd = inputs + [
+        "-filter_complex", filter_complex,
+        "-map", "[outv]",
+        "-map", "[outa]",
+        "-c:v", "libx264",
+        "-preset", "fast",
+        "-crf", "18",
+        "-c:a", "aac",
+        "-b:a", "192k",
+        str(output_path)
+    ]
+
+    run_ffmpeg(cmd)
+
+
+def _concatenate_with_mixed_transitions(
+    input_paths: List[Path],
+    clip_durations: List[float],
+    transition_map: dict,
+    output_path: Path,
+    work_dir: Path
+) -> None:
+    """
+    Handle case where only some clips have transitions.
+
+    Strategy:
+    1. Group consecutive clips that have transitions between them
+    2. Process each group with xfade
+    3. Concat all processed groups with regular concat (hard cuts)
+    """
+    n = len(input_paths)
+    segments = []  # List of (start_index, end_index, has_transitions)
+
+    i = 0
+    while i < n:
+        start = i
+        # Find consecutive clips with transitions
+        while i < n - 1 and i in transition_map:
+            i += 1
+        end = i
+
+        if start < end:
+            # This segment has transitions
+            segments.append((start, end + 1, True))  # end + 1 to include last clip
+            i = end + 1
+        else:
+            # Single clip or clip without transition to next
+            segments.append((start, start + 1, False))
+            i += 1
+
+    print(f"[Transitions] Segments: {segments}")
+
+    # Process each segment
+    processed_paths = []
+    for seg_idx, (start, end, has_trans) in enumerate(segments):
+        seg_paths = input_paths[start:end]
+        seg_durations = clip_durations[start:end]
+
+        if has_trans and len(seg_paths) > 1:
+            # Extract relevant transitions
+            seg_transitions = {
+                idx - start: transition_map[idx]
+                for idx in range(start, end - 1)
+                if idx in transition_map
+            }
+
+            seg_output = work_dir / f"segment_{seg_idx}.mp4"
+            _concatenate_with_chained_xfade(
+                seg_paths, seg_durations, seg_transitions, seg_output, work_dir
+            )
+            processed_paths.append(seg_output)
+        else:
+            # Single clip or no transitions
+            if len(seg_paths) == 1:
+                processed_paths.append(seg_paths[0])
+            else:
+                # Multiple clips without transitions - regular concat
+                seg_output = work_dir / f"segment_{seg_idx}.mp4"
+                concatenate_videos(seg_paths, seg_output, work_dir)
+                processed_paths.append(seg_output)
+
+    # Final concat of all segments
+    if len(processed_paths) == 1:
+        shutil.copy(processed_paths[0], output_path)
+    else:
+        concatenate_videos(processed_paths, output_path, work_dir)
 
 
 # Font mapping for FFmpeg
@@ -664,7 +931,8 @@ async def export_video(request: VideoExportRequest):
     work_dir = WORK_DIR / job_id
 
     text_overlay_count = len(request.textOverlays) if request.textOverlays else 0
-    print(f"[Export:{job_id}] Starting export with {len(request.clips)} clips and {text_overlay_count} text overlays")
+    transition_count = len(request.transitions) if request.transitions else 0
+    print(f"[Export:{job_id}] Starting export with {len(request.clips)} clips, {text_overlay_count} text overlays, and {transition_count} transitions")
 
     try:
         # Create work directory
@@ -700,10 +968,42 @@ async def export_video(request: VideoExportRequest):
                 # No trim needed
                 trimmed_paths.append(input_path)
 
-        # Step 3: Concatenate all videos
+        # Calculate clip durations for transition offset calculations
+        clip_durations = [
+            clip.sourceDuration - clip.trimStart - clip.trimEnd
+            for clip in sorted_clips
+        ]
+
+        # Step 3: Concatenate all videos (with transitions if specified)
         print(f"[Export:{job_id}] Step 3: Concatenating videos...")
         concat_output_path = work_dir / "concat_output.mp4"
-        concatenate_videos(trimmed_paths, concat_output_path, work_dir)
+
+        if request.transitions and len(request.transitions) > 0:
+            print(f"[Export:{job_id}] Using transition-aware concatenation with {len(request.transitions)} transitions")
+            for trans in request.transitions:
+                print(f"[Export:{job_id}]   Transition: {trans.type} ({trans.duration}s) between clips {trans.fromClipIndex} and {trans.toClipIndex}")
+
+            # Convert Pydantic models to dicts for processing
+            transitions_list = [
+                {
+                    'fromClipIndex': t.fromClipIndex,
+                    'toClipIndex': t.toClipIndex,
+                    'type': t.type,
+                    'duration': t.duration
+                }
+                for t in request.transitions
+            ]
+
+            concatenate_videos_with_transitions(
+                trimmed_paths,
+                clip_durations,
+                transitions_list,
+                concat_output_path,
+                work_dir
+            )
+        else:
+            print(f"[Export:{job_id}] No transitions, using simple concatenation")
+            concatenate_videos(trimmed_paths, concat_output_path, work_dir)
 
         # Step 4: Apply text overlays (if any)
         output_path = work_dir / "output.mp4"

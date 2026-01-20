@@ -4,7 +4,7 @@
 // Uses Cloud Run media-processing-service for lossless FFmpeg operations
 // ============================================
 
-import type { EditorClip, ExportStage, TextOverlay, TextStyle } from '@/types/editor';
+import type { EditorClip, ExportStage, TextOverlay, TextStyle, ClipTransition, TransitionType } from '@/types/editor';
 import { getEffectiveDuration } from '@/types/editor';
 
 /**
@@ -32,6 +32,16 @@ interface TextOverlayExport {
 }
 
 /**
+ * Transition export format for the media processing service
+ */
+interface TransitionExport {
+  fromClipIndex: number;
+  toClipIndex: number;
+  type: TransitionType;
+  duration: number;
+}
+
+/**
  * Export request payload for the media processing service
  */
 interface ExportRequest {
@@ -44,6 +54,7 @@ interface ExportRequest {
     trimEnd: number;
   }[];
   textOverlays?: TextOverlayExport[];
+  transitions?: TransitionExport[];
   previewDimensions?: { width: number; height: number }; // Dimensions of preview container in web editor
   userId: string;
   companyId?: string;
@@ -108,6 +119,26 @@ export const exportProject = async (
       };
     });
 
+    // Build transitions export format (extract from clips)
+    const transitionsExport: TransitionExport[] = [];
+    sortedClips.forEach((clip, index) => {
+      if (clip.transitionOut && clip.transitionOut.type !== 'none' && index < sortedClips.length - 1) {
+        console.log('[VideoEditor] Exporting transition from clip', index, 'to clip', index + 1);
+        console.log('[VideoEditor]   Type:', clip.transitionOut.type);
+        console.log('[VideoEditor]   Duration:', clip.transitionOut.duration);
+        transitionsExport.push({
+          fromClipIndex: index,
+          toClipIndex: index + 1,
+          type: clip.transitionOut.type,
+          duration: clip.transitionOut.duration,
+        });
+      }
+    });
+
+    if (transitionsExport.length > 0) {
+      console.log('[VideoEditor] Total transitions to export:', transitionsExport.length);
+    }
+
     // Build request payload
     const request: ExportRequest = {
       clips: sortedClips.map(clip => ({
@@ -119,6 +150,7 @@ export const exportProject = async (
         trimEnd: clip.trimEnd,
       })),
       textOverlays: textOverlaysExport,
+      transitions: transitionsExport.length > 0 ? transitionsExport : undefined,
       previewDimensions: previewDimensions,
       userId: userId || 'anonymous',
       companyId: companyId || undefined,

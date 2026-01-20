@@ -46,6 +46,7 @@ Scene: Extreme close-up of the founder's focused face, illuminated by blue lapto
 Wide shot reveals: apartment at night. Clock shows 2:47 AM. City lights through window. The founder immersed in their pool of blue light, fully concentrated on bringing their vision to life.
 
 Final frame: Wide shot of founder at desk, laptop glow the only light, absorbed in creative work.
+The camera angle turns around towards founders eyes smooth and begins to zoom in - while in his eyes we can see the reflecitons of his laptop of analytics, organizing, graphs, time flowing, getting bigger and bigger as camera continues to zoom in and prepare for the next scene.
 
 [AUDIO]
 Music: Single piano note (D3) held with sustain, felt-dampened tone. Contemplative. Second note (A3) enters at 4 seconds. Analog synth pad fades in underneath. 70 BPM pulse from subtle sub-bass. Key of D minor.

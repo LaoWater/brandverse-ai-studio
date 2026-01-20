@@ -365,12 +365,13 @@ async function pollSoraStatus(
 
 /**
  * Wait for Sora job completion (sync mode)
+ * Returns when job is completed - we use /content endpoint for download, not video_url
  */
 async function waitForSoraCompletion(
   jobId: string,
   openaiApiKey: string,
   maxWaitMs: number = 600000 // 10 minutes
-): Promise<{ videoUrl: string }> {
+): Promise<void> {
   const startTime = Date.now();
   const pollIntervalMs = 5000; // 5 seconds
 
@@ -381,8 +382,8 @@ async function waitForSoraCompletion(
 
     logStep(`Polling Sora job ${jobId}`, { status: result.status });
 
-    if (result.status === 'completed' && result.videoUrl) {
-      return { videoUrl: result.videoUrl };
+    if (result.status === 'completed') {
+      return; // Job complete - caller will use /content endpoint to download
     }
 
     if (result.status === 'failed') {
@@ -394,21 +395,33 @@ async function waitForSoraCompletion(
 }
 
 /**
- * Download video from URL and upload to Supabase Storage
+ * Download video from Sora /content endpoint and upload to Supabase Storage
+ * The /content endpoint requires authentication with the OpenAI API key
  */
 async function uploadVideoToStorage(
   supabaseClient: any,
-  videoUrl: string,
+  jobId: string,
   userId: string,
   companyId: string,
-  model: string
+  model: string,
+  openaiApiKey: string
 ): Promise<{ publicUrl: string; storagePath: string; fileSize: number }> {
-  logStep('Downloading video from Sora', { videoUrl: videoUrl.substring(0, 50) + '...' });
+  // Use the /content endpoint which requires authentication
+  const contentUrl = `https://api.openai.com/v1/videos/${jobId}/content`;
+  logStep('Downloading video from Sora /content endpoint', { jobId });
 
-  // Download video
-  const response = await fetch(videoUrl);
+  // Download video with authentication
+  const response = await fetch(contentUrl, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${openaiApiKey}`,
+    },
+  });
+
   if (!response.ok) {
-    throw new Error(`Failed to download video: ${response.status}`);
+    const errorText = await response.text().catch(() => 'Unknown error');
+    logStep('Video download failed', { status: response.status, error: errorText });
+    throw new Error(`Failed to download video: ${response.status} - ${errorText}`);
   }
 
   const videoBlob = await response.blob();
@@ -583,6 +596,34 @@ serve(async (req) => {
     if (request.async_mode) {
       logStep("Returning async operation for frontend polling");
 
+      // Store pending job in database for recovery if frontend stops polling
+      try {
+        const { error: pendingJobError } = await supabaseClient
+          .from('pending_video_jobs')
+          .insert({
+            user_id: user.id,
+            company_id: request.company_id || null,
+            operation_name: jobId,
+            model: request.model,
+            mode: request.mode,
+            prompt: request.prompt,
+            size: request.size,
+            seconds: request.seconds,
+            input_reference_url: request.input_reference_url || null,
+            status: 'pending',
+          });
+
+        if (pendingJobError) {
+          logStep('Warning: Failed to store pending job record', { error: pendingJobError.message });
+          // Continue anyway - this is not critical for generation
+        } else {
+          logStep('Pending job record created for recovery', { jobId });
+        }
+      } catch (pendingError) {
+        logStep('Warning: Exception storing pending job', { error: String(pendingError) });
+        // Continue anyway
+      }
+
       const response: SoraVideoResponse = {
         success: true,
         status: "processing",
@@ -605,15 +646,16 @@ serve(async (req) => {
     }
 
     // SYNC MODE: Wait for completion (may timeout for long videos)
-    const { videoUrl } = await waitForSoraCompletion(jobId, openaiApiKey);
+    await waitForSoraCompletion(jobId, openaiApiKey);
 
-    // Upload to Supabase Storage
+    // Upload to Supabase Storage using /content endpoint
     const { publicUrl, storagePath, fileSize } = await uploadVideoToStorage(
       supabaseClient,
-      videoUrl,
+      jobId,  // Pass jobId - the function uses /content endpoint
       user.id,
       request.company_id || 'default',
-      request.model
+      request.model,
+      openaiApiKey
     );
 
     // Save to database

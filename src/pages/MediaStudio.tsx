@@ -24,7 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { Sparkles, Zap, ArrowRight, Loader, CheckCircle, Library, Plus, Film } from 'lucide-react';
+import { Sparkles, Zap, ArrowRight, Loader, CheckCircle, Library, Plus, Film, RefreshCw, AlertCircle } from 'lucide-react';
 import type { MediaStudioView } from '@/types/editor';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -33,6 +33,9 @@ import {
   uploadVideoFrameImage,
   extractAndUploadLastFrame,
   MediaFile,
+  getPendingVideoJobsCount,
+  recoverPendingVideos,
+  RecoveryResult,
 } from '@/services/mediaStudioService';
 import GenerationErrorDialog, { GenerationError } from '@/components/media/GenerationErrorDialog';
 import { MediaType } from '@/contexts/MediaStudioContext';
@@ -102,6 +105,10 @@ const MediaStudioContent = () => {
   // State for error dialog
   const [showErrorDialog, setShowErrorDialog] = useState(false);
   const [generationError, setGenerationError] = useState<GenerationError | string | null>(null);
+
+  // State for pending video recovery
+  const [pendingJobsCount, setPendingJobsCount] = useState(0);
+  const [isRecovering, setIsRecovering] = useState(false);
 
   // Calculate generation cost based on current settings
   // For Sora models, use soraDuration; for Veo models, use videoDuration
@@ -483,6 +490,83 @@ const MediaStudioContent = () => {
     });
   };
 
+  // Fetch pending video jobs count on mount and when not generating
+  React.useEffect(() => {
+    const fetchPendingCount = async () => {
+      if (!user || isGenerating) return;
+      const count = await getPendingVideoJobsCount();
+      setPendingJobsCount(count);
+    };
+
+    fetchPendingCount();
+    // Re-check every 30 seconds when not generating
+    const interval = setInterval(fetchPendingCount, 30000);
+    return () => clearInterval(interval);
+  }, [user, isGenerating]);
+
+  // Handler for recovering pending videos
+  const handleRecoverPendingVideos = async () => {
+    if (isRecovering || !user) return;
+
+    setIsRecovering(true);
+    try {
+      const result = await recoverPendingVideos();
+
+      if (result.success) {
+        // Refresh the pending count
+        const newCount = await getPendingVideoJobsCount();
+        setPendingJobsCount(newCount);
+
+        // Invalidate library query to show recovered videos
+        if (result.recovered > 0) {
+          queryClient.invalidateQueries({ queryKey: ['mediaLibrary'] });
+        }
+
+        // Show appropriate toast
+        if (result.recovered > 0) {
+          toast({
+            title: `${result.recovered} Video${result.recovered > 1 ? 's' : ''} Recovered!`,
+            description: `Successfully recovered ${result.recovered} video${result.recovered > 1 ? 's' : ''} from pending jobs.${result.stillPending > 0 ? ` ${result.stillPending} still processing.` : ''}`,
+            className: 'bg-green-600/90 border-green-600 text-white',
+          });
+          // Switch to library to show recovered videos
+          setCurrentView('library');
+        } else if (result.stillPending > 0) {
+          toast({
+            title: 'Videos Still Processing',
+            description: `${result.stillPending} video${result.stillPending > 1 ? 's are' : ' is'} still being generated. Check back in a few minutes.`,
+            className: 'bg-primary/90 border-primary text-white',
+          });
+        } else if (result.expired > 0 || result.failed > 0) {
+          toast({
+            title: 'Recovery Complete',
+            description: `${result.expired} expired, ${result.failed} failed. No videos were recovered.`,
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'No Pending Videos',
+            description: 'There are no pending video jobs to recover.',
+          });
+        }
+      } else {
+        toast({
+          title: 'Recovery Failed',
+          description: result.error || 'Failed to check pending videos. Please try again.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to recover pending videos.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRecovering(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-background/95">
       <Navigation />
@@ -516,6 +600,31 @@ const MediaStudioContent = () => {
 
             {/* View Mode Switcher - Three tabs: Create, Library, Editor */}
             <div className="relative flex items-center gap-6">
+              {/* Pending Videos Recovery Button */}
+              {pendingJobsCount > 0 && !isGenerating && (
+                <Button
+                  onClick={handleRecoverPendingVideos}
+                  disabled={isRecovering}
+                  variant="outline"
+                  className="relative border-accent/50 hover:border-accent hover:bg-accent/10 text-accent"
+                >
+                  {isRecovering ? (
+                    <>
+                      <Loader className="w-4 h-4 mr-2 animate-spin" />
+                      Checking...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Check Pending Videos
+                      <span className="ml-2 px-1.5 py-0.5 text-xs font-bold bg-accent/20 rounded-full">
+                        {pendingJobsCount}
+                      </span>
+                    </>
+                  )}
+                </Button>
+              )}
+
               <div className="relative inline-flex items-center bg-muted/50 dark:bg-black/30 rounded-full p-1.5 border-0 will-change-auto">
               {/* Sliding indicator - hardware accelerated with transform */}
               <div

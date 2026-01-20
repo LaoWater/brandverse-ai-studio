@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Film, Plus, Download, Trash2, Play, Pause, SkipBack, Volume2, VolumeX, Save, FolderOpen, Cloud, CloudOff, Pencil, ArrowLeft, Scissors, Undo2, Redo2, Type, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { Film, Plus, Download, Trash2, Play, Pause, SkipBack, Volume2, VolumeX, Save, FolderOpen, Cloud, CloudOff, Pencil, ArrowLeft, Scissors, Undo2, Redo2, Type, PanelRightClose, PanelRightOpen, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
@@ -7,13 +7,14 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
-import type { EditorClip, PlaybackState, ExportState, TextOverlay } from '@/types/editor';
+import type { EditorClip, PlaybackState, ExportState, TextOverlay, ClipTransition } from '@/types/editor';
 import { getEffectiveDuration, getClipEndTime, createTextOverlay } from '@/types/editor';
 import { ClipSelector } from './ClipSelector';
 import { EditorTimeline } from './EditorTimeline';
 import { ExportModal } from './ExportModal';
 import { ProjectsLibrary } from './ProjectsLibrary';
 import { TextOverlayPanel, TextOverlayPreview } from './text-overlay';
+import { TransitionPanel } from './transitions';
 import { exportProject, downloadBlob } from '@/services/videoEditorService';
 import type { ExportDestination } from './ExportModal';
 import {
@@ -38,8 +39,10 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const preloadVideoRef = useRef<HTMLVideoElement>(null); // Hidden video for preloading next clip
   const animationRef = useRef<number | null>(null);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const preloadedClipIdRef = useRef<string | null>(null); // Track which clip is preloaded
 
   // View mode: 'projects' shows list, 'editing' shows the actual editor
   const [editorMode, setEditorMode] = useState<EditorMode>(initialProjectId ? 'editing' : 'projects');
@@ -77,6 +80,10 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
   const [selectedTextId, setSelectedTextId] = useState<string | null>(null);
   const [isTextPanelOpen, setIsTextPanelOpen] = useState(false);
   const previewContainerRef = useRef<HTMLDivElement>(null);
+
+  // Transition state
+  const [selectedTransitionIndex, setSelectedTransitionIndex] = useState<number | null>(null);
+  const [isTransitionPanelOpen, setIsTransitionPanelOpen] = useState(false);
 
   // History state for Undo/Redo (includes both clips and textOverlays)
   interface HistoryState {
@@ -430,6 +437,45 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
     return null;
   }, [clips]);
 
+  // Find the next clip after a given clip
+  const findNextClip = useCallback((currentClipId: string): EditorClip | null => {
+    const sortedClips = [...clips].sort((a, b) => a.startTime - b.startTime);
+    const currentIndex = sortedClips.findIndex(c => c.id === currentClipId);
+    if (currentIndex >= 0 && currentIndex < sortedClips.length - 1) {
+      return sortedClips[currentIndex + 1];
+    }
+    return null;
+  }, [clips]);
+
+  // Preload the next clip when we're close to the end of the current one
+  useEffect(() => {
+    const activeClip = findActiveClip(playback.currentTime);
+    if (!activeClip || !preloadVideoRef.current) return;
+
+    const nextClip = findNextClip(activeClip.id);
+    if (!nextClip) return;
+
+    // Check if we need to preload (when we're within last 2 seconds of current clip)
+    const clipLocalTime = playback.currentTime - activeClip.startTime;
+    const effectiveDuration = getEffectiveDuration(activeClip);
+    const timeUntilEnd = effectiveDuration - clipLocalTime;
+
+    // Preload when within 2 seconds of clip end
+    if (timeUntilEnd < 2 && preloadedClipIdRef.current !== nextClip.id) {
+      console.log('[VideoEditor] Preloading next clip:', nextClip.id);
+      preloadVideoRef.current.src = nextClip.sourceUrl;
+      preloadVideoRef.current.load();
+      preloadedClipIdRef.current = nextClip.id;
+
+      // Pre-seek to the trim start position
+      preloadVideoRef.current.addEventListener('loadedmetadata', () => {
+        if (preloadVideoRef.current) {
+          preloadVideoRef.current.currentTime = nextClip.trimStart;
+        }
+      }, { once: true });
+    }
+  }, [playback.currentTime, findActiveClip, findNextClip]);
+
   // Update video source when active clip changes
   useEffect(() => {
     const activeClip = findActiveClip(playback.currentTime);
@@ -438,23 +484,59 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
 
     if (activeClip) {
       if (playback.activeClipId !== activeClip.id) {
-        // New clip, load it
-        console.log('[VideoEditor] Loading clip:', activeClip.id, activeClip.sourceUrl);
-        videoRef.current.src = activeClip.sourceUrl;
-        videoRef.current.load();
+        const wasPlaying = playback.playing;
 
-        // Wait for video to be ready before seeking
-        const handleLoadedMetadata = () => {
-          if (videoRef.current) {
-            // Seek to the trimStart position (beginning of the trimmed content)
-            const clipLocalTime = playback.currentTime - activeClip.startTime + activeClip.trimStart;
-            const clampedTime = Math.max(activeClip.trimStart, clipLocalTime);
-            videoRef.current.currentTime = clampedTime;
-            console.log('[VideoEditor] Video loaded, seeking to:', clampedTime);
+        // Check if this clip was preloaded
+        if (preloadedClipIdRef.current === activeClip.id && preloadVideoRef.current?.src) {
+          // Swap: use the preloaded video
+          console.log('[VideoEditor] Using preloaded clip:', activeClip.id);
+          videoRef.current.src = preloadVideoRef.current.src;
+
+          // The preloaded video should already be at the right position
+          const handleCanPlay = () => {
+            if (videoRef.current) {
+              const clipLocalTime = playback.currentTime - activeClip.startTime + activeClip.trimStart;
+              const clampedTime = Math.max(activeClip.trimStart, clipLocalTime);
+              videoRef.current.currentTime = clampedTime;
+
+              // Resume playback immediately if we were playing
+              if (wasPlaying) {
+                videoRef.current.play().catch(() => {});
+              }
+            }
+          };
+
+          // Check if already loaded enough to play
+          if (videoRef.current.readyState >= 3) {
+            handleCanPlay();
+          } else {
+            videoRef.current.addEventListener('canplay', handleCanPlay, { once: true });
           }
-        };
 
-        videoRef.current.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
+          preloadedClipIdRef.current = null;
+        } else {
+          // Normal load (first clip or non-preloaded)
+          console.log('[VideoEditor] Loading clip:', activeClip.id, activeClip.sourceUrl);
+          videoRef.current.src = activeClip.sourceUrl;
+          videoRef.current.load();
+
+          // Wait for video to be ready before seeking
+          const handleLoadedMetadata = () => {
+            if (videoRef.current) {
+              const clipLocalTime = playback.currentTime - activeClip.startTime + activeClip.trimStart;
+              const clampedTime = Math.max(activeClip.trimStart, clipLocalTime);
+              videoRef.current.currentTime = clampedTime;
+              console.log('[VideoEditor] Video loaded, seeking to:', clampedTime);
+
+              // Resume playback if we were playing
+              if (wasPlaying) {
+                videoRef.current.play().catch(() => {});
+              }
+            }
+          };
+
+          videoRef.current.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
+        }
 
         setPlayback(prev => ({ ...prev, activeClipId: activeClip.id }));
       }
@@ -473,7 +555,7 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
         }, { once: true });
       }
     }
-  }, [playback.currentTime, playback.activeClipId, findActiveClip, clips]);
+  }, [playback.currentTime, playback.activeClipId, playback.playing, findActiveClip, clips]);
 
   // Monitor video timeupdate to enforce trim boundaries during playback
   useEffect(() => {
@@ -539,6 +621,12 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
   }, [playback.playing, totalDuration]);
 
   // Sync video element with playback - respect trim boundaries
+  // Only sync video position when:
+  // 1. Playback state changes (play/pause)
+  // 2. User seeks (currentTime changes significantly when not playing)
+  // 3. Active clip changes
+  const lastSyncTimeRef = useRef<number>(0);
+
   useEffect(() => {
     if (!videoRef.current) return;
 
@@ -554,18 +642,27 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
     const trimEndBoundary = activeClip.sourceDuration - activeClip.trimEnd;
 
     if (playback.playing) {
-      // Ensure video doesn't play past the trim end
+      // When playing, let the video play naturally - only ensure it's playing
+      // and check trim boundary
       if (clipLocalTime >= trimEndBoundary) {
         // We've reached the end of this clip's trimmed content
         // The playback animation loop will advance to the next clip
         return;
       }
-      videoRef.current.play().catch(() => {});
+
+      // Only start playing if paused
+      if (videoRef.current.paused) {
+        videoRef.current.play().catch(() => {});
+      }
     } else {
+      // When paused, sync the video to the timeline position for scrubbing
       videoRef.current.pause();
-      // Clamp the seek position within trim boundaries
       const clampedTime = Math.max(activeClip.trimStart, Math.min(clipLocalTime, trimEndBoundary));
-      videoRef.current.currentTime = clampedTime;
+
+      // Only update currentTime if it's significantly different (avoids jitter)
+      if (Math.abs(videoRef.current.currentTime - clampedTime) > 0.1) {
+        videoRef.current.currentTime = clampedTime;
+      }
     }
   }, [playback.playing, playback.currentTime, findActiveClip]);
 
@@ -807,6 +904,22 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
     setTextOverlays(prev => [...prev, newOverlay]);
     setSelectedTextId(newOverlay.id);
   }, [textOverlays]);
+
+  // Transition handlers
+  const handleSelectTransition = useCallback((index: number | null) => {
+    setSelectedTransitionIndex(index);
+    if (index !== null) {
+      setIsTransitionPanelOpen(true);
+      // Deselect text when selecting a transition
+      setSelectedTextId(null);
+    }
+  }, []);
+
+  const handleUpdateTransition = useCallback((clipIndex: number, transition: ClipTransition | undefined) => {
+    setClips(prev => prev.map((clip, idx) =>
+      idx === clipIndex ? { ...clip, transitionOut: transition } : clip
+    ));
+  }, []);
 
   // Open export modal (shows options first)
   const handleExport = useCallback(() => {
@@ -1135,6 +1248,25 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
             </Button>
           )}
 
+          {/* Transitions button - only show when there are 2+ clips */}
+          {clips.length > 1 && (
+            <Button
+              onClick={() => {
+                setIsTransitionPanelOpen(!isTransitionPanelOpen);
+                // Close text panel when opening transitions
+                if (!isTransitionPanelOpen) {
+                  setIsTextPanelOpen(false);
+                }
+              }}
+              variant="outline"
+              className={`border-blue-500/50 ${isTransitionPanelOpen ? 'bg-blue-600/20 text-blue-400' : 'text-blue-400 hover:bg-blue-600/10'}`}
+              title="Transitions"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              Transitions
+            </Button>
+          )}
+
           {clips.length > 0 && (
             <>
               <Button
@@ -1180,7 +1312,15 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
                   className="w-full h-full object-contain"
                   muted={isMuted}
                   playsInline
-                  preload="metadata"
+                  preload="auto"
+                />
+                {/* Hidden preload video for seamless clip transitions */}
+                <video
+                  ref={preloadVideoRef}
+                  className="hidden"
+                  muted
+                  playsInline
+                  preload="auto"
                 />
                 {!activeClip && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -1363,6 +1503,10 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
             if (id) setIsTextPanelOpen(true);
           }}
           onUpdateText={handleUpdateTextOverlay}
+          // Transition props
+          selectedTransitionIndex={selectedTransitionIndex}
+          onSelectTransition={handleSelectTransition}
+          onUpdateTransition={handleUpdateTransition}
         />
       </Card>
 
@@ -1408,6 +1552,18 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
         onDuplicateOverlay={handleDuplicateTextOverlay}
         currentTime={playback.currentTime}
         totalDuration={totalDuration}
+      />
+
+      {/* Transition Panel (Drawer) */}
+      <TransitionPanel
+        isOpen={isTransitionPanelOpen}
+        onClose={() => {
+          setIsTransitionPanelOpen(false);
+          setSelectedTransitionIndex(null);
+        }}
+        clips={clips}
+        selectedClipIndex={selectedTransitionIndex}
+        onUpdateTransition={handleUpdateTransition}
       />
     </div>
   );

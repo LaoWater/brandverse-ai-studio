@@ -1,9 +1,10 @@
 import { useCallback, useRef, useState, useEffect, useMemo } from 'react';
-import { Film, GripVertical, Scissors, SplitSquareHorizontal, Trash2, Undo2, Type } from 'lucide-react';
+import { Film, GripVertical, Scissors, SplitSquareHorizontal, Trash2, Undo2, Type, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { EditorClip, TextOverlay } from '@/types/editor';
+import type { EditorClip, TextOverlay, ClipTransition } from '@/types/editor';
 import { getEffectiveDuration, getClipEndTime } from '@/types/editor';
 import { TextTimelineTrack } from './text-overlay';
+import { TransitionIndicator } from './transitions';
 
 interface EditorTimelineProps {
   clips: EditorClip[];
@@ -22,6 +23,10 @@ interface EditorTimelineProps {
   selectedTextId?: string | null;
   onSelectText?: (id: string | null) => void;
   onUpdateText?: (id: string, updates: Partial<TextOverlay>) => void;
+  // Transition props
+  selectedTransitionIndex?: number | null;
+  onSelectTransition?: (index: number | null) => void;
+  onUpdateTransition?: (clipIndex: number, transition: ClipTransition | undefined) => void;
 }
 
 export const EditorTimeline = ({
@@ -40,6 +45,10 @@ export const EditorTimeline = ({
   selectedTextId,
   onSelectText,
   onUpdateText,
+  // Transition props
+  selectedTransitionIndex,
+  onSelectTransition,
+  onUpdateTransition,
 }: EditorTimelineProps) => {
   const timelineRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -464,6 +473,29 @@ export const EditorTimeline = ({
                 </div>
               );
             })}
+
+            {/* Transition Indicators between clips */}
+            {clips.length > 1 && onSelectTransition && (
+              <>
+                {clips.slice(0, -1).map((clip, index) => {
+                  const clipEndTime = getClipEndTime(clip);
+                  const position = timeToPixel(clipEndTime);
+
+                  return (
+                    <TransitionIndicator
+                      key={`transition-${clip.id}`}
+                      transition={clip.transitionOut}
+                      position={position}
+                      scale={scale}
+                      isSelected={selectedTransitionIndex === index}
+                      onClick={() => {
+                        onSelectTransition(selectedTransitionIndex === index ? null : index);
+                      }}
+                    />
+                  );
+                })}
+              </>
+            )}
           </div>
 
           {/* Text Track Area */}
@@ -509,6 +541,12 @@ export const EditorTimeline = ({
           <>
             <span>•</span>
             <span>Click Split to divide clip at playhead</span>
+          </>
+        )}
+        {onSelectTransition && clips.length > 1 && (
+          <>
+            <span>•</span>
+            <span>Click between clips to add transitions</span>
           </>
         )}
       </div>

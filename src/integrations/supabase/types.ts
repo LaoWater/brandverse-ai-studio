@@ -227,6 +227,72 @@ export type Database = {
           },
         ]
       }
+      pending_video_jobs: {
+        Row: {
+          id: string
+          user_id: string
+          company_id: string | null
+          operation_name: string
+          model: string
+          mode: string
+          prompt: string
+          size: string
+          seconds: number
+          input_reference_url: string | null
+          status: string
+          created_at: string
+          updated_at: string
+          expires_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          company_id?: string | null
+          operation_name: string
+          model: string
+          mode: string
+          prompt: string
+          size: string
+          seconds: number
+          input_reference_url?: string | null
+          status?: string
+          created_at?: string
+          updated_at?: string
+          expires_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          company_id?: string | null
+          operation_name?: string
+          model?: string
+          mode?: string
+          prompt?: string
+          size?: string
+          seconds?: number
+          input_reference_url?: string | null
+          status?: string
+          created_at?: string
+          updated_at?: string
+          expires_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_video_jobs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pending_video_jobs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       media_files: {
         Row: {
           aspect_ratio: string | null
