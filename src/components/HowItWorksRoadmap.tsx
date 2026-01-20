@@ -1,12 +1,12 @@
 // src/components/HowItWorksRoadmap.tsx
 import { useRef } from 'react';
 import { motion, useScroll, useTransform, useInView, easeOut } from 'framer-motion';
-import { ArrowRight, Pen, Sparkles, Brain, Bot, Users, CalendarClock, Target, Share2, TrendingUp, Zap, Rocket, Wand2, Globe } from 'lucide-react';
+import { ArrowRight, Pen, Sparkles, Brain, Bot, Users, CalendarClock, Target, Share2, TrendingUp, Zap, Rocket, Wand2, Globe, Film } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const iconMap = {
-  Pen, Sparkles, Brain, Bot, Users, CalendarClock, Target, Share2, TrendingUp, Zap, Rocket, Wand2, Globe,
+  Pen, Sparkles, Brain, Bot, Users, CalendarClock, Target, Share2, TrendingUp, Zap, Rocket, Wand2, Globe, Film,
 };
 type IconName = keyof typeof iconMap;
 
@@ -18,7 +18,7 @@ const steps = [ // Ensure icon names are valid IconName types
   {
     stepNumber: 1,
     icon: "Rocket" as IconName,
-    title: "Define Your Startup",
+    title: "Define Your Project",
     description: "Tell us about your product, your unique value proposition, and who your ideal customers are. Our AI learns what makes your startup special and how to communicate it.",
     details: [
       "Describe your product, mission, and target audience.",
@@ -47,6 +47,21 @@ const steps = [ // Ensure icon names are valid IconName types
   },
   {
     stepNumber: 3,
+    icon: "Film" as IconName,
+    title: "Edit & Polish Your Media",
+    description: "Our integrated video editor lets you trim, add transitions, captions, and music — then export in full quality. No subscriptions, no watermarks. Photo editing tools included. Everything you need to make your content shine, all in one place.",
+    details: [
+      "Web-based video editor with transitions, captions, and audio.",
+      "Full-quality exports — no watermarks or subscription walls.",
+      "Photo editing tools for quick touch-ups and enhancements.",
+    ],
+    bgColor: "bg-rose-500/10",
+    borderColor: "border-rose-500",
+    textColor: "text-rose-300",
+    iconColor: "text-rose-400",
+  },
+  {
+    stepNumber: 4,
     icon: "Target" as IconName,
     title: "SEO Everywhere",
     description: "73% of buying decisions happen outside Google. Our SEO Agent analyzes your visibility across the entire decision landscape — not just search rankings, but TikTok discoverability, YouTube authority, Reddit mentions, and AI assistant recommendations.",
@@ -61,7 +76,7 @@ const steps = [ // Ensure icon names are valid IconName types
     iconColor: "text-emerald-400",
   },
   {
-    stepNumber: 4,
+    stepNumber: 5,
     icon: "TrendingUp" as IconName,
     title: "Launch, Learn & Iterate",
     description: "Distribute your content across all platforms, track what resonates, and let our AI continuously learn from your results. The more you use it, the better it understands your market and refines your launch strategy.",
@@ -228,7 +243,7 @@ export function HowItWorksRoadmap() {
             transition={{ duration: 0.6, delay: 0.2 }}
             viewport={{ once: true }}
           >
-            Four steps to take your startup from invisible to undeniable — across every platform where your customers make decisions.
+            Five steps to take your startup from invisible to undeniable — with all the tools you need in one ecosystem.
           </motion.p>
 
           {/* Philosophy Callout */}

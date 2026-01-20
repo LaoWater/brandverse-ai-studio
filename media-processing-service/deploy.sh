@@ -6,6 +6,7 @@ PROJECT_ID="creators-multi-verse"
 REGION="europe-central2"
 AR_REPO="creatorsm-docker-repo"
 IMAGE_NAME="media-processing-service"
+GCS_BUCKET_NAME="brandverse-media-exports"
 IMAGE_TAG=$(date +%Y%m%d-%H%M%S)
 AR_IMAGE_PATH="${REGION}-docker.pkg.dev/${PROJECT_ID}/${AR_REPO}/${IMAGE_NAME}:${IMAGE_TAG}"
 SERVICE_NAME="media-processing-svc"
@@ -30,10 +31,11 @@ gcloud run deploy $SERVICE_NAME \
   --region $REGION \
   --allow-unauthenticated \
   --port 8080 \
-  --memory 2Gi \
+  --memory 4Gi \
   --cpu 2 \
   --timeout 600 \
   --update-secrets="SUPABASE_URL=SUPABASE_URL:latest,SUPABASE_SERVICE_ROLE_KEY=SUPABASE_SERVICE_ROLE_KEY:latest" \
+  --set-env-vars="GCS_BUCKET_NAME=$GCS_BUCKET_NAME" \
   --ingress=all \
   --project $PROJECT_ID
 

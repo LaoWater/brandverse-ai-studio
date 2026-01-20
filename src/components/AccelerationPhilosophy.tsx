@@ -163,7 +163,7 @@ const AccelerationPhilosophy = () => {
               </div>
 
               <p className="mt-8 text-gray-300 max-w-2xl mx-auto">
-                A skilled marketer with AI tools creates 10x the output. A founder with domain expertise
+                A skilled marketer with AI tools creates 10x the output. A Founder or Marketer with domain expertise
                 crafts content that truly resonates. <span className="text-white font-medium">We accelerate what you already know how to do.</span>
               </p>
             </div>

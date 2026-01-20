@@ -1,4 +1,4 @@
-import { Settings2, Maximize2, Clock, Monitor, Coins, Volume2, VolumeX } from 'lucide-react';
+import { Settings2, Maximize2, Clock, Monitor, Coins, Volume2, VolumeX, Lock } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -23,7 +23,11 @@ const VideoFormatControls = () => {
     selectedVideoModel,
     videoGenerationMode,
     videoReferenceImages,
+    sourceVideoGcsUri,
   } = useMediaStudio();
+
+  // Check if we're in extend-video mode (settings are locked)
+  const isExtendMode = videoGenerationMode === 'extend-video' && sourceVideoGcsUri;
 
   // Video aspect ratios - Veo 3.1 ONLY supports 16:9 and 9:16 (NOT 1:1)
   const videoAspectRatios: { value: VideoAspectRatio; label: string; description: string }[] = [
@@ -110,15 +114,21 @@ const VideoFormatControls = () => {
         <Label className="text-sm text-gray-400 flex items-center gap-1.5">
           <Monitor className="w-3.5 h-3.5" />
           Resolution
-          {!isHighResAllowed && (
+          {isExtendMode ? (
+            <span className="text-xs text-green-400/80 ml-auto flex items-center gap-1">
+              <Lock className="w-3 h-3" />
+              Locked for extend
+            </span>
+          ) : !isHighResAllowed && (
             <span className="text-xs text-yellow-500/80 ml-auto">Set 8s for HD/4K</span>
           )}
         </Label>
         <Select
           value={videoResolution}
           onValueChange={(value) => setVideoResolution(value as VideoResolution)}
+          disabled={isExtendMode}
         >
-          <SelectTrigger className="w-full bg-background/50 border-primary/20 text-white hover:border-primary/40 transition-colors">
+          <SelectTrigger className={`w-full bg-background/50 border-primary/20 text-white hover:border-primary/40 transition-colors ${isExtendMode ? 'opacity-60 cursor-not-allowed border-green-500/30' : ''}`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-card border-primary/20">
@@ -145,7 +155,12 @@ const VideoFormatControls = () => {
         <Label className="text-sm text-gray-400 flex items-center gap-1.5">
           <Clock className="w-3.5 h-3.5" />
           Duration
-          {requires8s && (
+          {isExtendMode ? (
+            <span className="text-xs text-green-400/80 ml-auto flex items-center gap-1">
+              <Lock className="w-3 h-3" />
+              Locked for extend
+            </span>
+          ) : requires8s && (
             <span className="text-xs text-yellow-500/80 ml-auto">
               {isHighRes ? '8s required for HD/4K' : isImageMode ? '8s required for image mode' : '8s required'}
             </span>
@@ -154,9 +169,9 @@ const VideoFormatControls = () => {
         <Select
           value={videoDuration.toString()}
           onValueChange={(value) => setVideoDuration(parseInt(value) as 4 | 6 | 8)}
-          disabled={requires8s}
+          disabled={requires8s || isExtendMode}
         >
-          <SelectTrigger className="w-full bg-background/50 border-primary/20 text-white hover:border-primary/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          <SelectTrigger className={`w-full bg-background/50 border-primary/20 text-white hover:border-primary/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isExtendMode ? 'opacity-60 border-green-500/30' : ''}`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-card border-primary/20">

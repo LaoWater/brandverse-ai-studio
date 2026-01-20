@@ -11,6 +11,7 @@ import {
   deleteMediaFile,
   incrementDownloadCount,
   incrementViewCount,
+  updateMediaMetadata,
   MediaFile,
   MediaFilters as Filters,
 } from '@/services/mediaStudioService';
@@ -18,6 +19,7 @@ import { MediaType } from '@/contexts/MediaStudioContext';
 import MediaGrid from './MediaGrid';
 import MediaFiltersComponent from './MediaFilters';
 import MediaPreviewModal from './MediaPreviewModal';
+import MediaEditDialog from './MediaEditDialog';
 import ImportVideoDialog from './ImportVideoDialog';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -56,6 +58,7 @@ const MediaLibrary = ({
   });
   const [selectedMedia, setSelectedMedia] = useState<MediaFile | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [showAllCompanies, setShowAllCompanies] = useState(isStudioContext); // Default to true for Studio, false for Post
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
 
@@ -206,6 +209,29 @@ const MediaLibrary = ({
     },
   });
 
+  // Update metadata mutation
+  const updateMetadataMutation = useMutation({
+    mutationFn: async ({ mediaId, updates }: { mediaId: string; updates: Partial<MediaFile> }) => {
+      return updateMediaMetadata(mediaId, updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mediaLibrary'] });
+      setIsEditDialogOpen(false);
+      toast({
+        title: 'Updated',
+        description: 'Media details updated successfully',
+        className: 'bg-primary/90 border-primary text-white',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to update media details',
+        variant: 'destructive',
+      });
+    },
+  });
+
   // Handlers
   const handleToggleFavorite = (id: string, isFavorite: boolean) => {
     favoriteMutation.mutate({ id, isFavorite });
@@ -263,6 +289,15 @@ const MediaLibrary = ({
 
   const handleFiltersChange = (newFilters: Filters) => {
     setFilters(newFilters);
+  };
+
+  const handleEdit = (media: MediaFile) => {
+    setSelectedMedia(media);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async (mediaId: string, updates: Partial<MediaFile>) => {
+    await updateMetadataMutation.mutateAsync({ mediaId, updates });
   };
 
   // Selection handlers
@@ -486,6 +521,7 @@ const MediaLibrary = ({
         onToggleFavorite={handleToggleFavorite}
         onDelete={handleDelete}
         onDownload={handleDownload}
+        onEdit={handleEdit}
         onUseForImageGeneration={
           onUseForGeneration
             ? (media) => onUseForGeneration(media, 'image')
@@ -500,6 +536,17 @@ const MediaLibrary = ({
         onExtendVideo={onExtendVideo}
         isContinuingVideo={isContinuingVideo}
         continueVideoProgress={continueVideoProgress}
+      />
+
+      {/* Edit Dialog */}
+      <MediaEditDialog
+        media={selectedMedia}
+        isOpen={isEditDialogOpen}
+        onClose={() => {
+          setIsEditDialogOpen(false);
+        }}
+        onSave={handleSaveEdit}
+        isSaving={updateMetadataMutation.isPending}
       />
 
       {/* Import Video Dialog */}

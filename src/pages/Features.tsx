@@ -1,6 +1,6 @@
 import Navigation from "@/components/Navigation";
 import { Check, Sparkles, Zap, Shield, Globe, Users, Rocket, Clock, RefreshCcw, AtomIcon,
-  Moon, Star, Tag, Triangle, DollarSign, TrendingUp, Target, Lightbulb, ArrowRight } from "lucide-react";
+  Moon, Star, Tag, Triangle, DollarSign, TrendingUp, Target, Lightbulb, ArrowRight, Film, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useState } from "react";
@@ -17,6 +17,13 @@ const Features = () => {
       metric: "hours saved weekly"
     },
     {
+      icon: <Film className="w-8 h-8 text-accent" />,
+      title: "Video & Photo Editor",
+      description: "Professional video editing built right in. Trim, add transitions, captions, and music — export in full quality with no watermarks. Photo editing tools included. No subscriptions required.",
+      savings: { hours: "10-15", money: "$600-900" },
+      metric: "hours saved on editing"
+    },
+    {
       icon: <Target className="w-8 h-8 text-accent" />,
       title: "SEO Everywhere Agent",
       description: "Go beyond Google. Our AI analyzes your visibility across TikTok, YouTube, Reddit, Amazon, ChatGPT, and more — where 73% of buying decisions actually happen.",
@@ -29,6 +36,13 @@ const Features = () => {
       description: "Each platform has its own decision psychology. We tailor your message for TikTok's emotional hooks, YouTube's authority, Reddit's authenticity, and LinkedIn's professionalism.",
       savings: { hours: "10-15", money: "$500-800" },
       metric: "hours saved per launch"
+    },
+    {
+      icon: <Layers className="w-8 h-8 text-accent" />,
+      title: "All-in-One Ecosystem",
+      description: "Content generation, image creation, video editing, photo editing, SEO analysis — everything a founder or marketer needs, unified in one platform. No more juggling subscriptions.",
+      savings: { hours: "15-20", money: "$500-1000" },
+      metric: "saved vs separate tools"
     },
     {
       icon: <Users className="w-8 h-8 text-accent" />,
@@ -56,10 +70,10 @@ const Features = () => {
   const benefits = [
     { icon: <Clock className="w-6 h-6 text-accent" />, text: "Launch faster — from idea to live in hours", stat: "87% time reduction" },
     { icon: <TrendingUp className="w-6 h-6 text-accent" />, text: "Be visible where customers actually decide", stat: "73% off-Google decisions" },
-    { icon: <Target className="w-6 h-6 text-accent" />, text: "SEO across Google, TikTok, YouTube & more", stat: "Multi-platform reach" },
-    { icon: <Lightbulb className="w-6 h-6 text-accent" />, text: "AI that learns your product's unique story", stat: "Personalized content" },
+    { icon: <Film className="w-6 h-6 text-accent" />, text: "Edit videos & photos with no watermarks", stat: "Full-quality exports" },
+    { icon: <Layers className="w-6 h-6 text-accent" />, text: "All tools unified in one ecosystem", stat: "No subscription juggling" },
     { icon: <DollarSign className="w-6 h-6 text-accent" />, text: "No subscriptions — pay only for what you use", stat: "Founder-friendly pricing" },
-    { icon: <Triangle className="w-6 h-6 text-accent" />, text: "Track visibility and conversions in real-time", stat: "Actionable insights" }
+    { icon: <Lightbulb className="w-6 h-6 text-accent" />, text: "AI that learns your product's unique story", stat: "Personalized content" }
   ];
 
   return (
@@ -195,6 +209,9 @@ const Features = () => {
                   <p className="text-gray-300 leading-relaxed">
                     <span className="text-white font-medium">The output of AI is highly dependent on the knowledge and skill level of the one using it.</span> Our tools amplify your expertise, turning hours of repetitive work into minutes while you maintain creative control.
                   </p>
+                  <p className="text-gray-300 leading-relaxed">
+                    That's why we're bringing <span className="text-accent font-medium">everything</span> into the Creators Multiverse ecosystem: content generation, AI image creation, video editing, photo editing, SEO analysis — all the tools you need, unified and subscription-free.
+                  </p>
                 </div>
 
                 <div className="space-y-4">
@@ -202,7 +219,7 @@ const Features = () => {
                     <div className="w-2 h-2 bg-accent rounded-full mt-2 flex-shrink-0"></div>
                     <div>
                       <p className="text-white font-medium">AI Accelerates</p>
-                      <p className="text-gray-400 text-sm">Content generation, platform optimization, SEO analysis, scheduling</p>
+                      <p className="text-gray-400 text-sm">Content generation, image creation, video editing, SEO analysis, scheduling</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3 p-4 rounded-lg bg-accent/10 border border-accent/20">
@@ -210,6 +227,13 @@ const Features = () => {
                     <div>
                       <p className="text-white font-medium">You Lead</p>
                       <p className="text-gray-400 text-sm">Strategy, brand voice, creative direction, authentic messaging, final decisions</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-4 rounded-lg bg-rose-500/10 border border-rose-500/20">
+                    <div className="w-2 h-2 bg-rose-400 rounded-full mt-2 flex-shrink-0"></div>
+                    <div>
+                      <p className="text-white font-medium">One Ecosystem</p>
+                      <p className="text-gray-400 text-sm">No more juggling subscriptions — everything from content to video editing, all in one place</p>
                     </div>
                   </div>
                 </div>
@@ -280,8 +304,8 @@ const Features = () => {
                   <p className="text-gray-400">Platforms Covered</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-accent font-bold text-2xl">$0</p>
-                  <p className="text-gray-400">Monthly Fees</p>
+                  <p className="text-accent font-bold text-2xl">1</p>
+                  <p className="text-gray-400">Unified Ecosystem</p>
                 </div>
               </div>
             </div>

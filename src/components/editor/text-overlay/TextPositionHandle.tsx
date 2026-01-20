@@ -191,7 +191,7 @@ export const TextPositionHandle = ({
     >
       {/* Text content with styling */}
       <div
-        className={`whitespace-nowrap transition-all ${
+        className={`whitespace-pre transition-all ${
           isSelected
             ? 'ring-2 ring-purple-500 ring-offset-2 ring-offset-transparent'
             : ''
@@ -211,6 +211,7 @@ export const TextPositionHandle = ({
           textShadow: !overlay.style.backgroundColor
             ? '2px 2px 4px rgba(0,0,0,0.8), -1px -1px 2px rgba(0,0,0,0.5)'
             : undefined,
+          lineHeight: 1.3,
         }}
       >
         {overlay.text || 'Text'}

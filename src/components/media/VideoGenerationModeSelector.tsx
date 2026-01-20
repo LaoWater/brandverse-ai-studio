@@ -1,11 +1,22 @@
 import { useState } from 'react';
-import { Type, ImageIcon, GitMerge } from 'lucide-react';
+import { Type, ImageIcon, GitMerge, Play, X, Lock } from 'lucide-react';
 import { useMediaStudio, VideoGenerationMode } from '@/contexts/MediaStudioContext';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 const VideoGenerationModeSelector = () => {
-  const { videoGenerationMode, setVideoGenerationMode } = useMediaStudio();
+  const {
+    videoGenerationMode,
+    setVideoGenerationMode,
+    sourceVideoPreview,
+    sourceVideoGcsUri,
+    clearSourceVideo,
+  } = useMediaStudio();
   const [hoveredMode, setHoveredMode] = useState<VideoGenerationMode | null>(null);
+
+  // Check if we're in extend-video mode
+  const isExtendMode = videoGenerationMode === 'extend-video' && sourceVideoGcsUri;
 
   // Veo 3.1 official modes
   const modes: {
@@ -39,6 +50,76 @@ const VideoGenerationModeSelector = () => {
   const displayedMode = hoveredMode
     ? modes.find(m => m.value === hoveredMode)
     : modes.find(m => m.value === videoGenerationMode);
+
+  // Handler to exit extend mode and return to text-to-video
+  const handleExitExtendMode = () => {
+    clearSourceVideo();
+    setVideoGenerationMode('text-to-video');
+  };
+
+  // If in extend-video mode, show special UI
+  if (isExtendMode) {
+    return (
+      <div className="space-y-3">
+        <Label className="text-sm text-gray-400 flex items-center gap-2">
+          Generation Mode
+          <Badge className="bg-green-500/20 text-green-400 text-[10px] border-0">
+            Extend Mode
+          </Badge>
+        </Label>
+
+        {/* Extend Mode Card */}
+        <div className="relative rounded-lg border-2 border-green-500/50 bg-green-500/10 p-3 space-y-3">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Play className="w-4 h-4 text-green-400" />
+              <span className="font-medium text-sm text-white">Extending Video</span>
+              <Badge className="bg-green-600/30 text-green-300 text-[10px] border-0">
+                +7s
+              </Badge>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleExitExtendMode}
+              className="h-6 w-6 p-0 text-gray-400 hover:text-white hover:bg-red-500/20"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+
+          {/* Video Preview */}
+          {sourceVideoPreview && (
+            <div className="relative aspect-video rounded-md overflow-hidden bg-black/50 border border-green-500/30">
+              <video
+                src={sourceVideoPreview}
+                className="w-full h-full object-contain"
+                muted
+                loop
+                autoPlay
+                playsInline
+              />
+              <div className="absolute bottom-1 right-1 bg-black/70 text-[10px] text-green-400 px-1.5 py-0.5 rounded">
+                Source Video
+              </div>
+            </div>
+          )}
+
+          {/* Locked Settings Info */}
+          <div className="flex items-center gap-2 text-xs text-gray-400 bg-black/30 rounded px-2 py-1.5">
+            <Lock className="w-3 h-3 text-yellow-500/80" />
+            <span>720p @ 8s (required for extension)</span>
+          </div>
+        </div>
+
+        {/* Description */}
+        <p className="text-xs text-gray-400 text-center">
+          Enter a prompt describing how you want to continue this video
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-2">

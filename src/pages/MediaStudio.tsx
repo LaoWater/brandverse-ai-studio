@@ -737,12 +737,16 @@ const MediaStudioContent = () => {
                       <h2 className="text-3xl font-bold text-cosmic mb-3">
                         {mediaType === 'image'
                           ? 'What will you create today?'
-                          : 'What video will you bring to life?'}
+                          : videoGenerationMode === 'extend-video' && sourceVideoGcsUri
+                            ? 'How should this video continue?'
+                            : 'What video will you bring to life?'}
                       </h2>
                       <p className="text-gray-300 text-lg">
                         {mediaType === 'image'
                           ? 'Describe your vision and watch AI bring it to life'
-                          : 'Describe the action and watch AI animate your vision'}
+                          : videoGenerationMode === 'extend-video' && sourceVideoGcsUri
+                            ? 'Describe the next scene to add ~7 seconds to your video'
+                            : 'Describe the action and watch AI animate your vision'}
                       </p>
                     </div>
 
@@ -777,7 +781,11 @@ const MediaStudioContent = () => {
                         ) : (
                           <>
                             <Sparkles className="w-5 h-5 mr-2" />
-                            {mediaType === 'image' ? 'Generate Image' : 'Generate Video'}
+                            {mediaType === 'image'
+                              ? 'Generate Image'
+                              : videoGenerationMode === 'extend-video' && sourceVideoGcsUri
+                                ? 'Extend Video (+7s)'
+                                : 'Generate Video'}
                             <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                           </>
                         )}

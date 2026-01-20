@@ -19,6 +19,7 @@ import {
   FastForward,
   Loader2,
   Play,
+  Pencil,
 } from 'lucide-react';
 import { MediaFile } from '@/services/mediaStudioService';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,7 @@ interface MediaPreviewModalProps {
   onToggleFavorite: (id: string, isFavorite: boolean) => void;
   onDelete: (id: string) => void;
   onDownload: (media: MediaFile) => void;
+  onEdit?: (media: MediaFile) => void; // New: Edit media details
   onUseForImageGeneration?: (media: MediaFile) => void;
   onUseForVideoGeneration?: (media: MediaFile) => void;
   onContinueVideo?: (media: MediaFile) => void;
@@ -72,6 +74,7 @@ const MediaPreviewModal = ({
   onToggleFavorite,
   onDelete,
   onDownload,
+  onEdit,
   onUseForImageGeneration,
   onUseForVideoGeneration,
   onContinueVideo,
@@ -270,6 +273,18 @@ const MediaPreviewModal = ({
                       {media.is_favorite ? 'Unfavorite' : 'Favorite'}
                     </Button>
                   </div>
+
+                  {/* Edit Button */}
+                  {onEdit && (
+                    <Button
+                      onClick={() => onEdit(media)}
+                      variant="outline"
+                      className="w-full border-accent/30 hover:border-accent/50 hover:bg-accent/10"
+                    >
+                      <Pencil className="w-4 h-4 mr-2" />
+                      Edit Details
+                    </Button>
+                  )}
 
                   {/* Use for Generation - Only for images */}
                   {!isVideo && (onUseForImageGeneration || onUseForVideoGeneration) && (

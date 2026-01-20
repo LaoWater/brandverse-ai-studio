@@ -24,6 +24,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client, Client
+from google.cloud import storage as gcs_storage
 
 # ============================================
 # Configuration
@@ -32,6 +33,10 @@ from supabase import create_client, Client
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 WORK_DIR = Path("/tmp/media-processing")
+
+# GCS configuration for large files (> 50MB)
+GCS_BUCKET_NAME = os.environ.get("GCS_BUCKET_NAME", "brandverse-media-exports")
+GCS_LARGE_FILE_THRESHOLD = 50 * 1024 * 1024  # 50MB in bytes
 
 # ============================================
 # FastAPI App Setup
@@ -115,6 +120,7 @@ class VideoExportResponse(BaseModel):
     fileSize: Optional[int] = None
     mediaFileId: Optional[str] = None
     processingTimeMs: Optional[int] = None
+    storageType: Optional[str] = None  # 'supabase' or 'gcs'
     error: Optional[str] = None
 
 
@@ -130,6 +136,30 @@ def get_supabase_client() -> Client:
             detail="Supabase credentials not configured"
         )
     return create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
+
+def upload_to_gcs(file_path: Path, destination_path: str) -> str:
+    """
+    Upload file to Google Cloud Storage and return a public URL.
+    Used for files > 50MB that exceed Supabase storage limits.
+
+    Bucket has uniform bucket-level access with allUsers:objectViewer,
+    so all objects are publicly readable by default.
+    Objects are auto-deleted after 30 days via bucket lifecycle policy.
+    """
+    print(f"[GCS] Uploading {file_path} to gs://{GCS_BUCKET_NAME}/{destination_path}")
+
+    client = gcs_storage.Client()
+    bucket = client.bucket(GCS_BUCKET_NAME)
+    blob = bucket.blob(destination_path)
+
+    # Upload the file
+    blob.upload_from_filename(str(file_path), content_type="video/mp4")
+
+    # Return the public URL (bucket already has public read access)
+    public_url = f"https://storage.googleapis.com/{GCS_BUCKET_NAME}/{destination_path}"
+    print(f"[GCS] Upload complete. Public URL: {public_url}")
+    return public_url
 
 
 async def download_file(url: str, dest_path: Path) -> None:
@@ -597,7 +627,12 @@ def hex_to_ffmpeg_color(color: str) -> tuple[str, float]:
 
 
 def escape_text_for_drawtext(text: str) -> str:
-    """Escape special characters for FFmpeg drawtext filter."""
+    """
+    Escape special characters for FFmpeg drawtext filter.
+
+    For multiline text, we use a text file instead (see build_drawtext_filter).
+    This function handles single-line text escaping.
+    """
     # FFmpeg drawtext needs special escaping
     text = text.replace("\\", "\\\\\\\\")  # Backslash
     text = text.replace("'", "\\\\'")  # Single quote
@@ -608,26 +643,28 @@ def escape_text_for_drawtext(text: str) -> str:
     return text
 
 
-def build_drawtext_filter(
+def split_text_into_lines(text: str) -> list[str]:
+    """Split text into lines, normalizing line endings."""
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    return text.split("\n")
+
+
+def build_drawtext_filters(
     overlay: TextOverlay,
     video_width: int,
     video_height: int,
-    preview_width: int = 400  # Approximate preview width in the web editor
-) -> str:
+    preview_width: int = 400,  # Approximate preview width in the web editor
+) -> list[str]:
     """
-    Build FFmpeg drawtext filter string for a text overlay.
+    Build FFmpeg drawtext filter strings for a text overlay.
 
-    The web preview shows text at CSS pixels relative to a ~400px wide container.
-    We need to scale the font size proportionally to the actual video resolution.
+    Returns a LIST of filter strings - one per line for multiline text.
+    This approach handles newlines reliably by rendering each line separately.
 
     Position values (x, y) are percentages (0-100) where:
     - x=0 is left edge, x=100 is right edge
     - y=0 is top edge, y=100 is bottom edge
     - x=50, y=50 is center of the video
-
-    The web UI uses CSS transform: translate(-50%, -50%) to center the text element
-    on the position point. FFmpeg's drawtext uses x and y as the top-left corner
-    by default, so we need to offset by half the text width and height.
     """
     style = overlay.style
 
@@ -635,12 +672,10 @@ def build_drawtext_filter(
     font_path = get_font_path(style.fontFamily, style.fontWeight)
 
     # Calculate position in pixels from percentage
-    # Handle both dict access styles (Pydantic model or raw dict)
     pos = overlay.position
     x_pct = pos.get('x', 50) if isinstance(pos, dict) else getattr(pos, 'x', 50)
     y_pct = pos.get('y', 50) if isinstance(pos, dict) else getattr(pos, 'y', 50)
 
-    # Ensure position values are valid numbers
     try:
         x_pct = float(x_pct)
         y_pct = float(y_pct)
@@ -649,81 +684,82 @@ def build_drawtext_filter(
         x_pct = 50.0
         y_pct = 50.0
 
-    print(f"[Position] Raw percentages: x={x_pct}%, y={y_pct}%")
     x_pos = int((x_pct / 100) * video_width)
     y_pos = int((y_pct / 100) * video_height)
 
-    # Scale font size proportionally to video resolution
-    # Preview is ~400px wide, so we scale based on actual video width
-    # For portrait videos (1080x1920), width is 1080, scale = 1080/400 = 2.7
-    # For landscape videos (1920x1080), width is 1920, scale = 1920/400 = 4.8
+    # Scale font size and padding proportionally to video resolution
     scale_factor = video_width / preview_width
     scaled_font_size = int(style.fontSize * scale_factor)
-
-    # Also scale background padding
     scaled_padding = int((style.backgroundPadding or 0) * scale_factor)
 
+    # Line height with some spacing (typically 1.2x font size)
+    line_height = int(scaled_font_size * 1.2)
+
     print(f"[Font] Family: {style.fontFamily}, Weight: {style.fontWeight}, Path: {font_path}")
-    print(f"[Font] Original size: {style.fontSize}px, Scale factor: {scale_factor:.2f}, Scaled size: {scaled_font_size}px")
+    print(f"[Font] Original size: {style.fontSize}px, Scale: {scale_factor:.2f}, Scaled: {scaled_font_size}px")
     print(f"[Position] x={x_pct}% -> {x_pos}px, y={y_pct}% -> {y_pos}px (video: {video_width}x{video_height})")
-    print(f"[Style] align={style.textAlign}, color={style.color}, opacity={style.opacity}")
-    print(f"[Style] bgColor={style.backgroundColor}, bgPadding={style.backgroundPadding} (scaled: {scaled_padding})")
 
-    # Escape text for FFmpeg
-    escaped_text = escape_text_for_drawtext(overlay.text)
-
-    # Color conversion - now returns (color, opacity)
+    # Color conversion
     font_color, font_color_opacity = hex_to_ffmpeg_color(style.color)
-    # Combine color opacity with style opacity
     final_font_opacity = style.opacity * font_color_opacity
 
-    # Build the drawtext filter
-    filter_parts = [
-        f"drawtext=text='{escaped_text}'",
-        f"fontfile='{font_path}'",
-        f"fontsize={scaled_font_size}",
-        f"fontcolor={font_color}@{final_font_opacity}",
-    ]
-
-    # Text alignment - adjust x position based on alignment
-    #
-    # Web behavior (CSS):
-    # - The text container is positioned at (x%, y%) using left/top
-    # - transform: translate(-50%, -50%) centers the container on that point
-    # - textAlign then aligns text WITHIN that centered container
-    #
-    # So for ALL alignments, the visual "anchor point" is the CENTER of the text block.
-    # This means:
-    # - center: text center is at x_pos → x = x_pos - (tw/2)
-    # - left: text center is at x_pos, but text reads left-to-right → x = x_pos - (tw/2)
-    # - right: text center is at x_pos, but text reads right-to-left → x = x_pos - (tw/2)
-    #
-    # The textAlign in CSS only affects multi-line text alignment within the container,
-    # but for single-line text, the container width equals text width, so alignment
-    # doesn't visually change the position - the CENTER is always at the anchor point.
-    #
-    # Therefore, for FFmpeg we ALWAYS center the text on the x_pos point:
-    filter_parts.append(f"x={x_pos}-(tw/2)")
-
-    # Y position (center vertically on the point) - same logic
-    filter_parts.append(f"y={y_pos}-(th/2)")
-
-    print(f"[Position] FFmpeg x={x_pos}-(tw/2), y={y_pos}-(th/2) (text centered on anchor point)")
-
-    # Background box if specified
+    # Background color
+    bg_color, bg_opacity, final_bg_opacity = None, None, None
     if style.backgroundColor:
         bg_color, bg_opacity = hex_to_ffmpeg_color(style.backgroundColor)
-        # Combine background opacity with style opacity
         final_bg_opacity = style.opacity * bg_opacity
-        filter_parts.append(f"box=1")
-        filter_parts.append(f"boxcolor={bg_color}@{final_bg_opacity}")
-        filter_parts.append(f"boxborderw={scaled_padding}")
 
-    # Enable timing (show text only during specified time range)
+    # Timing
     end_time = overlay.startTime + overlay.duration
-    filter_parts.append(f"enable='between(t,{overlay.startTime},{end_time})'")
 
-    return ":".join(filter_parts)
+    # Split text into lines
+    lines = split_text_into_lines(overlay.text)
+    num_lines = len(lines)
+
+    print(f"[TextOverlay] {num_lines} line(s): {lines}")
+
+    # Calculate total text block height to center it on y_pos
+    total_height = num_lines * line_height
+    # Starting Y position (top of first line, adjusted to center the block)
+    start_y = y_pos - (total_height // 2) + (line_height // 2)
+
+    filters = []
+    for i, line_text in enumerate(lines):
+        if not line_text.strip():
+            # Skip empty lines but account for spacing
+            continue
+
+        escaped_text = escape_text_for_drawtext(line_text)
+
+        # Calculate Y position for this line
+        line_y = start_y + (i * line_height)
+
+        filter_parts = [
+            f"drawtext=text='{escaped_text}'",
+            f"fontfile='{font_path}'",
+            f"fontsize={scaled_font_size}",
+            f"fontcolor={font_color}@{final_font_opacity}",
+        ]
+
+        # X position - always center on anchor point
+        filter_parts.append(f"x={x_pos}-(tw/2)")
+
+        # Y position for this specific line
+        filter_parts.append(f"y={line_y}-(th/2)")
+
+        # Background box if specified
+        if bg_color:
+            filter_parts.append(f"box=1")
+            filter_parts.append(f"boxcolor={bg_color}@{final_bg_opacity}")
+            filter_parts.append(f"boxborderw={scaled_padding}")
+
+        # Timing
+        filter_parts.append(f"enable='between(t,{overlay.startTime},{end_time})'")
+
+        filters.append(":".join(filter_parts))
+        print(f"[TextOverlay] Line {i+1} filter: y={line_y}")
+
+    return filters
 
 
 def get_video_dimensions(video_path: Path) -> tuple[int, int]:
@@ -763,10 +799,13 @@ def apply_text_overlays(
     video_width: int = None,
     video_height: int = None,
     preview_width: int = None,
-    preview_height: int = None
+    preview_height: int = None,
 ) -> None:
     """
     Apply text overlays to a video using FFmpeg drawtext filters.
+
+    Handles multiline text by rendering each line as a separate filter,
+    stacked vertically and centered on the anchor point.
 
     Args:
         input_path: Input video file
@@ -794,14 +833,15 @@ def apply_text_overlays(
     print(f"[TextOverlay] Preview dimensions: {preview_width}x{preview_height}")
 
     # Build filter complex with all text overlays chained together
-    filter_parts = []
+    # Note: build_drawtext_filters returns a LIST of filters (one per line for multiline text)
+    all_filters = []
     for i, overlay in enumerate(overlays):
-        filter_str = build_drawtext_filter(overlay, video_width, video_height, preview_width)
-        print(f"[TextOverlay] Filter {i+1}: {filter_str[:200]}...")
-        filter_parts.append(filter_str)
+        filters = build_drawtext_filters(overlay, video_width, video_height, preview_width)
+        print(f"[TextOverlay] Overlay {i+1}: {len(filters)} filter(s)")
+        all_filters.extend(filters)
 
-    # Chain filters together
-    filter_complex = ",".join(filter_parts)
+    # Chain all filters together
+    filter_complex = ",".join(all_filters)
     print(f"[TextOverlay] Full filter complex length: {len(filter_complex)} chars")
 
     run_ffmpeg([
@@ -1041,7 +1081,7 @@ async def export_video(request: VideoExportRequest):
                 output_path,
                 request.textOverlays,
                 preview_width=preview_width,
-                preview_height=preview_height
+                preview_height=preview_height,
             )
         else:
             print(f"[Export:{job_id}] Step 4: No text overlays to apply, using concatenated output...")
@@ -1049,27 +1089,35 @@ async def export_video(request: VideoExportRequest):
 
         # Get output file size
         output_size = output_path.stat().st_size
-        print(f"[Export:{job_id}] Output file size: {output_size} bytes")
+        print(f"[Export:{job_id}] Output file size: {output_size} bytes ({output_size / (1024*1024):.1f} MB)")
 
-        # Step 5: Upload to Supabase storage
-        print(f"[Export:{job_id}] Step 5: Uploading to storage...")
+        # Step 5: Upload to storage (GCS for large files, Supabase for smaller)
         supabase = get_supabase_client()
-
         timestamp = int(datetime.now().timestamp() * 1000)
         storage_path = f"{request.userId}/{request.companyId or 'default'}/{timestamp}_export.mp4"
 
-        with open(output_path, "rb") as f:
-            output_data = f.read()
+        # Choose storage based on file size
+        if output_size > GCS_LARGE_FILE_THRESHOLD:
+            # Large file: use GCS
+            print(f"[Export:{job_id}] Step 5: File > 50MB, uploading to GCS...")
+            public_url = upload_to_gcs(output_path, storage_path)
+            storage_type = "gcs"
+            print(f"[Export:{job_id}] Uploaded to GCS: {storage_path}")
+        else:
+            # Normal file: use Supabase
+            print(f"[Export:{job_id}] Step 5: Uploading to Supabase storage...")
+            with open(output_path, "rb") as f:
+                output_data = f.read()
 
-        upload_result = supabase.storage.from_("media-studio-videos").upload(
-            storage_path,
-            output_data,
-            file_options={"content-type": "video/mp4"}
-        )
+            upload_result = supabase.storage.from_("media-studio-videos").upload(
+                storage_path,
+                output_data,
+                file_options={"content-type": "video/mp4"}
+            )
 
-        # Get public URL
-        public_url = supabase.storage.from_("media-studio-videos").get_public_url(storage_path)
-        print(f"[Export:{job_id}] Uploaded to: {public_url}")
+            public_url = supabase.storage.from_("media-studio-videos").get_public_url(storage_path)
+            storage_type = "supabase"
+            print(f"[Export:{job_id}] Uploaded to Supabase: {public_url}")
 
         # Step 6: Create media_files record
         print(f"[Export:{job_id}] Step 6: Creating media record...")
@@ -1100,7 +1148,7 @@ async def export_video(request: VideoExportRequest):
 
         # Calculate processing time
         processing_time_ms = int((datetime.now() - start_time).total_seconds() * 1000)
-        print(f"[Export:{job_id}] Complete in {processing_time_ms}ms")
+        print(f"[Export:{job_id}] Complete in {processing_time_ms}ms (storage: {storage_type})")
 
         return VideoExportResponse(
             success=True,
@@ -1108,7 +1156,8 @@ async def export_video(request: VideoExportRequest):
             storagePath=storage_path,
             fileSize=output_size,
             mediaFileId=media_file_id,
-            processingTimeMs=processing_time_ms
+            processingTimeMs=processing_time_ms,
+            storageType=storage_type
         )
 
     except HTTPException:

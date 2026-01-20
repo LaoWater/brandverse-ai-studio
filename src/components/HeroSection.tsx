@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, Calendar, Zap, Globe, Share2, Lightbulb, Target, Rocket, Play, Users, TrendingUp, Clock, Activity, GitGraph, DatabaseIcon, Sparkles, Radio } from "lucide-react";
+import { ArrowRight, Calendar, Zap, Globe, Share2, Lightbulb, Target, Rocket, Play, Users, TrendingUp, Clock, Activity, GitGraph, DatabaseIcon, Sparkles, Radio, Film, Scissors, Music, Type } from "lucide-react";
 import { FaFacebookF, FaInstagram, FaLinkedinIn, FaXTwitter } from "react-icons/fa6";
 import ReviewsSection from "./ReviewsSection";
 
@@ -190,6 +190,88 @@ const HeroSection = () => {
                 loading="lazy" // Improves page load performance
               ></iframe>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Video Editor Showcase Section */}
+      <section className="py-12 sm:py-24 relative bg-gradient-to-b from-background/80 to-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-8 sm:mb-12">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-rose-500/10 border border-rose-500/20 mb-4 sm:mb-6">
+              <Film className="w-4 h-4 text-rose-400" />
+              <span className="text-sm text-rose-300 font-medium">Integrated Video Editor</span>
+            </div>
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white mb-4 sm:mb-6">
+              Edit Your Media, <span className="text-cosmic font-serif">Your Way</span>
+            </h2>
+            <p className="text-base sm:text-xl text-gray-300 max-w-3xl mx-auto px-2">
+              Professional video editing built right in. Trim, add transitions, captions, and music —
+              then export in full quality. No subscriptions, no watermarks, no limits.
+            </p>
+          </div>
+
+          {/* Video Editor Screenshot Placeholder */}
+          <div className="max-w-5xl mx-auto">
+            <div className="relative">
+              {/* Glow effect */}
+              <div className="absolute -inset-2 bg-gradient-to-r from-rose-500/20 via-purple-500/20 to-rose-500/20 rounded-3xl blur-xl opacity-60"></div>
+
+              {/* Screenshot container */}
+              <div className="relative bg-gradient-to-br from-gray-900/80 to-gray-800/80 rounded-2xl overflow-hidden border border-rose-500/30 shadow-2xl">
+                {/* Placeholder for screenshot - replace src with actual screenshot */}
+                <div className="aspect-video bg-gradient-to-br from-gray-800/50 to-gray-900/50 flex items-center justify-center">
+                  {/* Placeholder content - will be replaced with actual screenshot */}
+                  <img
+                    src="/video-editor-screenshot.png"
+                    alt="Video Editor Interface - Timeline, transitions, captions and audio tools"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback if screenshot doesn't exist yet
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      target.parentElement!.classList.add('placeholder-active');
+                    }}
+                  />
+                  {/* Fallback placeholder UI */}
+                  <div className="placeholder-fallback absolute inset-0 flex flex-col items-center justify-center text-center p-8">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-rose-500/30 to-purple-500/30 rounded-2xl flex items-center justify-center mb-4 sm:mb-6">
+                      <Film className="w-8 h-8 sm:w-10 sm:h-10 text-rose-400" />
+                    </div>
+                    <p className="text-gray-400 text-sm sm:text-base">Video Editor Screenshot Coming Soon</p>
+                    <p className="text-gray-500 text-xs sm:text-sm mt-2">Add your screenshot at /public/video-editor-screenshot.png</p>
+                  </div>
+                </div>
+
+                {/* Feature badges overlay */}
+                <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 flex flex-wrap gap-2">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-black/70 backdrop-blur-sm rounded-full border border-white/10">
+                    <Scissors className="w-3 h-3 text-rose-400" />
+                    <span className="text-xs text-white">Trim & Cut</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-black/70 backdrop-blur-sm rounded-full border border-white/10">
+                    <Sparkles className="w-3 h-3 text-purple-400" />
+                    <span className="text-xs text-white">Transitions</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-black/70 backdrop-blur-sm rounded-full border border-white/10">
+                    <Type className="w-3 h-3 text-sky-400" />
+                    <span className="text-xs text-white">Captions</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-black/70 backdrop-blur-sm rounded-full border border-white/10">
+                    <Music className="w-3 h-3 text-emerald-400" />
+                    <span className="text-xs text-white">Audio</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Ecosystem message */}
+          <div className="text-center mt-8 sm:mt-12">
+            <p className="text-sm sm:text-base text-gray-400 max-w-2xl mx-auto">
+              Part of the <span className="text-accent font-medium">Creators Multiverse</span> ecosystem —
+              content generation, image creation, video editing, SEO analysis, all in one place.
+            </p>
           </div>
         </div>
       </section>

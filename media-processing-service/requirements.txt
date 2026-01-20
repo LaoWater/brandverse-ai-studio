@@ -16,3 +16,6 @@ gotrue==1.3.0
 
 # Pydantic for data validation
 pydantic==2.5.3
+
+# Google Cloud Storage (for large file uploads)
+google-cloud-storage==2.14.0
