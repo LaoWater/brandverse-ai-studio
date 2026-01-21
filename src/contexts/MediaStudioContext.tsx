@@ -49,6 +49,26 @@ export type QualityTier = 'fast' | 'standard' | 'ultra';
 export type AspectRatio = '1:1' | '16:9' | '9:16' | '3:4' | '4:3' | '3:2';
 export type VideoAspectRatio = '16:9' | '9:16'; // Veo 3.1 only supports these two
 
+// Active video generation tracking (for non-blocking queue)
+export interface ActiveGeneration {
+  id: string;                    // Local UUID for tracking
+  pendingJobId?: string;         // pending_video_jobs.id (if persisted)
+  operationName: string;         // OpenAI/Google job ID
+  prompt: string;
+  model: string;
+  mode: string;
+  resolution: string;
+  duration: number;
+  thumbnailUrl?: string;         // For image-to-video mode (input image preview)
+  progress: number;              // 0-100
+  status: 'starting' | 'queued' | 'processing' | 'completed' | 'failed';
+  stage: string;                 // Current stage description
+  startedAt: Date;
+  completedAt?: Date;
+  videoUrl?: string;             // Set when completed
+  error?: string;                // Set when failed
+}
+
 export interface MediaStudioState {
   // Media type selection
   mediaType: MediaType;
@@ -60,6 +80,9 @@ export interface MediaStudioState {
   // Video model selection
   selectedVideoModel: VideoModel;
   videoGenerationMode: VideoGenerationMode;
+
+  // Active video generations queue (non-blocking)
+  activeGenerations: ActiveGeneration[];
 
   // Nano Banana variant selection
   nanoBananaVariant: NanoBananaVariant;
@@ -161,12 +184,18 @@ interface MediaStudioContextType extends MediaStudioState {
   setNegativePrompt: (prompt: string | undefined) => void;
   setEnhancePrompt: (enhance: boolean) => void;
 
-  // Actions
+  // Actions (legacy - for image generation which still uses modal)
   startGeneration: () => void;
   updateGenerationProgress: (progress: number, stage: string) => void;
   completeGeneration: (mediaUrl: string, thumbnailUrl?: string) => void;
   resetGeneration: () => void;
   clearAll: () => void;
+
+  // Active generations queue management (non-blocking video generation)
+  addActiveGeneration: (generation: Omit<ActiveGeneration, 'progress' | 'status' | 'stage' | 'startedAt'>) => string;
+  updateActiveGeneration: (id: string, updates: Partial<ActiveGeneration>) => void;
+  removeActiveGeneration: (id: string) => void;
+  clearCompletedGenerations: () => void;
 
   // Helper function to get model from quality tier
   getModelFromQualityTier: (tier: QualityTier) => ImageModel;
@@ -190,6 +219,9 @@ const initialState: MediaStudioState = {
   // Video models
   selectedVideoModel: 'veo-3.1-fast-generate-001', // Default to Fast for quicker iterations
   videoGenerationMode: 'text-to-video', // Default mode
+
+  // Active generations queue (non-blocking)
+  activeGenerations: [],
 
   // Common settings
   prompt: '',
@@ -600,6 +632,49 @@ export const MediaStudioProvider: React.FC<{ children: ReactNode }> = ({ childre
     return getModelFromQualityTierHelper(tier);
   };
 
+  // Active generations queue management (non-blocking video generation)
+  const addActiveGeneration = (generation: Omit<ActiveGeneration, 'progress' | 'status' | 'stage' | 'startedAt'>): string => {
+    const id = generation.id || crypto.randomUUID();
+    const newGeneration: ActiveGeneration = {
+      ...generation,
+      id,
+      progress: 0,
+      status: 'starting',
+      stage: 'Initializing...',
+      startedAt: new Date(),
+    };
+    setState(prev => ({
+      ...prev,
+      activeGenerations: [...prev.activeGenerations, newGeneration],
+    }));
+    return id;
+  };
+
+  const updateActiveGeneration = (id: string, updates: Partial<ActiveGeneration>) => {
+    setState(prev => ({
+      ...prev,
+      activeGenerations: prev.activeGenerations.map(gen =>
+        gen.id === id ? { ...gen, ...updates } : gen
+      ),
+    }));
+  };
+
+  const removeActiveGeneration = (id: string) => {
+    setState(prev => ({
+      ...prev,
+      activeGenerations: prev.activeGenerations.filter(gen => gen.id !== id),
+    }));
+  };
+
+  const clearCompletedGenerations = () => {
+    setState(prev => ({
+      ...prev,
+      activeGenerations: prev.activeGenerations.filter(
+        gen => gen.status !== 'completed' && gen.status !== 'failed'
+      ),
+    }));
+  };
+
   const value: MediaStudioContextType = {
     ...state,
     setMediaType,
@@ -644,6 +719,10 @@ export const MediaStudioProvider: React.FC<{ children: ReactNode }> = ({ childre
     getModelFromQualityTier,
     addReferenceImageFromUrl,
     setInputVideoImageFromUrl,
+    addActiveGeneration,
+    updateActiveGeneration,
+    removeActiveGeneration,
+    clearCompletedGenerations,
   };
 
   return (

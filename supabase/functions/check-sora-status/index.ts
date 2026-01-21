@@ -213,6 +213,10 @@ serve(async (req) => {
     logStep("Sora status response", {
       status: statusData.status,
       hasVideoUrl: !!statusData.video_url,
+      hasError: !!statusData.error,
+      errorCode: statusData.error?.code,
+      errorMessage: statusData.error?.message,
+      progress: statusData.progress,
     });
 
     // Handle different statuses
@@ -242,10 +246,39 @@ serve(async (req) => {
         logStep('Warning: Failed to update pending job status', { error: String(cleanupError) });
       }
 
+      // Build structured error response with error code for frontend handling
+      const errorCode = statusData.error?.code || 'unknown';
+      const errorMessage = statusData.error?.message || 'Sora video generation failed';
+
+      // Create structured error for moderation blocks
+      let structuredError: string;
+      if (errorCode === 'moderation_blocked') {
+        structuredError = JSON.stringify({
+          type: 'MODERATION_BLOCKED',
+          code: errorCode,
+          title: 'Content Moderation Block',
+          message: 'Your request was blocked by OpenAI\'s moderation system.',
+          suggestion: 'Try simplifying your prompt, removing references to faces/eyes, or adjusting imagery that could be misinterpreted.',
+          prompt: request.prompt,
+          retryable: true,
+        });
+      } else {
+        structuredError = JSON.stringify({
+          type: 'SORA_API_ERROR',
+          code: errorCode,
+          title: 'Video Generation Failed',
+          message: errorMessage,
+          prompt: request.prompt,
+          retryable: true,
+        });
+      }
+
+      logStep('Returning structured error', { errorCode, errorMessage });
+
       const response: StatusCheckResponse = {
         success: false,
         status: 'failed',
-        error: statusData.error?.message || 'Sora video generation failed',
+        error: structuredError,
       };
 
       return new Response(JSON.stringify(response), {

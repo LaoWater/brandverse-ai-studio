@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import React from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -19,6 +19,7 @@ import KeyframeImageUpload from '@/components/media/KeyframeImageUpload';
 import VideoPromptGuide from '@/components/media/VideoPromptGuide';
 import SoraFormatControls from '@/components/media/SoraFormatControls';
 import MediaLibrary from '@/components/media/MediaLibrary';
+import VideoGenerationQueue from '@/components/media/VideoGenerationQueue';
 import { VideoEditor } from '@/components/editor';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -36,7 +37,12 @@ import {
   getPendingVideoJobsCount,
   recoverPendingVideos,
   RecoveryResult,
+  startAsyncVideoGeneration,
+  persistPendingVideoJob,
+  deletePendingJob,
+  GenerationConfig,
 } from '@/services/mediaStudioService';
+import { videoPollingService } from '@/services/videoPollingService';
 import GenerationErrorDialog, { GenerationError } from '@/components/media/GenerationErrorDialog';
 import { MediaType } from '@/contexts/MediaStudioContext';
 import {
@@ -67,6 +73,7 @@ const MediaStudioContent = () => {
     firstFrameImage,
     lastFrameImage,
     inputVideoImage,
+    inputVideoImagePreview,
     sourceVideoGcsUri,
     // Sora-specific state
     soraResolution,
@@ -87,6 +94,11 @@ const MediaStudioContent = () => {
     clearReferenceImages,
     clearVideoFrames,
     setSourceVideoForExtension,
+    // Active generations queue (non-blocking video generation)
+    activeGenerations,
+    addActiveGeneration,
+    updateActiveGeneration,
+    removeActiveGeneration,
   } = useMediaStudio();
 
   const { user } = useAuth();
@@ -109,6 +121,56 @@ const MediaStudioContent = () => {
   // State for pending video recovery
   const [pendingJobsCount, setPendingJobsCount] = useState(0);
   const [isRecovering, setIsRecovering] = useState(false);
+
+  // Set up video polling service callbacks
+  useEffect(() => {
+    videoPollingService.setCallbacks({
+      onProgress: (id, progress, stage) => {
+        updateActiveGeneration(id, {
+          progress,
+          stage,
+          status: progress < 30 ? 'queued' : 'processing',
+        });
+      },
+      onComplete: (id, videoUrl, thumbnailUrl) => {
+        updateActiveGeneration(id, {
+          progress: 100,
+          status: 'completed',
+          stage: 'Complete!',
+          videoUrl,
+          completedAt: new Date(),
+        });
+
+        // Refresh library to show new video
+        queryClient.invalidateQueries({ queryKey: ['mediaLibrary'] });
+
+        // Show success toast
+        toast({
+          title: 'Video Ready!',
+          description: 'Your video has been generated successfully.',
+          className: 'bg-green-600/90 border-green-600 text-white',
+        });
+      },
+      onError: (id, error) => {
+        console.log('[MediaStudio] Generation error received:', error);
+        updateActiveGeneration(id, {
+          status: 'failed',
+          stage: 'Failed',
+          error,
+        });
+
+        // Show the error dialog with full error details
+        // The error may be a JSON string with structured error info
+        setGenerationError(error);
+        setShowGenerationError(true);
+      },
+    });
+
+    // Cleanup on unmount
+    return () => {
+      videoPollingService.stopAll();
+    };
+  }, [updateActiveGeneration, queryClient, toast]);
 
   // Calculate generation cost based on current settings
   // For Sora models, use soraDuration; for Veo models, use videoDuration
@@ -371,8 +433,151 @@ const MediaStudioContent = () => {
       return;
     }
 
+    // For VIDEO: Use non-blocking queue-based generation
+    if (mediaType === 'video') {
+      handleVideoGenerateNonBlocking();
+      return;
+    }
+
+    // For IMAGE: Keep using the modal-based generation (faster, doesn't need queue)
     startGeneration();
     generateMutation.mutate();
+  };
+
+  // Non-blocking video generation handler
+  const handleVideoGenerateNonBlocking = async () => {
+    if (!user) return;
+
+    const usingSora = isSoraModel(selectedVideoModel);
+
+    try {
+      // Check credits first
+      const userCredits = await getUserCredits();
+      if (!userCredits || userCredits.available_credits < generationCost) {
+        toast({
+          title: 'Insufficient Credits',
+          description: `You need ${generationCost} credits but only have ${userCredits?.available_credits || 0}.`,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Deduct credits
+      const deductSuccess = await deductCredits(generationCost);
+      if (!deductSuccess) {
+        toast({
+          title: 'Error',
+          description: 'Failed to deduct credits. Please try again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Upload input image if needed (for image-to-video mode)
+      let inputImageUrl: string | undefined;
+      if (videoGenerationMode === 'image-to-video' && inputVideoImage && user) {
+        toast({
+          title: 'Uploading image...',
+          description: 'Preparing your input image.',
+        });
+        inputImageUrl = await uploadVideoFrameImage(inputVideoImage, user.id, 'input');
+        if (!inputImageUrl) {
+          throw new Error('Failed to upload input image. Please try again.');
+        }
+      }
+
+      // Build generation config
+      const config: GenerationConfig = {
+        prompt,
+        mediaType: 'video',
+        model: selectedVideoModel,
+        aspectRatio,
+        videoMode: videoGenerationMode,
+        userId: user.id,
+        companyId: selectedCompany?.id,
+        // Sora-specific
+        ...(usingSora && {
+          soraResolution,
+          soraDuration,
+          soraInputReferenceUrl: inputImageUrl,
+          soraRemixVideoId: videoGenerationMode === 'remix' ? soraRemixVideoId || undefined : undefined,
+        }),
+        // Veo-specific
+        ...(!usingSora && {
+          videoDuration,
+          videoResolution,
+          generateAudio,
+          negativePrompt: videoNegativePrompt,
+          inputImageUrl,
+          sourceVideoGcsUri: videoGenerationMode === 'extend-video' ? sourceVideoGcsUri || undefined : undefined,
+        }),
+      };
+
+      // Create a local generation ID
+      const localId = crypto.randomUUID();
+
+      // Add to active generations queue immediately (shows in UI)
+      addActiveGeneration({
+        id: localId,
+        operationName: '', // Will be updated after API call
+        prompt,
+        model: selectedVideoModel,
+        mode: videoGenerationMode,
+        resolution: usingSora ? soraResolution : videoResolution,
+        duration: usingSora ? soraDuration : videoDuration,
+        thumbnailUrl: inputVideoImagePreview || undefined,
+      });
+
+      // Show toast
+      toast({
+        title: 'Video Generation Started',
+        description: 'You can continue working while the video generates.',
+        className: 'bg-primary/90 border-primary text-white',
+      });
+
+      // Start the async generation
+      const result = await startAsyncVideoGeneration(config, (progress, stage) => {
+        // Update progress during initial API call
+        updateActiveGeneration(localId, { progress, stage });
+      });
+
+      if (!result.success || !result.operation_name) {
+        throw new Error(result.error || 'Failed to start video generation');
+      }
+
+      // Update the generation with the operation name
+      updateActiveGeneration(localId, {
+        operationName: result.operation_name,
+        status: 'queued',
+        stage: 'Queued for processing...',
+      });
+
+      // Persist to pending_video_jobs for recovery
+      const pendingJobId = await persistPendingVideoJob(result.operation_name, config);
+      if (pendingJobId) {
+        updateActiveGeneration(localId, { pendingJobId });
+      }
+
+      // Start background polling
+      videoPollingService.startPolling(
+        localId,
+        result.operation_name,
+        selectedVideoModel,
+        result.request_data
+      );
+
+    } catch (error: any) {
+      console.error('Video generation error:', error);
+
+      // Remove from queue if we added it
+      // (The error might have happened before or after adding)
+
+      toast({
+        title: 'Generation Failed',
+        description: error.message || 'Failed to start video generation.',
+        variant: 'destructive',
+      });
+    }
   };
 
   // Handler for using a library image for new generation
@@ -966,6 +1171,9 @@ const MediaStudioContent = () => {
         }}
         error={generationError}
       />
+
+      {/* Non-blocking Video Generation Queue Panel */}
+      <VideoGenerationQueue />
     </div>
   );
 };

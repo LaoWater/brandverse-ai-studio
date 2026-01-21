@@ -494,6 +494,110 @@ export const startAsyncVideoGeneration = async (
 };
 
 /**
+ * Persist a video generation job to pending_video_jobs table
+ * This ensures the job can be recovered even if the browser closes
+ */
+export const persistPendingVideoJob = async (
+  operationName: string,
+  config: GenerationConfig
+): Promise<string | null> => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.error('[persistPendingVideoJob] Not authenticated');
+      return null;
+    }
+
+    const jobId = crypto.randomUUID();
+    const usingSora = isSoraModel(config.model);
+
+    // Build the job record
+    const jobRecord = {
+      id: jobId,
+      user_id: session.user.id,
+      company_id: config.companyId || null,
+      operation_name: operationName,
+      model: config.model,
+      mode: config.videoMode || 'text-to-video',
+      prompt: config.prompt,
+      size: usingSora
+        ? (config.soraResolution || '1280x720')
+        : (config.videoResolution || '720p'),
+      seconds: usingSora
+        ? (config.soraDuration || 4)
+        : (config.videoDuration || 8),
+      input_reference_url: usingSora
+        ? (config.soraInputReferenceUrl || null)
+        : (config.inputImageUrl || null),
+      status: 'pending',
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+    };
+
+    const { error } = await supabase
+      .from('pending_video_jobs')
+      .insert(jobRecord);
+
+    if (error) {
+      console.error('[persistPendingVideoJob] Failed to persist job:', error);
+      return null;
+    }
+
+    console.log('[persistPendingVideoJob] Job persisted:', jobId);
+    return jobId;
+  } catch (error) {
+    console.error('[persistPendingVideoJob] Error:', error);
+    return null;
+  }
+};
+
+/**
+ * Update a pending job status
+ */
+export const updatePendingJobStatus = async (
+  jobId: string,
+  status: 'pending' | 'completed' | 'failed' | 'expired'
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('pending_video_jobs')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', jobId);
+
+    if (error) {
+      console.error('[updatePendingJobStatus] Failed:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('[updatePendingJobStatus] Error:', error);
+    return false;
+  }
+};
+
+/**
+ * Delete a pending job (after successful recovery or manual removal)
+ */
+export const deletePendingJob = async (jobId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('pending_video_jobs')
+      .delete()
+      .eq('id', jobId);
+
+    if (error) {
+      console.error('[deletePendingJob] Failed:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('[deletePendingJob] Error:', error);
+    return false;
+  }
+};
+
+/**
  * Poll video generation status
  * Routes to appropriate endpoint based on model (Sora vs Veo)
  * Returns status: 'processing' | 'completed' | 'failed'

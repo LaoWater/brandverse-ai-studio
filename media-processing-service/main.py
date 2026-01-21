@@ -649,6 +649,129 @@ def split_text_into_lines(text: str) -> list[str]:
     return text.split("\n")
 
 
+def remap_overlay_times_to_concatenated_timeline(
+    overlays: List[TextOverlay],
+    sorted_clips: List[VideoClip],
+    transitions: Optional[List] = None
+) -> List[TextOverlay]:
+    """
+    Remap text overlay times from editor timeline to concatenated video timeline.
+
+    The editor timeline has clips positioned with gaps (based on clip.startTime),
+    but the concatenated video has clips joined sequentially with no gaps.
+
+    This function calculates where each overlay should appear in the final video.
+
+    Args:
+        overlays: List of text overlays with editor timeline positions
+        sorted_clips: Clips sorted by their editor timeline startTime
+        transitions: Optional list of transitions (affects timing due to overlap)
+
+    Returns:
+        New list of TextOverlay objects with adjusted startTime values
+    """
+    if not overlays or not sorted_clips:
+        return overlays or []
+
+    # Build a mapping from editor timeline to concatenated timeline
+    # For each clip, we need:
+    # - editor_start: when it starts in the editor timeline
+    # - editor_end: when it ends in the editor timeline
+    # - concat_start: when it starts in the concatenated video
+    # - concat_end: when it ends in the concatenated video
+
+    clip_mappings = []
+    concat_position = 0.0
+
+    for i, clip in enumerate(sorted_clips):
+        effective_duration = clip.sourceDuration - clip.trimStart - clip.trimEnd
+        editor_start = clip.startTime
+        editor_end = editor_start + effective_duration
+
+        # Check if there's a transition INTO this clip (reduces concat position)
+        transition_offset = 0.0
+        if transitions and i > 0:
+            for trans in transitions:
+                if trans.get('toClipIndex') == i or (hasattr(trans, 'toClipIndex') and trans.toClipIndex == i):
+                    duration = trans.get('duration', 0) if isinstance(trans, dict) else trans.duration
+                    transition_offset = duration
+                    break
+
+        # Adjust concat position for transition overlap
+        concat_start = max(0, concat_position - transition_offset)
+        concat_end = concat_start + effective_duration
+
+        clip_mappings.append({
+            'clip_index': i,
+            'editor_start': editor_start,
+            'editor_end': editor_end,
+            'concat_start': concat_start,
+            'concat_end': concat_end,
+            'effective_duration': effective_duration,
+        })
+
+        # Move concat position forward (accounting for transition overlap already applied)
+        concat_position = concat_end
+
+    print(f"[TimeRemap] Clip timeline mappings:")
+    for m in clip_mappings:
+        print(f"[TimeRemap]   Clip {m['clip_index']}: editor [{m['editor_start']:.2f}-{m['editor_end']:.2f}] -> concat [{m['concat_start']:.2f}-{m['concat_end']:.2f}]")
+
+    # Now remap each overlay
+    remapped_overlays = []
+
+    for overlay in overlays:
+        original_start = overlay.startTime
+        original_end = original_start + overlay.duration
+
+        # Find which clip(s) this overlay belongs to based on editor timeline
+        # An overlay might span multiple clips, so we use the start time to anchor it
+        matched_clip = None
+        for mapping in clip_mappings:
+            # Check if overlay starts within this clip's editor timeline span
+            if mapping['editor_start'] <= original_start < mapping['editor_end']:
+                matched_clip = mapping
+                break
+
+        if matched_clip is None:
+            # Overlay starts before first clip or after last clip
+            # Try to find the closest clip
+            if original_start < clip_mappings[0]['editor_start']:
+                matched_clip = clip_mappings[0]
+                print(f"[TimeRemap] Overlay '{overlay.text[:20]}...' starts before first clip, anchoring to clip 0")
+            else:
+                matched_clip = clip_mappings[-1]
+                print(f"[TimeRemap] Overlay '{overlay.text[:20]}...' starts after last clip, anchoring to last clip")
+
+        # Calculate the offset within the clip (in editor timeline)
+        offset_within_clip = original_start - matched_clip['editor_start']
+
+        # Apply same offset in concatenated timeline
+        new_start = matched_clip['concat_start'] + offset_within_clip
+
+        # Clamp to valid range (0 to total duration)
+        total_concat_duration = clip_mappings[-1]['concat_end']
+        new_start = max(0, min(new_start, total_concat_duration - 0.1))
+
+        # Ensure duration doesn't extend past video end
+        new_duration = min(overlay.duration, total_concat_duration - new_start)
+
+        print(f"[TimeRemap] Overlay '{overlay.text[:30]}': editor {original_start:.2f}s -> concat {new_start:.2f}s (clip {matched_clip['clip_index']}, offset {offset_within_clip:.2f}s)")
+
+        # Create new overlay with adjusted times
+        remapped_overlay = TextOverlay(
+            id=overlay.id,
+            startTime=new_start,
+            duration=new_duration,
+            text=overlay.text,
+            position=overlay.position,
+            style=overlay.style,
+        )
+        remapped_overlays.append(remapped_overlay)
+
+    return remapped_overlays
+
+
 def build_drawtext_filters(
     overlay: TextOverlay,
     video_width: int,
@@ -1055,9 +1178,30 @@ async def export_video(request: VideoExportRequest):
             preview_height = request.previewDimensions.height if request.previewDimensions else None
             print(f"[Export:{job_id}] Preview dimensions from request: {preview_width}x{preview_height}")
 
-            for i, overlay in enumerate(request.textOverlays):
+            # CRITICAL: Remap overlay times from editor timeline to concatenated video timeline
+            # The editor timeline has gaps between clips, but the concatenated video is seamless
+            print(f"[Export:{job_id}] Remapping overlay times from editor timeline to concatenated timeline...")
+            transitions_for_remap = None
+            if request.transitions:
+                transitions_for_remap = [
+                    {
+                        'fromClipIndex': t.fromClipIndex,
+                        'toClipIndex': t.toClipIndex,
+                        'type': t.type,
+                        'duration': t.duration
+                    }
+                    for t in request.transitions
+                ]
+            remapped_overlays = remap_overlay_times_to_concatenated_timeline(
+                request.textOverlays,
+                sorted_clips,
+                transitions_for_remap
+            )
+
+            for i, overlay in enumerate(remapped_overlays):
                 text_preview = overlay.text[:30] if len(overlay.text) > 30 else overlay.text
-                print(f"[Export:{job_id}]   Overlay {i+1}: text='{text_preview}', start={overlay.startTime}, duration={overlay.duration}")
+                original_start = request.textOverlays[i].startTime
+                print(f"[Export:{job_id}]   Overlay {i+1}: text='{text_preview}', editor_time={original_start:.2f}s -> concat_time={overlay.startTime:.2f}s, duration={overlay.duration:.2f}s")
 
                 # Detailed position logging
                 pos = overlay.position
@@ -1079,7 +1223,7 @@ async def export_video(request: VideoExportRequest):
             apply_text_overlays(
                 concat_output_path,
                 output_path,
-                request.textOverlays,
+                remapped_overlays,  # Use remapped overlays with corrected times
                 preview_width=preview_width,
                 preview_height=preview_height,
             )

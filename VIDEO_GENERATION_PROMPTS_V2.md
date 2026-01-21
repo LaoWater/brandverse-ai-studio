@@ -61,21 +61,23 @@ Voice: None. The atmosphere speaks.
 ### SEGMENT 1B: "The Mountain" (8s)
 
 ```
-[VISUAL]
+Scene: Opens on reflections on Founder's eyes at desk. Camera pushes toward the eye through the holographs showing social media dashboards. Push continues - glass ripple effect as we transition through.
+
+[VISUAL Style]
 Cinematic 4K, shallow depth transitioning to deep focus for surreal sequence. Anamorphic flares. Color palette: transitions from cool blue to cosmic purples and cyans. Deep space blacks. Electric cyan accents.
 
-Scene: Opens on founder at desk. Camera pushes toward laptop screen showing social media dashboards. Push continues INTO the screen - glass ripple effect as we transition through.
 
-SURREAL TRANSITION: Founder stands in cosmic void at base of an impossibly tall mountain. The mountain is constructed from floating social media elements: Instagram posts, TikTok videos, LinkedIn articles, analytics graphs - all swirling upward. Platform logos orbit like planets.
+SURREAL TRANSITION: Founder stands in cosmic void at base of an impossibly tall realistic mountain. The mountain is covered in holographics and realistic floating social media elements: Instagram posts, TikTok videos, LinkedIn articles, analytics graphs, SEO, Blogs, Ads - all swirling upward. Platform logos orbit like planets.
+The Mountain feels un-climbable
 
-Text fragments float past: "post daily", "optimize keywords", "engage followers", "beat the algorithm" - endless possibilities.
+Text fragments float past: "post daily", "optimize keywords", "engage followers", "beat the algorithm", "launch" - endless possibilities.
 
-The founder looks up, face showing wonder at the scale. Camera pulls to wide shot: human silhouette against infinite content mountain. They reach one hand upward toward the summit.
+The founder looks up, body showing wonder at the scale - he is facing the mountain and his back facing the camera. Camera pulls to wide shot: human silhouette against infinite content mountain. They reach one hand upward toward the summit.
 
 Final frame: Founder's outstretched hand reaching toward the mountain, fingers spread, ready for the climb.
 
 [AUDIO]
-Music: Piano motif continues, strings enter - low cellos building. Analog synths swell. Tempo builds 70 to 85 BPM. D minor with suspended chords. Orchestral build adding layers.
+Music: Piano motif continues, strings enter - low cellos building. Tempo builds 70 to 85 BPM. D minor with suspended chords. Orchestral build adding layers.
 
 Sound Design: Transition whoosh - granular, crystalline. Space wind (processed, ethereal). Digital whispers - notification sounds creating texture. Sub-bass intensifies.
 ```
