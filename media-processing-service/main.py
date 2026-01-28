@@ -1320,6 +1320,323 @@ async def export_video(request: VideoExportRequest):
 
 
 # ============================================
+# AUDIO PROCESSING MODELS
+# ============================================
+
+class AudioExtractRequest(BaseModel):
+    """Request to extract audio from a video file."""
+    videoUrl: str
+    userId: str
+    outputFormat: str = "mp3"  # "mp3" or "wav"
+
+
+class AudioExtractResponse(BaseModel):
+    """Response from audio extraction."""
+    success: bool
+    audioUrl: Optional[str] = None
+    duration: Optional[float] = None
+    fileSize: Optional[int] = None
+    error: Optional[str] = None
+
+
+class TranscriptSegment(BaseModel):
+    """A single segment of transcribed text with timing."""
+    start: float
+    end: float
+    text: str
+
+
+class TranscribeRequest(BaseModel):
+    """Request to transcribe audio to text using Whisper."""
+    audioUrl: str  # URL to audio file (can also be video URL)
+    userId: str
+    language: Optional[str] = None  # Auto-detect if not specified
+
+
+class TranscribeResponse(BaseModel):
+    """Response from transcription."""
+    success: bool
+    srtUrl: Optional[str] = None
+    transcript: Optional[str] = None
+    segments: Optional[List[TranscriptSegment]] = None
+    duration: Optional[float] = None
+    language: Optional[str] = None
+    error: Optional[str] = None
+
+
+# ============================================
+# AUDIO PROCESSING HELPERS
+# ============================================
+
+def extract_audio_ffmpeg(input_path: Path, output_path: Path, output_format: str = "mp3") -> float:
+    """
+    Extract audio from video using FFmpeg.
+    Returns the audio duration in seconds.
+    """
+    if output_format == "mp3":
+        codec_args = ["-acodec", "libmp3lame", "-q:a", "2"]
+    else:  # wav
+        codec_args = ["-acodec", "pcm_s16le"]
+
+    run_ffmpeg([
+        "-i", str(input_path),
+        "-vn",  # No video
+        *codec_args,
+        "-ar", "16000",  # 16kHz sample rate (good for speech recognition)
+        "-ac", "1",  # Mono (better for speech recognition)
+        str(output_path)
+    ])
+
+    # Get duration
+    return get_video_duration_ffprobe(output_path)
+
+
+def segments_to_srt(segments: List[dict]) -> str:
+    """
+    Convert Whisper segments to SRT subtitle format.
+    """
+    srt_lines = []
+
+    for i, segment in enumerate(segments, 1):
+        start_time = segment['start']
+        end_time = segment['end']
+        text = segment['text'].strip()
+
+        # Format timestamps as HH:MM:SS,mmm
+        def format_srt_time(seconds: float) -> str:
+            hours = int(seconds // 3600)
+            minutes = int((seconds % 3600) // 60)
+            secs = int(seconds % 60)
+            millis = int((seconds % 1) * 1000)
+            return f"{hours:02d}:{minutes:02d}:{secs:02d},{millis:03d}"
+
+        srt_lines.append(str(i))
+        srt_lines.append(f"{format_srt_time(start_time)} --> {format_srt_time(end_time)}")
+        srt_lines.append(text)
+        srt_lines.append("")  # Empty line between entries
+
+    return "\n".join(srt_lines)
+
+
+async def transcribe_with_whisper(audio_path: Path, language: Optional[str] = None) -> dict:
+    """
+    Transcribe audio using OpenAI Whisper API.
+    Returns dict with: transcript, segments, language, duration
+    """
+    import httpx
+
+    openai_api_key = os.environ.get("OPENAI_API_KEY")
+    if not openai_api_key:
+        raise HTTPException(status_code=500, detail="OpenAI API key not configured")
+
+    # Read audio file
+    with open(audio_path, "rb") as f:
+        audio_data = f.read()
+
+    # Prepare multipart form data
+    files = {
+        "file": (audio_path.name, audio_data, "audio/mpeg"),
+    }
+    data = {
+        "model": "whisper-1",
+        "response_format": "verbose_json",  # Get word-level timestamps
+        "timestamp_granularities[]": "segment",
+    }
+
+    if language:
+        data["language"] = language
+
+    print(f"[Whisper] Transcribing {audio_path.name} ({len(audio_data)} bytes)")
+
+    async with httpx.AsyncClient(timeout=300.0) as client:
+        response = await client.post(
+            "https://api.openai.com/v1/audio/transcriptions",
+            headers={"Authorization": f"Bearer {openai_api_key}"},
+            files=files,
+            data=data,
+        )
+
+        if response.status_code != 200:
+            error_text = response.text
+            print(f"[Whisper] Error: {response.status_code} - {error_text}")
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=f"Whisper API error: {error_text}"
+            )
+
+        result = response.json()
+        print(f"[Whisper] Transcription complete: {len(result.get('text', ''))} chars")
+
+        return {
+            "transcript": result.get("text", ""),
+            "segments": result.get("segments", []),
+            "language": result.get("language", "unknown"),
+            "duration": result.get("duration", 0),
+        }
+
+
+# ============================================
+# AUDIO PROCESSING ENDPOINTS
+# ============================================
+
+@app.post("/audio/extract", response_model=AudioExtractResponse)
+async def extract_audio(request: AudioExtractRequest):
+    """
+    Extract audio track from a video file.
+
+    Supports MP3 (smaller, lossy) or WAV (larger, lossless) output.
+    Audio is converted to 16kHz mono for optimal speech recognition compatibility.
+    """
+    job_id = str(uuid.uuid4())[:8]
+    work_dir = WORK_DIR / f"audio_{job_id}"
+
+    print(f"[AudioExtract:{job_id}] Starting audio extraction from {request.videoUrl}")
+
+    try:
+        work_dir.mkdir(parents=True, exist_ok=True)
+
+        # Download video
+        input_path = work_dir / "input.mp4"
+        await download_file(request.videoUrl, input_path)
+
+        # Extract audio
+        ext = request.outputFormat.lower()
+        if ext not in ["mp3", "wav"]:
+            ext = "mp3"
+
+        output_path = work_dir / f"audio.{ext}"
+        duration = extract_audio_ffmpeg(input_path, output_path, ext)
+
+        # Get file size
+        file_size = output_path.stat().st_size
+        print(f"[AudioExtract:{job_id}] Extracted audio: {duration:.1f}s, {file_size} bytes")
+
+        # Upload to Supabase storage
+        supabase = get_supabase_client()
+        timestamp = int(datetime.now().timestamp() * 1000)
+        storage_path = f"{request.userId}/audio/{timestamp}_extracted.{ext}"
+
+        with open(output_path, "rb") as f:
+            audio_data = f.read()
+
+        supabase.storage.from_("media-studio-videos").upload(
+            storage_path,
+            audio_data,
+            file_options={"content-type": f"audio/{ext}"}
+        )
+
+        public_url = supabase.storage.from_("media-studio-videos").get_public_url(storage_path)
+        print(f"[AudioExtract:{job_id}] Uploaded to: {public_url}")
+
+        return AudioExtractResponse(
+            success=True,
+            audioUrl=public_url,
+            duration=duration,
+            fileSize=file_size,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[AudioExtract:{job_id}] Error: {str(e)}")
+        return AudioExtractResponse(
+            success=False,
+            error=str(e),
+        )
+    finally:
+        if work_dir.exists():
+            shutil.rmtree(work_dir, ignore_errors=True)
+
+
+@app.post("/audio/transcribe", response_model=TranscribeResponse)
+async def transcribe_audio(request: TranscribeRequest):
+    """
+    Transcribe audio to text using OpenAI Whisper.
+
+    Accepts either audio or video URLs. If a video URL is provided,
+    audio will be extracted first before transcription.
+
+    Returns:
+    - Full transcript text
+    - Timestamped segments for subtitle generation
+    - SRT file URL for use in video export
+    """
+    job_id = str(uuid.uuid4())[:8]
+    work_dir = WORK_DIR / f"transcribe_{job_id}"
+
+    print(f"[Transcribe:{job_id}] Starting transcription from {request.audioUrl}")
+
+    try:
+        work_dir.mkdir(parents=True, exist_ok=True)
+
+        # Download the audio/video file
+        input_path = work_dir / "input"
+        await download_file(request.audioUrl, input_path)
+
+        # Check if it's a video file (extract audio if needed)
+        audio_path = work_dir / "audio.mp3"
+
+        # Try to extract audio (works for both video and audio files)
+        try:
+            extract_audio_ffmpeg(input_path, audio_path, "mp3")
+        except Exception as e:
+            print(f"[Transcribe:{job_id}] Audio extraction failed, assuming input is already audio: {e}")
+            # If extraction fails, assume input is already audio
+            audio_path = input_path
+
+        # Transcribe with Whisper
+        result = await transcribe_with_whisper(audio_path, request.language)
+
+        # Convert segments to our format
+        segments = [
+            TranscriptSegment(
+                start=seg['start'],
+                end=seg['end'],
+                text=seg['text'].strip()
+            )
+            for seg in result['segments']
+        ]
+
+        # Generate SRT content
+        srt_content = segments_to_srt(result['segments'])
+
+        # Upload SRT to storage
+        supabase = get_supabase_client()
+        timestamp = int(datetime.now().timestamp() * 1000)
+        srt_path = f"{request.userId}/captions/{timestamp}_captions.srt"
+
+        supabase.storage.from_("media-studio-videos").upload(
+            srt_path,
+            srt_content.encode('utf-8'),
+            file_options={"content-type": "text/plain"}
+        )
+
+        srt_url = supabase.storage.from_("media-studio-videos").get_public_url(srt_path)
+        print(f"[Transcribe:{job_id}] SRT uploaded to: {srt_url}")
+
+        return TranscribeResponse(
+            success=True,
+            srtUrl=srt_url,
+            transcript=result['transcript'],
+            segments=segments,
+            duration=result['duration'],
+            language=result['language'],
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Transcribe:{job_id}] Error: {str(e)}")
+        return TranscribeResponse(
+            success=False,
+            error=str(e),
+        )
+    finally:
+        if work_dir.exists():
+            shutil.rmtree(work_dir, ignore_errors=True)
+
+
+# ============================================
 # Main
 # ============================================
 

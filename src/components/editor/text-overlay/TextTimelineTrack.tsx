@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, useEffect } from 'react';
+import { useCallback, useRef, useState, useEffect, useMemo } from 'react';
 import { Type, GripVertical } from 'lucide-react';
 import type { TextOverlay } from '@/types/editor';
 
@@ -154,21 +154,27 @@ export const TextTimelineTrack = ({
   }, [dragState, overlays, scale, onUpdateOverlay, onDragEnd, snapTime]);
 
   // Format time for display
-  const formatTime = (seconds: number) => {
+  const formatTime = useCallback((seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return mins > 0 ? `${mins}:${secs.toString().padStart(2, '0')}` : `${secs}s`;
-  };
+  }, []);
+
+  // Sort overlays by start time
+  const sortedOverlays = useMemo(() =>
+    [...overlays].sort((a, b) => a.startTime - b.startTime),
+    [overlays]
+  );
 
   return (
     <div
       ref={trackRef}
-      className="relative h-10 bg-purple-900/10"
+      className="relative h-10 bg-purple-500/5 dark:bg-purple-900/10"
       style={{ width: timelineWidth }}
     >
-      {/* Text overlay items */}
-      {overlays.map((overlay) => {
-        const left = timeToPixel(overlay.startTime);
+      {/* Text overlay items - NO label inside, label is handled by parent */}
+      {sortedOverlays.map((overlay) => {
+        const left = timeToPixel(overlay.startTime); // No offset - label is outside
         const width = timeToPixel(overlay.duration);
         const isSelected = selectedOverlayId === overlay.id;
         const isBeingDragged = dragState?.overlayId === overlay.id;
@@ -178,8 +184,8 @@ export const TextTimelineTrack = ({
             key={overlay.id}
             className={`absolute top-1 h-8 rounded border-2 transition-all overflow-hidden cursor-grab active:cursor-grabbing ${
               isSelected
-                ? 'border-purple-400 bg-purple-500/40 z-20'
-                : 'border-purple-500/50 bg-purple-500/20 hover:border-purple-400'
+                ? 'border-purple-500 dark:border-purple-400 bg-purple-400/50 dark:bg-purple-500/40 z-20'
+                : 'border-purple-500/60 dark:border-purple-500/50 bg-purple-300/40 dark:bg-purple-500/20 hover:border-purple-500 dark:hover:border-purple-400'
             } ${isBeingDragged ? 'shadow-lg shadow-purple-500/30' : ''}`}
             style={{
               left: left,
@@ -196,13 +202,13 @@ export const TextTimelineTrack = ({
               onMouseDown={(e) => handleDragStart(e, overlay.id)}
             >
               <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                <GripVertical className="w-3 h-3 text-purple-300 opacity-50 flex-shrink-0" />
-                <span className="text-[11px] text-purple-100 truncate font-medium">
+                <GripVertical className="w-3 h-3 text-purple-700 dark:text-purple-300 opacity-60 flex-shrink-0" />
+                <span className="text-[11px] text-purple-900 dark:text-purple-100 truncate font-medium">
                   {overlay.text.trim() ? overlay.text.split('\n')[0].substring(0, 20) : 'Empty'}
                   {overlay.text.length > 20 ? '...' : ''}
                 </span>
               </div>
-              <span className="text-[9px] text-purple-300/70 flex-shrink-0 ml-1">
+              <span className="text-[9px] text-purple-700/80 dark:text-purple-300/70 flex-shrink-0 ml-1">
                 {formatTime(overlay.duration)}
               </span>
             </div>
@@ -212,13 +218,13 @@ export const TextTimelineTrack = ({
               className="absolute left-0 top-0 bottom-0 w-1.5 cursor-ew-resize hover:w-2 transition-all group"
               onMouseDown={(e) => handleResizeStart(e, overlay.id, 'start')}
             >
-              <div className="absolute inset-y-1 left-0.5 w-1 bg-purple-300/60 rounded-full group-hover:bg-purple-200" />
+              <div className="absolute inset-y-1 left-0.5 w-1 bg-purple-600/60 dark:bg-purple-300/60 rounded-full group-hover:bg-purple-500 dark:group-hover:bg-purple-200" />
             </div>
             <div
               className="absolute right-0 top-0 bottom-0 w-1.5 cursor-ew-resize hover:w-2 transition-all group"
               onMouseDown={(e) => handleResizeStart(e, overlay.id, 'end')}
             >
-              <div className="absolute inset-y-1 right-0.5 w-1 bg-purple-300/60 rounded-full group-hover:bg-purple-200" />
+              <div className="absolute inset-y-1 right-0.5 w-1 bg-purple-600/60 dark:bg-purple-300/60 rounded-full group-hover:bg-purple-500 dark:group-hover:bg-purple-200" />
             </div>
           </div>
         );
@@ -226,5 +232,13 @@ export const TextTimelineTrack = ({
     </div>
   );
 };
+
+// Track label component for use outside the scrollable area
+export const TextTrackLabel = () => (
+  <div className="h-10 w-16 flex items-center justify-center bg-slate-100 dark:bg-black/20 border-r border-slate-200 dark:border-white/10">
+    <Type className="w-3 h-3 text-purple-500 dark:text-purple-400 mr-1" />
+    <span className="text-[9px] text-purple-600 dark:text-purple-400 font-medium">Text</span>
+  </div>
+);
 
 export default TextTimelineTrack;

@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Film, Plus, Download, Trash2, Play, Pause, SkipBack, Volume2, VolumeX, Save, FolderOpen, Cloud, CloudOff, Pencil, ArrowLeft, Scissors, Undo2, Redo2, Type, PanelRightClose, PanelRightOpen, Sparkles } from 'lucide-react';
+import { Film, Plus, Download, Trash2, Play, Pause, SkipBack, Volume2, VolumeX, Save, FolderOpen, Cloud, CloudOff, Pencil, ArrowLeft, Scissors, Undo2, Redo2, Type, PanelRightClose, PanelRightOpen, Sparkles, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
@@ -7,15 +7,17 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
-import type { EditorClip, PlaybackState, ExportState, TextOverlay, ClipTransition } from '@/types/editor';
-import { getEffectiveDuration, getClipEndTime, createTextOverlay } from '@/types/editor';
+import type { EditorClip, PlaybackState, ExportState, TextOverlay, ClipTransition, CaptionSegment, CaptionStyle } from '@/types/editor';
+import { getEffectiveDuration, getClipEndTime, createTextOverlay, DEFAULT_CAPTION_STYLE, createCaptionSegment } from '@/types/editor';
 import { ClipSelector } from './ClipSelector';
 import { EditorTimeline } from './EditorTimeline';
 import { ExportModal } from './ExportModal';
 import { ProjectsLibrary } from './ProjectsLibrary';
 import { TextOverlayPanel, TextOverlayPreview } from './text-overlay';
 import { TransitionPanel } from './transitions';
+import { CaptionPanel, CaptionPreview } from './captions';
 import { exportProject, downloadBlob } from '@/services/videoEditorService';
+import { generateCaptions } from '@/services/audioService';
 import type { ExportDestination } from './ExportModal';
 import {
   createProject,
@@ -84,6 +86,13 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
   // Transition state
   const [selectedTransitionIndex, setSelectedTransitionIndex] = useState<number | null>(null);
   const [isTransitionPanelOpen, setIsTransitionPanelOpen] = useState(false);
+
+  // Caption state
+  const [captions, setCaptions] = useState<CaptionSegment[]>([]);
+  const [selectedCaptionId, setSelectedCaptionId] = useState<string | null>(null);
+  const [isCaptionPanelOpen, setIsCaptionPanelOpen] = useState(false);
+  const [isGeneratingCaptions, setIsGeneratingCaptions] = useState(false);
+  const [captionStyle, setCaptionStyle] = useState<CaptionStyle>(DEFAULT_CAPTION_STYLE);
 
   // History state for Undo/Redo (includes both clips and textOverlays)
   interface HistoryState {
@@ -666,6 +675,25 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
     }
   }, [playback.playing, playback.currentTime, findActiveClip]);
 
+  // Sync video volume with active clip's audio settings
+  useEffect(() => {
+    if (!videoRef.current) return;
+
+    const activeClip = findActiveClip(playback.currentTime);
+    if (!activeClip) return;
+
+    const audioInfo = activeClip.audioInfo || { hasAudio: true, volume: 1, muted: false };
+
+    // Apply clip-specific audio settings combined with global mute/volume
+    if (isMuted || audioInfo.muted) {
+      videoRef.current.muted = true;
+    } else {
+      videoRef.current.muted = false;
+      // Combine global volume with clip volume
+      videoRef.current.volume = volume * audioInfo.volume;
+    }
+  }, [playback.currentTime, findActiveClip, isMuted, volume]);
+
   // Handle adding clips from library
   const handleAddClips = useCallback((mediaFiles: MediaFile[]) => {
     const newClips: EditorClip[] = mediaFiles.map((media, index) => {
@@ -919,6 +947,128 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
     setClips(prev => prev.map((clip, idx) =>
       idx === clipIndex ? { ...clip, transitionOut: transition } : clip
     ));
+  }, []);
+
+  // Audio handlers
+  const [selectedAudioClipId, setSelectedAudioClipId] = useState<string | null>(null);
+
+  const handleToggleClipMute = useCallback((clipId: string) => {
+    setClips(prev => prev.map(clip => {
+      if (clip.id !== clipId) return clip;
+      const currentAudioInfo = clip.audioInfo || { hasAudio: true, volume: 1, muted: false };
+      return {
+        ...clip,
+        audioInfo: {
+          ...currentAudioInfo,
+          muted: !currentAudioInfo.muted,
+        },
+      };
+    }));
+  }, []);
+
+  const handleClipVolumeChange = useCallback((clipId: string, volume: number) => {
+    setClips(prev => prev.map(clip => {
+      if (clip.id !== clipId) return clip;
+      const currentAudioInfo = clip.audioInfo || { hasAudio: true, volume: 1, muted: false };
+      return {
+        ...clip,
+        audioInfo: {
+          ...currentAudioInfo,
+          volume: Math.max(0, Math.min(1, volume)),
+        },
+      };
+    }));
+  }, []);
+
+  // Caption handlers
+  const handleAddCaption = useCallback((caption: CaptionSegment) => {
+    setCaptions(prev => [...prev, caption]);
+  }, []);
+
+  const handleUpdateCaption = useCallback((id: string, updates: Partial<CaptionSegment>) => {
+    setCaptions(prev => prev.map(caption =>
+      caption.id === id ? { ...caption, ...updates } : caption
+    ));
+  }, []);
+
+  const handleDeleteCaption = useCallback((id: string) => {
+    setCaptions(prev => prev.filter(caption => caption.id !== id));
+    if (selectedCaptionId === id) {
+      setSelectedCaptionId(null);
+    }
+  }, [selectedCaptionId]);
+
+  const handleDuplicateCaption = useCallback((id: string) => {
+    const caption = captions.find(c => c.id === id);
+    if (!caption) return;
+
+    const duration = caption.endTime - caption.startTime;
+    const newCaption: CaptionSegment = {
+      ...caption,
+      id: `caption_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      startTime: caption.endTime,
+      endTime: caption.endTime + duration,
+    };
+    setCaptions(prev => [...prev, newCaption]);
+    setSelectedCaptionId(newCaption.id);
+  }, [captions]);
+
+  const handleGenerateCaptions = useCallback(async () => {
+    if (clips.length === 0) {
+      toast({
+        title: 'No Clips',
+        description: 'Add video clips to generate captions from audio.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Use the first clip's video for caption generation
+    const firstClip = clips[0];
+    if (!firstClip?.sourceUrl) {
+      toast({
+        title: 'Invalid Clip',
+        description: 'Cannot access video source for caption generation.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsGeneratingCaptions(true);
+
+    try {
+      const result = await generateCaptions(
+        firstClip.sourceUrl,
+        user?.id || 'anonymous'
+      );
+
+      // Adjust caption times to account for clip's position and trim
+      const adjustedCaptions = result.captions.map(caption => ({
+        ...caption,
+        startTime: Math.max(0, caption.startTime - firstClip.trimStart + firstClip.startTime),
+        endTime: Math.max(0, caption.endTime - firstClip.trimStart + firstClip.startTime),
+      }));
+
+      setCaptions(adjustedCaptions);
+
+      toast({
+        title: 'Captions Generated',
+        description: `Generated ${adjustedCaptions.length} caption segments.`,
+      });
+    } catch (error) {
+      console.error('[VideoEditor] Caption generation failed:', error);
+      toast({
+        title: 'Caption Generation Failed',
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGeneratingCaptions(false);
+    }
+  }, [clips, user, toast]);
+
+  const handleUpdateCaptionStyle = useCallback((updates: Partial<CaptionStyle>) => {
+    setCaptionStyle(prev => ({ ...prev, ...updates }));
   }, []);
 
   // Open export modal (shows options first)
@@ -1256,6 +1406,7 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
                 // Close text panel when opening transitions
                 if (!isTransitionPanelOpen) {
                   setIsTextPanelOpen(false);
+                  setIsCaptionPanelOpen(false);
                 }
               }}
               variant="outline"
@@ -1264,6 +1415,29 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
             >
               <Sparkles className="w-4 h-4 mr-2" />
               Transitions
+            </Button>
+          )}
+
+          {/* Captions button */}
+          {clips.length > 0 && (
+            <Button
+              onClick={() => {
+                setIsCaptionPanelOpen(!isCaptionPanelOpen);
+                // Close other panels when opening captions
+                if (!isCaptionPanelOpen) {
+                  setIsTextPanelOpen(false);
+                  setIsTransitionPanelOpen(false);
+                }
+              }}
+              variant="outline"
+              className={`border-yellow-500/50 ${isCaptionPanelOpen ? 'bg-yellow-600/20 text-yellow-400' : 'text-yellow-400 hover:bg-yellow-600/10'}`}
+              title="Captions"
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Captions
+              {captions.length > 0 && (
+                <span className="ml-1 text-xs">({captions.length})</span>
+              )}
             </Button>
           )}
 
@@ -1340,6 +1514,15 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
                     }}
                     onUpdateOverlay={handleUpdateTextOverlay}
                     videoRef={videoRef}
+                  />
+                )}
+
+                {/* Caption Preview */}
+                {captions.length > 0 && (
+                  <CaptionPreview
+                    captions={captions}
+                    currentTime={playback.currentTime}
+                    globalStyle={captionStyle}
                   />
                 )}
               </>
@@ -1507,6 +1690,20 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
           selectedTransitionIndex={selectedTransitionIndex}
           onSelectTransition={handleSelectTransition}
           onUpdateTransition={handleUpdateTransition}
+          // Audio props
+          showAudioTrack={true}
+          selectedAudioClipId={selectedAudioClipId}
+          onSelectAudioClip={setSelectedAudioClipId}
+          onToggleClipMute={handleToggleClipMute}
+          onClipVolumeChange={handleClipVolumeChange}
+          // Caption props
+          captions={captions}
+          selectedCaptionId={selectedCaptionId}
+          onSelectCaption={(id) => {
+            setSelectedCaptionId(id);
+            if (id) setIsCaptionPanelOpen(true);
+          }}
+          onUpdateCaption={handleUpdateCaption}
         />
       </Card>
 
@@ -1564,6 +1761,25 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
         clips={clips}
         selectedClipIndex={selectedTransitionIndex}
         onUpdateTransition={handleUpdateTransition}
+      />
+
+      {/* Caption Panel (Drawer) */}
+      <CaptionPanel
+        isOpen={isCaptionPanelOpen}
+        onClose={() => setIsCaptionPanelOpen(false)}
+        captions={captions}
+        selectedCaptionId={selectedCaptionId}
+        onSelectCaption={setSelectedCaptionId}
+        onAddCaption={handleAddCaption}
+        onUpdateCaption={handleUpdateCaption}
+        onDeleteCaption={handleDeleteCaption}
+        onDuplicateCaption={handleDuplicateCaption}
+        onGenerateCaptions={handleGenerateCaptions}
+        isGenerating={isGeneratingCaptions}
+        currentTime={playback.currentTime}
+        totalDuration={totalDuration}
+        globalStyle={captionStyle}
+        onUpdateGlobalStyle={handleUpdateCaptionStyle}
       />
     </div>
   );

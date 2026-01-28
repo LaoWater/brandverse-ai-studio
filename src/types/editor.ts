@@ -191,6 +191,25 @@ export const getTransitionsByCategory = (category: TransitionTypeInfo['category'
 // ============================================
 
 /**
+ * Audio information for a clip
+ */
+export interface ClipAudioInfo {
+  hasAudio: boolean;          // Whether the clip has an audio track
+  volume: number;             // Volume level 0-1
+  muted: boolean;             // Whether audio is muted
+  waveformUrl?: string;       // URL to waveform data (future enhancement)
+}
+
+/**
+ * Default audio info for new clips
+ */
+export const DEFAULT_AUDIO_INFO: ClipAudioInfo = {
+  hasAudio: true,             // Assume clips have audio by default
+  volume: 1,
+  muted: false,
+};
+
+/**
  * Represents a video clip on the editor timeline
  */
 export interface EditorClip {
@@ -211,6 +230,9 @@ export interface EditorClip {
   // Transition to NEXT clip (outgoing transition)
   // Applied between this clip and the following clip
   transitionOut?: ClipTransition;
+
+  // Audio properties
+  audioInfo?: ClipAudioInfo;
 }
 
 /**
@@ -329,3 +351,61 @@ export const timelineActionToClip = (
  * Editor view mode (for Media Studio integration)
  */
 export type MediaStudioView = 'create' | 'library' | 'editor';
+
+// ============================================
+// CAPTION TYPES
+// ============================================
+
+/**
+ * Caption style configuration
+ */
+export interface CaptionStyle {
+  fontSize: number;           // 16-48px typically
+  fontColor: string;          // Hex color
+  backgroundColor?: string;   // Optional background (semi-transparent)
+  position: 'top' | 'center' | 'bottom';
+}
+
+/**
+ * Default caption style
+ */
+export const DEFAULT_CAPTION_STYLE: CaptionStyle = {
+  fontSize: 24,
+  fontColor: '#FFFFFF',
+  backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  position: 'bottom',
+};
+
+/**
+ * A single caption segment with timing
+ */
+export interface CaptionSegment {
+  id: string;
+  startTime: number;          // When caption appears (seconds)
+  endTime: number;            // When caption disappears (seconds)
+  text: string;               // Caption text
+  style?: CaptionStyle;       // Optional per-segment style override
+}
+
+/**
+ * Create a new caption segment
+ */
+export const createCaptionSegment = (
+  startTime: number,
+  endTime: number,
+  text: string
+): CaptionSegment => ({
+  id: `caption_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+  startTime,
+  endTime,
+  text,
+});
+
+/**
+ * Transcript segment from speech-to-text (Whisper)
+ */
+export interface TranscriptSegment {
+  start: number;
+  end: number;
+  text: string;
+}

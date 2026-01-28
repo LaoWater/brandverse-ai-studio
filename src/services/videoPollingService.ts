@@ -21,6 +21,7 @@ interface PollingJob {
   intervalId: NodeJS.Timer | null;
   startTime: number;
   pollCount: number;
+  consecutiveErrors: number;
 }
 
 class VideoPollingService {
@@ -33,6 +34,7 @@ class VideoPollingService {
    * Set callbacks for status updates
    */
   setCallbacks(callbacks: PollingCallbacks) {
+    console.log('[VideoPollingService] Callbacks registered');
     this.callbacks = callbacks;
   }
 
@@ -45,6 +47,15 @@ class VideoPollingService {
     model: string,
     requestData: AsyncVideoStartResponse['request_data']
   ) {
+    console.log(`[VideoPollingService] startPolling called`, {
+      id,
+      operationName,
+      model,
+      hasRequestData: !!requestData,
+      requestDataKeys: requestData ? Object.keys(requestData) : [],
+      hasCallbacks: !!this.callbacks,
+    });
+
     // Don't start if already polling this job
     if (this.jobs.has(id)) {
       console.log(`[VideoPollingService] Already polling job ${id}`);
@@ -59,6 +70,7 @@ class VideoPollingService {
       intervalId: null,
       startTime: Date.now(),
       pollCount: 0,
+      consecutiveErrors: 0,
     };
 
     // Start the polling interval
@@ -115,7 +127,14 @@ class VideoPollingService {
    */
   private async pollJob(id: string) {
     const job = this.jobs.get(id);
-    if (!job) return;
+    if (!job) {
+      console.log(`[VideoPollingService] Job ${id} not found, skipping poll`);
+      return;
+    }
+
+    if (!this.callbacks) {
+      console.warn(`[VideoPollingService] No callbacks set, poll results will be lost`);
+    }
 
     job.pollCount++;
 
@@ -141,55 +160,81 @@ class VideoPollingService {
       stage = 'Finalizing...';
     }
 
-    // Update progress
-    this.callbacks?.onProgress(id, estimatedProgress, stage);
+    // Update progress (this will happen even on error, showing activity)
+    if (this.callbacks) {
+      this.callbacks.onProgress(id, estimatedProgress, stage);
+    }
 
     try {
+      console.log(`[VideoPollingService] Polling job ${id} (attempt ${job.pollCount}/${this.maxPollCount})`);
+
       const result = await pollVideoStatus(
         job.operationName,
         job.model,
         job.requestData
       );
 
+      // Reset consecutive errors on successful poll
+      job.consecutiveErrors = 0;
+
       console.log(`[VideoPollingService] Poll ${job.pollCount} for ${id}:`, {
         status: result.status,
+        hasVideo: !!result.video_url,
         hasError: !!result.error,
-        error: result.error,
       });
 
       if (result.status === 'completed') {
         // Success!
         this.stopPolling(id);
-        this.callbacks?.onComplete(
-          id,
-          result.video_url || '',
-          result.thumbnail_url
-        );
-      } else if (result.status === 'failed' || result.status === 'error') {
+        if (this.callbacks) {
+          this.callbacks.onComplete(
+            id,
+            result.video_url || '',
+            result.thumbnail_url
+          );
+        }
+        return;
+      }
+
+      if (result.status === 'failed' || result.status === 'error') {
         // Failed - pass through the full error (may contain structured JSON)
         console.log(`[VideoPollingService] Generation failed for ${id}:`, result.error);
         this.stopPolling(id);
-        this.callbacks?.onError(id, result.error || 'Video generation failed');
+        if (this.callbacks) {
+          this.callbacks.onError(id, result.error || 'Video generation failed');
+        }
+        return;
       }
-      // If still processing, continue polling
+
+      // Status is 'processing' - continue polling
 
       // Check for timeout
       if (job.pollCount >= this.maxPollCount) {
+        console.log(`[VideoPollingService] Job ${id} timed out after ${job.pollCount} polls`);
         this.stopPolling(id);
-        this.callbacks?.onError(
-          id,
-          'Generation timed out. The video may still be processing - check your library later.'
-        );
+        if (this.callbacks) {
+          this.callbacks.onError(
+            id,
+            'Generation timed out. The video may still be processing - check your library later.'
+          );
+        }
       }
     } catch (error: any) {
-      console.error(`[VideoPollingService] Poll error for ${id}:`, error);
+      job.consecutiveErrors++;
+      console.error(`[VideoPollingService] Poll error for ${id} (consecutive: ${job.consecutiveErrors}):`, error.message);
 
-      // Don't stop on transient errors, but track consecutive failures
-      // After 5 consecutive failures, give up
-      if (job.pollCount > 5 && job.pollCount % 5 === 0) {
-        // Every 5 polls after the first 5, check if we should give up
-        // This allows for transient network issues
+      // After 10 consecutive failures, give up
+      if (job.consecutiveErrors >= 10) {
+        console.error(`[VideoPollingService] Too many consecutive errors for ${id}, giving up`);
+        this.stopPolling(id);
+        if (this.callbacks) {
+          this.callbacks.onError(
+            id,
+            `Connection error: ${error.message}. The video may still be processing - check your library later.`
+          );
+        }
       }
+      // Otherwise continue polling - could be transient network issue
     }
   }
 
