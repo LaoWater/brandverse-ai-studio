@@ -1,5 +1,5 @@
 
-// Updated App.tsx  
+// Updated App.tsx
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route, useLocation, useNavigate } from "react-ro
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CompanyProvider } from "@/contexts/CompanyContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { MediaStudioProvider } from "@/contexts/MediaStudioContext";
 import Footer from "@/components/Footer";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
@@ -29,11 +30,12 @@ import GenerationSuccess from './pages/GenerationSuccess';
 import ChatButton from "./components/ChatButton";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PartnershipAgreementEditor from "./pages/PartnershipAgreementEditor";
+import GlobalVideoGenerationTracker from "./components/global/GlobalVideoGenerationTracker";
 
 import CookiesPage from "@/pages/termeni/Cookies";
 import TermeniPage from "@/pages/termeni/Termeni";
 import PoliticaPage from "@/pages/termeni/Politica";
-import DataProcessingAgreementPage from "@/pages/termeni/Acord"; 
+import DataProcessingAgreementPage from "@/pages/termeni/Acord";
 import ScrollManager from '@/components/layout/ScrollManager';
 
 import { useEffect, useRef, useState } from "react";
@@ -96,10 +98,13 @@ const App = () => (
       <ThemeProvider>
         <AuthProvider>
           <CompanyProvider>
-            <BrowserRouter>
-            <ScrollManager />
-            <div className="flex flex-col min-h-screen">
-              <Routes>
+            <MediaStudioProvider>
+              <BrowserRouter>
+                <ScrollManager />
+                {/* Global Video Generation Tracker - persists across all pages */}
+                <GlobalVideoGenerationTracker />
+                <div className="flex flex-col min-h-screen">
+                  <Routes>
                 {/* Public routes - accessible without authentication */}
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
@@ -197,13 +202,14 @@ const App = () => (
                   } 
                 />
 
-                {/* 404 - accessible to all */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-              <ChatButton />
-              <Footer />
-            </div>
-            </BrowserRouter>
+                  {/* 404 - accessible to all */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+                <ChatButton />
+                <Footer />
+              </div>
+              </BrowserRouter>
+            </MediaStudioProvider>
           </CompanyProvider>
         </AuthProvider>
       </ThemeProvider>

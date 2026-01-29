@@ -156,6 +156,7 @@ export interface SoraVideoGenerationAPIPayload {
 }
 
 // Response from async video generation start
+// Note: request_data shape differs between Sora and Veo backends
 export interface AsyncVideoStartResponse {
   success: boolean;
   status: 'processing' | 'completed' | 'failed' | 'error';
@@ -166,12 +167,17 @@ export interface AsyncVideoStartResponse {
     user_id: string;
     company_id?: string;
     prompt: string;
-    aspect_ratio: string;
-    resolution: string;
-    duration: number;
     mode: string;
+    // Veo uses these:
+    aspect_ratio?: string;
+    resolution?: string;
+    duration?: number;
     negative_prompt?: string;
     input_image_url?: string;
+    // Sora uses these:
+    size?: string;
+    seconds?: number;
+    input_reference_url?: string;
   };
   // For completed status
   video_url?: string;

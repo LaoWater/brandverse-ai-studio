@@ -3,7 +3,7 @@ import React from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
-import { MediaStudioProvider, useMediaStudio, isSoraModel } from '@/contexts/MediaStudioContext';
+import { useMediaStudio, isSoraModel } from '@/contexts/MediaStudioContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import MediaTypeSwitcher from '@/components/media/MediaTypeSwitcher';
@@ -19,7 +19,7 @@ import KeyframeImageUpload from '@/components/media/KeyframeImageUpload';
 import VideoPromptGuide from '@/components/media/VideoPromptGuide';
 import SoraFormatControls from '@/components/media/SoraFormatControls';
 import MediaLibrary from '@/components/media/MediaLibrary';
-import VideoGenerationQueue from '@/components/media/VideoGenerationQueue';
+// VideoGenerationQueue is now rendered globally via GlobalVideoGenerationTracker
 import { VideoEditor } from '@/components/editor';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -43,6 +43,7 @@ import {
   GenerationConfig,
 } from '@/services/mediaStudioService';
 import { videoPollingService } from '@/services/videoPollingService';
+// Note: videoPollingService callbacks are set up globally in GlobalVideoGenerationTracker
 import GenerationErrorDialog, { GenerationError } from '@/components/media/GenerationErrorDialog';
 import { MediaType } from '@/contexts/MediaStudioContext';
 import {
@@ -122,55 +123,19 @@ const MediaStudioContent = () => {
   const [pendingJobsCount, setPendingJobsCount] = useState(0);
   const [isRecovering, setIsRecovering] = useState(false);
 
-  // Set up video polling service callbacks
+  // Note: Video polling service callbacks are now set up globally in GlobalVideoGenerationTracker
+  // This component only needs to handle local error dialogs for failed generations
+
+  // Watch for failed generations to show error dialog
   useEffect(() => {
-    videoPollingService.setCallbacks({
-      onProgress: (id, progress, stage) => {
-        updateActiveGeneration(id, {
-          progress,
-          stage,
-          status: progress < 30 ? 'queued' : 'processing',
-        });
-      },
-      onComplete: (id, videoUrl, thumbnailUrl) => {
-        updateActiveGeneration(id, {
-          progress: 100,
-          status: 'completed',
-          stage: 'Complete!',
-          videoUrl,
-          completedAt: new Date(),
-        });
-
-        // Refresh library to show new video
-        queryClient.invalidateQueries({ queryKey: ['mediaLibrary'] });
-
-        // Show success toast
-        toast({
-          title: 'Video Ready!',
-          description: 'Your video has been generated successfully.',
-          className: 'bg-green-600/90 border-green-600 text-white',
-        });
-      },
-      onError: (id, error) => {
-        console.log('[MediaStudio] Generation error received:', error);
-        updateActiveGeneration(id, {
-          status: 'failed',
-          stage: 'Failed',
-          error,
-        });
-
-        // Show the error dialog with full error details
-        // The error may be a JSON string with structured error info
-        setGenerationError(error);
-        setShowGenerationError(true);
-      },
-    });
-
-    // Cleanup on unmount
-    return () => {
-      videoPollingService.stopAll();
-    };
-  }, [updateActiveGeneration, queryClient, toast]);
+    const failedGeneration = activeGenerations.find(
+      g => g.status === 'failed' && g.error && !showErrorDialog
+    );
+    if (failedGeneration) {
+      setGenerationError(failedGeneration.error || null);
+      setShowErrorDialog(true);
+    }
+  }, [activeGenerations, showErrorDialog]);
 
   // Calculate generation cost based on current settings
   // For Sora models, use soraDuration; for Veo models, use videoDuration
@@ -450,6 +415,10 @@ const MediaStudioContent = () => {
 
     const usingSora = isSoraModel(selectedVideoModel);
 
+    // Create a local generation ID outside try block so it's accessible in catch
+    const localId = crypto.randomUUID();
+    let generationAdded = false;
+
     try {
       // Check credits first
       const userCredits = await getUserCredits();
@@ -513,9 +482,6 @@ const MediaStudioContent = () => {
         }),
       };
 
-      // Create a local generation ID
-      const localId = crypto.randomUUID();
-
       // Add to active generations queue immediately (shows in UI)
       addActiveGeneration({
         id: localId,
@@ -527,6 +493,7 @@ const MediaStudioContent = () => {
         duration: usingSora ? soraDuration : videoDuration,
         thumbnailUrl: inputVideoImagePreview || undefined,
       });
+      generationAdded = true;
 
       // Show toast
       toast({
@@ -569,8 +536,10 @@ const MediaStudioContent = () => {
     } catch (error: any) {
       console.error('Video generation error:', error);
 
-      // Remove from queue if we added it
-      // (The error might have happened before or after adding)
+      // Remove the failed generation from the queue if it was added
+      if (generationAdded) {
+        removeActiveGeneration(localId);
+      }
 
       toast({
         title: 'Generation Failed',
@@ -1172,8 +1141,7 @@ const MediaStudioContent = () => {
         error={generationError}
       />
 
-      {/* Non-blocking Video Generation Queue Panel */}
-      <VideoGenerationQueue />
+      {/* Note: VideoGenerationQueue is now rendered globally in App.tsx via GlobalVideoGenerationTracker */}
     </div>
   );
 };
@@ -1223,12 +1191,11 @@ class MediaStudioErrorBoundary extends React.Component<
   }
 }
 
+// Note: MediaStudioProvider is now at the App level for global video generation tracking
 const MediaStudio = () => {
   return (
     <MediaStudioErrorBoundary>
-      <MediaStudioProvider>
-        <MediaStudioContent />
-      </MediaStudioProvider>
+      <MediaStudioContent />
     </MediaStudioErrorBoundary>
   );
 };
