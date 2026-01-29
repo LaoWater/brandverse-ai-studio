@@ -238,8 +238,6 @@ const HeroSection = () => {
                     <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-rose-500/30 to-purple-500/30 rounded-2xl flex items-center justify-center mb-4 sm:mb-6">
                       <Film className="w-8 h-8 sm:w-10 sm:h-10 text-rose-400" />
                     </div>
-                    <p className="text-gray-400 text-sm sm:text-base">Video Editor Screenshot Coming Soon</p>
-                    <p className="text-gray-500 text-xs sm:text-sm mt-2">Add your screenshot at /public/video-editor-screenshot.png</p>
                   </div>
                 </div>
 
