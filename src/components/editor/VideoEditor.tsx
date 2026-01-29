@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
-import type { EditorClip, PlaybackState, ExportState, TextOverlay, ClipTransition, CaptionSegment, CaptionStyle } from '@/types/editor';
+import type { EditorClip, PlaybackState, ExportState, TextOverlay, ClipTransition, CaptionSegment, CaptionStyle, AudioSegment } from '@/types/editor';
 import { getEffectiveDuration, getClipEndTime, createTextOverlay, DEFAULT_CAPTION_STYLE, createCaptionSegment } from '@/types/editor';
 import { ClipSelector } from './ClipSelector';
 import { EditorTimeline } from './EditorTimeline';
@@ -86,6 +86,9 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
   // Transition state
   const [selectedTransitionIndex, setSelectedTransitionIndex] = useState<number | null>(null);
   const [isTransitionPanelOpen, setIsTransitionPanelOpen] = useState(false);
+
+  // Audio segments state (detached audio)
+  const [audioSegments, setAudioSegments] = useState<AudioSegment[]>([]);
 
   // Caption state
   const [captions, setCaptions] = useState<CaptionSegment[]>([]);
@@ -966,7 +969,16 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
     }));
   }, []);
 
-  const handleClipVolumeChange = useCallback((clipId: string, volume: number) => {
+  const handleClipVolumeChange = useCallback((clipId: string, newVolume: number) => {
+    // Check if it's a detached audio segment
+    const isSegment = audioSegments.some(s => s.id === clipId);
+    if (isSegment) {
+      setAudioSegments(prev => prev.map(seg =>
+        seg.id === clipId ? { ...seg, volume: Math.max(0, Math.min(1, newVolume)) } : seg
+      ));
+      return;
+    }
+
     setClips(prev => prev.map(clip => {
       if (clip.id !== clipId) return clip;
       const currentAudioInfo = clip.audioInfo || { hasAudio: true, volume: 1, muted: false };
@@ -974,11 +986,86 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
         ...clip,
         audioInfo: {
           ...currentAudioInfo,
-          volume: Math.max(0, Math.min(1, volume)),
+          volume: Math.max(0, Math.min(1, newVolume)),
         },
       };
     }));
-  }, []);
+  }, [audioSegments]);
+
+  const handleDetachAudio = useCallback((clipId: string) => {
+    const clip = clips.find(c => c.id === clipId);
+    if (!clip) return;
+    const audioInfo = clip.audioInfo || { hasAudio: true, volume: 1, muted: false };
+    if (!audioInfo.hasAudio) return;
+
+    // Create independent audio segment
+    const effectiveDuration = getEffectiveDuration(clip);
+    const segment: AudioSegment = {
+      id: `audio_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      sourceClipId: clip.id,
+      sourceUrl: clip.sourceUrl,
+      startTime: clip.startTime,
+      duration: effectiveDuration,
+      trimStart: clip.trimStart,
+      trimEnd: clip.trimEnd,
+      volume: audioInfo.volume,
+      muted: audioInfo.muted,
+      linkedToVideo: false,
+    };
+
+    setAudioSegments(prev => [...prev, segment]);
+
+    // Mark video clip as having no audio
+    setClips(prev => prev.map(c =>
+      c.id === clipId
+        ? { ...c, audioInfo: { ...audioInfo, hasAudio: false } }
+        : c
+    ));
+
+    toast({
+      title: 'Audio Detached',
+      description: 'Audio is now independent. Right-click to reattach.',
+    });
+  }, [clips, toast]);
+
+  const handleReattachAudio = useCallback((segmentId: string) => {
+    const segment = audioSegments.find(s => s.id === segmentId);
+    if (!segment) return;
+
+    // Restore audio to the source clip
+    setClips(prev => prev.map(c =>
+      c.id === segment.sourceClipId
+        ? {
+            ...c,
+            audioInfo: {
+              hasAudio: true,
+              volume: segment.volume,
+              muted: segment.muted,
+            },
+          }
+        : c
+    ));
+
+    // Remove the detached segment
+    setAudioSegments(prev => prev.filter(s => s.id !== segmentId));
+
+    toast({
+      title: 'Audio Reattached',
+      description: 'Audio has been linked back to its video clip.',
+    });
+  }, [audioSegments, toast]);
+
+  // Handle mute toggle for both clips and detached segments
+  const handleToggleClipMuteOrSegment = useCallback((id: string) => {
+    const isSegment = audioSegments.some(s => s.id === id);
+    if (isSegment) {
+      setAudioSegments(prev => prev.map(seg =>
+        seg.id === id ? { ...seg, muted: !seg.muted } : seg
+      ));
+      return;
+    }
+    handleToggleClipMute(id);
+  }, [audioSegments, handleToggleClipMute]);
 
   // Caption handlers
   const handleAddCaption = useCallback((caption: CaptionSegment) => {
@@ -1694,8 +1781,13 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
           showAudioTrack={true}
           selectedAudioClipId={selectedAudioClipId}
           onSelectAudioClip={setSelectedAudioClipId}
-          onToggleClipMute={handleToggleClipMute}
+          onToggleClipMute={handleToggleClipMuteOrSegment}
           onClipVolumeChange={handleClipVolumeChange}
+          onDetachAudio={handleDetachAudio}
+          onReattachAudio={handleReattachAudio}
+          audioSegments={audioSegments}
+          videoRef={videoRef}
+          isPlaying={playback.playing}
           // Caption props
           captions={captions}
           selectedCaptionId={selectedCaptionId}

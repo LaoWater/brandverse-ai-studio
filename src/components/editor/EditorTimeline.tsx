@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState, useEffect, useMemo } from 'react';
 import { Film, GripVertical, Scissors, SplitSquareHorizontal, Trash2, Undo2, Type, Sparkles, Music, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { EditorClip, TextOverlay, ClipTransition, CaptionSegment } from '@/types/editor';
+import type { EditorClip, TextOverlay, ClipTransition, CaptionSegment, AudioSegment } from '@/types/editor';
 import { getEffectiveDuration, getClipEndTime } from '@/types/editor';
 import { TextTimelineTrack } from './text-overlay';
 import { TransitionIndicator } from './transitions';
@@ -72,6 +72,11 @@ interface EditorTimelineProps {
   onSelectAudioClip?: (id: string | null) => void;
   onToggleClipMute?: (clipId: string) => void;
   onClipVolumeChange?: (clipId: string, volume: number) => void;
+  onDetachAudio?: (clipId: string) => void;
+  onReattachAudio?: (segmentId: string) => void;
+  audioSegments?: AudioSegment[];
+  videoRef?: React.RefObject<HTMLVideoElement>;
+  isPlaying?: boolean;
   // Caption props
   captions?: CaptionSegment[];
   selectedCaptionId?: string | null;
@@ -105,6 +110,11 @@ export const EditorTimeline = ({
   onSelectAudioClip,
   onToggleClipMute,
   onClipVolumeChange,
+  onDetachAudio,
+  onReattachAudio,
+  audioSegments = [],
+  videoRef,
+  isPlaying = false,
   // Caption props
   captions = [],
   selectedCaptionId,
@@ -682,6 +692,11 @@ export const EditorTimeline = ({
                 onSelectClip={onSelectAudioClip || (() => {})}
                 onToggleMute={onToggleClipMute}
                 onVolumeChange={onClipVolumeChange}
+                onDetachAudio={onDetachAudio}
+                onReattachAudio={onReattachAudio}
+                audioSegments={audioSegments}
+                videoRef={videoRef}
+                isPlaying={isPlaying}
               />
             </div>
           )}

@@ -409,3 +409,24 @@ export interface TranscriptSegment {
   end: number;
   text: string;
 }
+
+// ============================================
+// AUDIO SEGMENT TYPES
+// ============================================
+
+/**
+ * An independent audio segment that has been detached from its video clip.
+ * Can be moved, trimmed, and volume-adjusted independently.
+ */
+export interface AudioSegment {
+  id: string;
+  sourceClipId: string;        // Which video clip this audio came from
+  sourceUrl: string;           // Audio source (original video URL)
+  startTime: number;           // Position on timeline
+  duration: number;            // Length of audio segment
+  trimStart: number;           // Trim from beginning
+  trimEnd: number;             // Trim from end
+  volume: number;              // 0-1 range (0-100%)
+  muted: boolean;
+  linkedToVideo: boolean;      // If true, moves with video clip
+}
