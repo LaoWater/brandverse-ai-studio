@@ -1361,7 +1361,7 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
               <span>
                 {clips.length === 0
                   ? 'Add clips from your library to get started'
-                  : `${clips.length} clip${clips.length !== 1 ? 's' : ''} • ${formatTime(totalDuration)} total`}
+                  : ''}
               </span>
               {/* Save status indicator */}
               {clips.length > 0 && (
@@ -1371,17 +1371,17 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
                     {isSaving ? (
                       <>
                         <Cloud className="w-3 h-3 animate-pulse text-primary" />
-                        Saving...
+                        
                       </>
                     ) : hasUnsavedChanges ? (
                       <>
                         <CloudOff className="w-3 h-3 text-yellow-500" />
-                        Unsaved changes
+                        
                       </>
                     ) : lastSaved ? (
                       <>
                         <Cloud className="w-3 h-3 text-green-500" />
-                        Saved {formatLastSaved()}
+                        Saved
                       </>
                     ) : null}
                   </span>
