@@ -62,8 +62,8 @@ app.add_middleware(
 # ============================================
 
 class ClipAudioInfo(BaseModel):
-    volume: float = 1.0      # 0.0 to 1.0 (0-100%)
-    muted: bool = False
+    volume: float = 1.0      # 0.0 to 2.0 (0-200%). 0 = mute, 1 = normal, 2 = max boost
+    muted: bool = False       # Legacy field, kept for backwards compat. volume=0 is preferred.
 
 
 class VideoClip(BaseModel):
@@ -218,7 +218,8 @@ def trim_video(input_path: Path, output_path: Path, start_time: float, duration:
     This approach ensures exact frame trimming regardless of keyframe positions.
 
     Args:
-        audio_volume: Volume level 0.0-1.0. None means no adjustment (default volume).
+        audio_volume: Volume level 0.0-2.0. None means no adjustment (default volume).
+                      Values >1.0 boost the audio (up to 200%). 0.0 strips audio.
         audio_muted: If True, strips audio entirely from the output.
     """
     end_time = start_time + duration
@@ -1156,9 +1157,10 @@ async def export_video(request: VideoExportRequest):
             audio_volume = None
             audio_muted = False
             if clip.audioInfo:
-                audio_muted = clip.audioInfo.muted
+                # volume=0 means mute (replaces legacy muted flag)
+                audio_muted = clip.audioInfo.muted or clip.audioInfo.volume == 0
                 if not audio_muted and clip.audioInfo.volume != 1.0:
-                    audio_volume = clip.audioInfo.volume
+                    audio_volume = min(clip.audioInfo.volume, 2.0)  # Cap at 200%
                 print(f"[Export:{job_id}] Clip {i+1} audio: volume={clip.audioInfo.volume}, muted={audio_muted}")
 
             needs_trim = clip.trimStart > 0 or clip.trimEnd > 0

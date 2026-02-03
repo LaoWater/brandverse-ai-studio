@@ -90,6 +90,9 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
   // Audio segments state (detached audio)
   const [audioSegments, setAudioSegments] = useState<AudioSegment[]>([]);
 
+  // Timeline scale (px/s) - persisted per project
+  const [timelineScale, setTimelineScale] = useState<number>(50);
+
   // Caption state
   const [captions, setCaptions] = useState<CaptionSegment[]>([]);
   const [selectedCaptionId, setSelectedCaptionId] = useState<string | null>(null);
@@ -214,6 +217,9 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
       const projectData = project.project_data;
       setClips(projectData.clips || []);
       setTextOverlays(projectData.textOverlays || []);
+      if (projectData.timelineScale) {
+        setTimelineScale(projectData.timelineScale);
+      }
       setLastSaved(new Date(project.updated_at));
       setHasUnsavedChanges(false);
       setEditorMode('editing');
@@ -297,7 +303,7 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
         clearTimeout(autoSaveTimeoutRef.current);
       }
     };
-  }, [clips, textOverlays, user]);
+  }, [clips, textOverlays, timelineScale, user]);
 
   // Save project to database
   const saveProject = async () => {
@@ -312,6 +318,7 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
           name: projectName,
           clips,
           textOverlays,
+          timelineScale,
         });
         if (updated) {
           setCurrentProject(updated);
@@ -685,15 +692,16 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
     const activeClip = findActiveClip(playback.currentTime);
     if (!activeClip) return;
 
-    const audioInfo = activeClip.audioInfo || { hasAudio: true, volume: 1, muted: false };
+    const audioInfo = activeClip.audioInfo || { hasAudio: true, volume: 1 };
 
-    // Apply clip-specific audio settings combined with global mute/volume
-    if (isMuted || audioInfo.muted) {
+    if (isMuted || audioInfo.volume === 0) {
       videoRef.current.muted = true;
     } else {
       videoRef.current.muted = false;
       // Combine global volume with clip volume
-      videoRef.current.volume = volume * audioInfo.volume;
+      // HTML5 video.volume is clamped to 0-1; values >1 are applied via ffmpeg on export
+      const combinedVolume = volume * audioInfo.volume;
+      videoRef.current.volume = Math.min(1, combinedVolume);
     }
   }, [playback.currentTime, findActiveClip, isMuted, volume]);
 
@@ -955,38 +963,24 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
   // Audio handlers
   const [selectedAudioClipId, setSelectedAudioClipId] = useState<string | null>(null);
 
-  const handleToggleClipMute = useCallback((clipId: string) => {
-    setClips(prev => prev.map(clip => {
-      if (clip.id !== clipId) return clip;
-      const currentAudioInfo = clip.audioInfo || { hasAudio: true, volume: 1, muted: false };
-      return {
-        ...clip,
-        audioInfo: {
-          ...currentAudioInfo,
-          muted: !currentAudioInfo.muted,
-        },
-      };
-    }));
-  }, []);
-
   const handleClipVolumeChange = useCallback((clipId: string, newVolume: number) => {
     // Check if it's a detached audio segment
     const isSegment = audioSegments.some(s => s.id === clipId);
     if (isSegment) {
       setAudioSegments(prev => prev.map(seg =>
-        seg.id === clipId ? { ...seg, volume: Math.max(0, Math.min(1, newVolume)) } : seg
+        seg.id === clipId ? { ...seg, volume: Math.max(0, Math.min(2, newVolume)) } : seg
       ));
       return;
     }
 
     setClips(prev => prev.map(clip => {
       if (clip.id !== clipId) return clip;
-      const currentAudioInfo = clip.audioInfo || { hasAudio: true, volume: 1, muted: false };
+      const currentAudioInfo = clip.audioInfo || { hasAudio: true, volume: 1 };
       return {
         ...clip,
         audioInfo: {
           ...currentAudioInfo,
-          volume: Math.max(0, Math.min(1, newVolume)),
+          volume: Math.max(0, Math.min(2, newVolume)),
         },
       };
     }));
@@ -995,7 +989,7 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
   const handleDetachAudio = useCallback((clipId: string) => {
     const clip = clips.find(c => c.id === clipId);
     if (!clip) return;
-    const audioInfo = clip.audioInfo || { hasAudio: true, volume: 1, muted: false };
+    const audioInfo = clip.audioInfo || { hasAudio: true, volume: 1 };
     if (!audioInfo.hasAudio) return;
 
     // Create independent audio segment
@@ -1009,7 +1003,6 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
       trimStart: clip.trimStart,
       trimEnd: clip.trimEnd,
       volume: audioInfo.volume,
-      muted: audioInfo.muted,
       linkedToVideo: false,
     };
 
@@ -1040,7 +1033,6 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
             audioInfo: {
               hasAudio: true,
               volume: segment.volume,
-              muted: segment.muted,
             },
           }
         : c
@@ -1055,17 +1047,6 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
     });
   }, [audioSegments, toast]);
 
-  // Handle mute toggle for both clips and detached segments
-  const handleToggleClipMuteOrSegment = useCallback((id: string) => {
-    const isSegment = audioSegments.some(s => s.id === id);
-    if (isSegment) {
-      setAudioSegments(prev => prev.map(seg =>
-        seg.id === id ? { ...seg, muted: !seg.muted } : seg
-      ));
-      return;
-    }
-    handleToggleClipMute(id);
-  }, [audioSegments, handleToggleClipMute]);
 
   // Caption handlers
   const handleAddCaption = useCallback((caption: CaptionSegment) => {
@@ -1781,7 +1762,6 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
           showAudioTrack={true}
           selectedAudioClipId={selectedAudioClipId}
           onSelectAudioClip={setSelectedAudioClipId}
-          onToggleClipMute={handleToggleClipMuteOrSegment}
           onClipVolumeChange={handleClipVolumeChange}
           onDetachAudio={handleDetachAudio}
           onReattachAudio={handleReattachAudio}
@@ -1796,6 +1776,9 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
             if (id) setIsCaptionPanelOpen(true);
           }}
           onUpdateCaption={handleUpdateCaption}
+          // Scale props
+          scale={timelineScale}
+          onScaleChange={setTimelineScale}
         />
       </Card>
 

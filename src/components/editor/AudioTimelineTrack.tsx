@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState, useEffect, useRef, RefObject } from 'react';
-import { Volume2, VolumeX, Music, Unlink, Link } from 'lucide-react';
+import { Volume2, Music, Unlink, Link } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import type { EditorClip, AudioSegment } from '@/types/editor';
 import { getEffectiveDuration } from '@/types/editor';
@@ -10,7 +10,6 @@ interface AudioTimelineTrackProps {
   timelineWidth: number;
   selectedClipId: string | null;
   onSelectClip: (id: string | null) => void;
-  onToggleMute: (clipId: string) => void;
   onVolumeChange: (clipId: string, volume: number) => void;
   onDetachAudio?: (clipId: string) => void;
   onReattachAudio?: (segmentId: string) => void;
@@ -20,21 +19,20 @@ interface AudioTimelineTrackProps {
 }
 
 /**
- * Hook for monitoring audio level from a video element using Web Audio API.
- * Returns a 0-1 value representing the current audio level.
+ * Simulated audio level indicator for visual feedback during playback.
+ * Uses a simple animation instead of Web Audio API to avoid hijacking
+ * the video element's audio output (createMediaElementSource permanently
+ * re-routes audio and breaks normal playback).
  */
 const useAudioLevel = (
-  videoRef: RefObject<HTMLVideoElement> | undefined,
+  _videoRef: RefObject<HTMLVideoElement> | undefined,
   isPlaying: boolean
 ): number => {
   const [level, setLevel] = useState(0);
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!isPlaying || !videoRef?.current) {
+    if (!isPlaying) {
       setLevel(0);
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
@@ -43,40 +41,14 @@ const useAudioLevel = (
       return;
     }
 
-    const video = videoRef.current;
-
-    // Create AudioContext and connect only once per video element
-    if (!audioCtxRef.current) {
-      try {
-        const audioCtx = new AudioContext();
-        const source = audioCtx.createMediaElementSource(video);
-        const analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 256;
-
-        source.connect(analyser);
-        analyser.connect(audioCtx.destination);
-
-        audioCtxRef.current = audioCtx;
-        sourceRef.current = source;
-        analyserRef.current = analyser;
-      } catch {
-        // MediaElementSource can only be created once per element
-        return;
-      }
-    }
-
-    const analyser = analyserRef.current;
-    if (!analyser) return;
-
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-    const updateLevel = () => {
-      analyser.getByteFrequencyData(dataArray);
-      const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
-      setLevel(avg / 255);
-      rafRef.current = requestAnimationFrame(updateLevel);
+    const animate = () => {
+      // Generate a natural-looking pseudo-random level
+      const t = performance.now() / 1000;
+      const simulated = 0.3 + 0.2 * Math.sin(t * 3.7) + 0.15 * Math.sin(t * 7.1) + 0.1 * Math.cos(t * 11.3);
+      setLevel(Math.max(0, Math.min(1, simulated)));
+      rafRef.current = requestAnimationFrame(animate);
     };
-    updateLevel();
+    rafRef.current = requestAnimationFrame(animate);
 
     return () => {
       if (rafRef.current) {
@@ -84,20 +56,39 @@ const useAudioLevel = (
         rafRef.current = null;
       }
     };
-  }, [isPlaying, videoRef]);
-
-  // Cleanup AudioContext on unmount
-  useEffect(() => {
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      audioCtxRef.current?.close().catch(() => {});
-      audioCtxRef.current = null;
-      sourceRef.current = null;
-      analyserRef.current = null;
-    };
-  }, []);
+  }, [isPlaying]);
 
   return level;
+};
+
+/**
+ * Get volume color: blue at normal (<=100%), transitions to red when boosted (>100%)
+ */
+const getVolumeColor = (volume: number): { slider: string; text: string; waveform: string; label: string } => {
+  if (volume <= 1) {
+    return {
+      slider: '[&_[data-slot=slider-range]]:bg-blue-500',
+      text: 'text-blue-600 dark:text-blue-300',
+      waveform: 'bg-blue-600/70 dark:bg-blue-400/60',
+      label: 'text-blue-600 dark:text-blue-300',
+    };
+  }
+  // Interpolate from blue to red as volume goes from 1.0 to 2.0
+  const t = (volume - 1); // 0 to 1
+  if (t < 0.5) {
+    return {
+      slider: '[&_[data-slot=slider-range]]:bg-orange-500',
+      text: 'text-orange-500 dark:text-orange-400',
+      waveform: 'bg-orange-500/70 dark:bg-orange-400/60',
+      label: 'text-orange-500 dark:text-orange-400',
+    };
+  }
+  return {
+    slider: '[&_[data-slot=slider-range]]:bg-red-500',
+    text: 'text-red-500 dark:text-red-400',
+    waveform: 'bg-red-500/70 dark:bg-red-400/60',
+    label: 'text-red-500 dark:text-red-400',
+  };
 };
 
 export const AudioTimelineTrack = ({
@@ -106,7 +97,6 @@ export const AudioTimelineTrack = ({
   timelineWidth,
   selectedClipId,
   onSelectClip,
-  onToggleMute,
   onVolumeChange,
   onDetachAudio,
   onReattachAudio,
@@ -115,12 +105,26 @@ export const AudioTimelineTrack = ({
   isPlaying = false,
 }: AudioTimelineTrackProps) => {
   const [contextMenu, setContextMenu] = useState<{ clipId: string; x: number; y: number } | null>(null);
+  const [boostWarning, setBoostWarning] = useState(false);
+  const boostWarningShownRef = useRef(false);
+  const boostWarningTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Convert time to pixel position
   const timeToPixel = useCallback((time: number) => time * scale, [scale]);
 
   // Audio level indicator
   const audioLevel = useAudioLevel(videoRef, isPlaying);
+
+  // Show a one-time boost warning when volume crosses 100%
+  const handleVolumeWithBoostWarning = useCallback((clipId: string, newVolume: number) => {
+    if (newVolume > 1 && !boostWarningShownRef.current) {
+      boostWarningShownRef.current = true;
+      setBoostWarning(true);
+      if (boostWarningTimerRef.current) clearTimeout(boostWarningTimerRef.current);
+      boostWarningTimerRef.current = setTimeout(() => setBoostWarning(false), 4000);
+    }
+    onVolumeChange(clipId, newVolume);
+  }, [onVolumeChange]);
 
   // Sort clips by start time
   const sortedClips = useMemo(() =>
@@ -148,21 +152,33 @@ export const AudioTimelineTrack = ({
       style={{ width: timelineWidth }}
       onClick={() => setContextMenu(null)}
     >
+      {/* Boost warning tooltip */}
+      {boostWarning && (
+        <div className="absolute -top-8 left-1/2 -translate-x-1/2 z-30 px-3 py-1 rounded bg-orange-500/90 text-white text-[10px] whitespace-nowrap shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-200">
+          Volume above 100% will only be reflected in the final exported video
+        </div>
+      )}
+
       {/* Linked audio clips */}
       {sortedClips.map((clip) => {
         const effectiveDuration = getEffectiveDuration(clip);
         const left = timeToPixel(clip.startTime);
         const width = timeToPixel(effectiveDuration);
         const isSelected = selectedClipId === clip.id;
-        const audioInfo = clip.audioInfo || { hasAudio: true, volume: 1, muted: false };
-        const isMuted = audioInfo.muted;
+        const audioInfo = clip.audioInfo || { hasAudio: true, volume: 1 };
         const volume = audioInfo.volume;
+        const isMuted = volume === 0;
+        const colors = getVolumeColor(volume);
 
         // Color based on audio state
         const bgColor = !audioInfo.hasAudio
           ? 'bg-gray-300/50 dark:bg-gray-500/20 border-gray-400 dark:border-gray-500/30'
           : isMuted
           ? 'bg-red-200/50 dark:bg-red-500/20 border-red-400 dark:border-red-500/30'
+          : volume > 1
+          ? isSelected
+            ? 'bg-red-200/40 dark:bg-red-500/30 border-red-400 dark:border-red-400'
+            : 'bg-orange-200/30 dark:bg-orange-500/15 border-orange-400/70 dark:border-orange-500/50'
           : isSelected
           ? 'bg-blue-300/60 dark:bg-blue-500/40 border-blue-500 dark:border-blue-400'
           : 'bg-blue-200/50 dark:bg-blue-500/20 border-blue-400/70 dark:border-blue-500/50';
@@ -179,17 +195,17 @@ export const AudioTimelineTrack = ({
             onContextMenu={(e) => handleContextMenu(e, clip.id)}
           >
             {/* Audio waveform placeholder - simple bars */}
-            {audioInfo.hasAudio && !isMuted && (
+            {audioInfo.hasAudio && volume > 0 && (
               <div className="absolute inset-0 flex items-center gap-0.5 px-1 overflow-hidden" style={{ right: '70px' }}>
                 {Array.from({ length: Math.max(Math.floor((width - 70) / 4), 3) }).map((_, i) => {
                   const height = 30 + Math.sin(i * 0.5 + clip.startTime) * 40 + Math.cos(i * 0.3) * 15;
                   return (
                     <div
                       key={i}
-                      className="w-0.5 bg-blue-600/70 dark:bg-blue-400/60 rounded-full flex-shrink-0"
+                      className={`w-0.5 ${colors.waveform} rounded-full flex-shrink-0`}
                       style={{
-                        height: `${Math.min(height, 80)}%`,
-                        opacity: volume,
+                        height: `${Math.min(height * Math.min(volume, 1.5), 90)}%`,
+                        opacity: Math.min(volume, 1),
                       }}
                     />
                   );
@@ -205,60 +221,34 @@ export const AudioTimelineTrack = ({
               </div>
             )}
 
-            {/* Muted indicator */}
-            {audioInfo.hasAudio && isMuted && (
-              <div className="absolute left-2 inset-y-0 flex items-center">
-                <VolumeX className="w-4 h-4 text-red-400/70" />
-              </div>
-            )}
-
-            {/* Controls area (right side): volume slider + mute button */}
+            {/* Controls area (right side): volume slider */}
             {audioInfo.hasAudio && (
-              <div className="absolute right-1 top-0 bottom-0 flex items-center gap-1" style={{ width: '65px' }}>
-                {/* Volume slider */}
-                {!isMuted && (
-                  <div className="flex items-center gap-0.5 flex-1">
-                    <Slider
-                      value={[volume * 100]}
-                      min={0}
-                      max={100}
-                      step={5}
-                      onValueChange={([v]) => {
-                        onVolumeChange(clip.id, v / 100);
-                      }}
-                      className="w-10 h-1 [&_[data-slot=slider-track]]:h-0.5 [&_[data-slot=slider-range]]:bg-blue-500 [&_[data-slot=slider-thumb]]:h-2 [&_[data-slot=slider-thumb]]:w-2 [&_[data-slot=slider-thumb]]:border-0"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    <span className="text-[7px] text-blue-600 dark:text-blue-300 font-mono w-5 text-right">
-                      {Math.round(volume * 100)}
-                    </span>
-                  </div>
-                )}
-
-                {/* Mute toggle */}
-                <button
-                  className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/20 transition-colors flex-shrink-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleMute(clip.id);
-                  }}
-                  title={isMuted ? 'Unmute' : 'Mute'}
-                >
-                  {isMuted ? (
-                    <VolumeX className="w-3 h-3 text-red-500 dark:text-red-400" />
-                  ) : (
-                    <Volume2 className="w-3 h-3 text-blue-600 dark:text-blue-300" />
-                  )}
-                </button>
+              <div className="absolute right-1 top-0 bottom-0 flex items-center gap-1" style={{ width: '70px' }}>
+                <div className="flex items-center gap-0.5 flex-1">
+                  <Slider
+                    value={[volume * 100]}
+                    min={0}
+                    max={200}
+                    step={5}
+                    onValueChange={([v]) => {
+                      handleVolumeWithBoostWarning(clip.id, v / 100);
+                    }}
+                    className={`w-10 h-1 [&_[data-slot=slider-track]]:h-0.5 ${colors.slider} [&_[data-slot=slider-thumb]]:h-2 [&_[data-slot=slider-thumb]]:w-2 [&_[data-slot=slider-thumb]]:border-0`}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <span className={`text-[7px] ${colors.text} font-mono w-6 text-right`}>
+                    {Math.round(volume * 100)}
+                  </span>
+                </div>
               </div>
             )}
 
             {/* Audio level indicator (bottom bar, shows during playback) */}
-            {audioInfo.hasAudio && !isMuted && isPlaying && isSelected && (
+            {audioInfo.hasAudio && volume > 0 && isPlaying && isSelected && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-700/30 dark:bg-gray-700/50 overflow-hidden">
                 <div
-                  className="h-full bg-green-500 dark:bg-green-400 transition-all duration-75"
-                  style={{ width: `${audioLevel * volume * 100}%` }}
+                  className={`h-full ${volume > 1 ? 'bg-red-500 dark:bg-red-400' : 'bg-green-500 dark:bg-green-400'} transition-all duration-75`}
+                  style={{ width: `${audioLevel * Math.min(volume, 1) * 100}%` }}
                 />
               </div>
             )}
@@ -272,9 +262,15 @@ export const AudioTimelineTrack = ({
         const effectiveDuration = segment.duration - segment.trimStart - segment.trimEnd;
         const width = timeToPixel(effectiveDuration);
         const isSelected = selectedClipId === segment.id;
+        const isMuted = segment.volume === 0;
+        const colors = getVolumeColor(segment.volume);
 
-        const bgColor = segment.muted
+        const bgColor = isMuted
           ? 'bg-orange-200/50 dark:bg-orange-500/20 border-orange-400 dark:border-orange-500/30'
+          : segment.volume > 1
+          ? isSelected
+            ? 'bg-red-200/40 dark:bg-red-500/30 border-red-400 dark:border-red-400'
+            : 'bg-purple-200/50 dark:bg-purple-500/20 border-purple-400/70 dark:border-purple-500/50'
           : isSelected
           ? 'bg-purple-300/60 dark:bg-purple-500/40 border-purple-500 dark:border-purple-400'
           : 'bg-purple-200/50 dark:bg-purple-500/20 border-purple-400/70 dark:border-purple-500/50';
@@ -299,40 +295,22 @@ export const AudioTimelineTrack = ({
             </div>
 
             {/* Volume slider for detached segments */}
-            {!segment.muted && (
-              <div className="absolute right-5 top-0 bottom-0 flex items-center gap-0.5" style={{ width: '50px' }}>
-                <Slider
-                  value={[segment.volume * 100]}
-                  min={0}
-                  max={100}
-                  step={5}
-                  onValueChange={([v]) => {
-                    onVolumeChange(segment.id, v / 100);
-                  }}
-                  className="w-8 h-1 [&_[data-slot=slider-track]]:h-0.5 [&_[data-slot=slider-range]]:bg-purple-500 [&_[data-slot=slider-thumb]]:h-2 [&_[data-slot=slider-thumb]]:w-2 [&_[data-slot=slider-thumb]]:border-0"
-                  onClick={(e) => e.stopPropagation()}
-                />
-                <span className="text-[7px] text-purple-600 dark:text-purple-300 font-mono w-5 text-right">
-                  {Math.round(segment.volume * 100)}
-                </span>
-              </div>
-            )}
-
-            {/* Mute toggle for detached */}
-            <button
-              className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleMute(segment.id);
-              }}
-              title={segment.muted ? 'Unmute' : 'Mute'}
-            >
-              {segment.muted ? (
-                <VolumeX className="w-3 h-3 text-orange-500 dark:text-orange-400" />
-              ) : (
-                <Volume2 className="w-3 h-3 text-purple-600 dark:text-purple-300" />
-              )}
-            </button>
+            <div className="absolute right-1 top-0 bottom-0 flex items-center gap-0.5" style={{ width: '60px' }}>
+              <Slider
+                value={[segment.volume * 100]}
+                min={0}
+                max={200}
+                step={5}
+                onValueChange={([v]) => {
+                  handleVolumeWithBoostWarning(segment.id, v / 100);
+                }}
+                className={`w-9 h-1 [&_[data-slot=slider-track]]:h-0.5 ${colors.slider} [&_[data-slot=slider-thumb]]:h-2 [&_[data-slot=slider-thumb]]:w-2 [&_[data-slot=slider-thumb]]:border-0`}
+                onClick={(e) => e.stopPropagation()}
+              />
+              <span className={`text-[7px] ${colors.text} font-mono w-6 text-right`}>
+                {Math.round(segment.volume * 100)}
+              </span>
+            </div>
           </div>
         );
       })}
@@ -376,16 +354,6 @@ export const AudioTimelineTrack = ({
                   Detach Audio
                 </button>
               )}
-              <button
-                className="w-full px-3 py-1.5 text-left text-xs hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                onClick={() => {
-                  onToggleMute(contextMenu.clipId);
-                  setContextMenu(null);
-                }}
-              >
-                <VolumeX className="w-3 h-3" />
-                {clips.find(c => c.id === contextMenu.clipId)?.audioInfo?.muted ? 'Unmute' : 'Mute'}
-              </button>
             </>
           )}
         </div>

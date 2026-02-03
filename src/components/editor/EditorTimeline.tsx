@@ -70,7 +70,6 @@ interface EditorTimelineProps {
   showAudioTrack?: boolean;
   selectedAudioClipId?: string | null;
   onSelectAudioClip?: (id: string | null) => void;
-  onToggleClipMute?: (clipId: string) => void;
   onClipVolumeChange?: (clipId: string, volume: number) => void;
   onDetachAudio?: (clipId: string) => void;
   onReattachAudio?: (segmentId: string) => void;
@@ -82,6 +81,9 @@ interface EditorTimelineProps {
   selectedCaptionId?: string | null;
   onSelectCaption?: (id: string | null) => void;
   onUpdateCaption?: (id: string, updates: Partial<CaptionSegment>) => void;
+  // Scale props (persisted per project)
+  scale?: number;
+  onScaleChange?: (scale: number) => void;
 }
 
 export const EditorTimeline = ({
@@ -108,7 +110,6 @@ export const EditorTimeline = ({
   showAudioTrack = true,
   selectedAudioClipId,
   onSelectAudioClip,
-  onToggleClipMute,
   onClipVolumeChange,
   onDetachAudio,
   onReattachAudio,
@@ -120,6 +121,9 @@ export const EditorTimeline = ({
   selectedCaptionId,
   onSelectCaption,
   onUpdateCaption,
+  // Scale props
+  scale: externalScale,
+  onScaleChange,
 }: EditorTimelineProps) => {
   const timelineRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -135,8 +139,18 @@ export const EditorTimeline = ({
   const rafRef = useRef<number | null>(null); // For requestAnimationFrame throttling
   const dragStartTimeRef = useRef<number>(0); // Original time when drag started
 
-  // Scale: pixels per second (adjustable for zoom)
-  const [scale, setScale] = useState(50);
+  // Scale: pixels per second (controlled by parent when persisted, otherwise local)
+  const [localScale, setLocalScale] = useState(50);
+  const scale = externalScale ?? localScale;
+  const setScale = useCallback((updater: number | ((prev: number) => number)) => {
+    const newValue = typeof updater === 'function' ? updater(scale) : updater;
+    const clamped = Math.max(20, Math.min(100, newValue));
+    if (onScaleChange) {
+      onScaleChange(clamped);
+    } else {
+      setLocalScale(clamped);
+    }
+  }, [scale, onScaleChange]);
   const minDuration = Math.max(totalDuration, 30); // Minimum 30s timeline width
   const timelineWidth = minDuration * scale;
 
@@ -679,7 +693,7 @@ export const EditorTimeline = ({
           )}
 
           {/* Audio Track Area - positioned after text track */}
-          {showAudioTrack && clips.length > 0 && onToggleClipMute && onClipVolumeChange && (
+          {showAudioTrack && clips.length > 0 && onClipVolumeChange && (
             <div
               className="absolute left-0 right-0 h-10 border-t border-slate-200 dark:border-white/10"
               style={{ top: `${104 + (textOverlays.length > 0 ? 40 : 0)}px` }}
@@ -690,7 +704,6 @@ export const EditorTimeline = ({
                 timelineWidth={timelineWidth}
                 selectedClipId={selectedAudioClipId ?? null}
                 onSelectClip={onSelectAudioClip || (() => {})}
-                onToggleMute={onToggleClipMute}
                 onVolumeChange={onClipVolumeChange}
                 onDetachAudio={onDetachAudio}
                 onReattachAudio={onReattachAudio}
