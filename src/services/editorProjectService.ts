@@ -10,15 +10,17 @@ import type { EditorClip, TextOverlay } from '@/types/editor';
  * Current project data schema version
  * Increment when making breaking changes to ProjectData structure
  */
-const CURRENT_PROJECT_VERSION = 2;
+const CURRENT_PROJECT_VERSION = 3;
 
 /**
  * Project data structure stored in JSONB
  * Version 2: Added textOverlays support
+ * Version 3: Added timelineScale (px/s zoom level)
  */
 export interface ProjectData {
   clips: EditorClip[];
   textOverlays: TextOverlay[];  // Added in v2
+  timelineScale?: number;       // Added in v3 - px/s zoom level
   settings?: {
     aspectRatio?: string;
     resolution?: string;
@@ -44,6 +46,12 @@ export const migrateProjectData = (data: any): ProjectData => {
   if (!data.version || data.version < 2) {
     data.textOverlays = [];
     data.version = 2;
+  }
+
+  // Version 2 -> 3: Add timelineScale
+  if (data.version < 3) {
+    // No default needed — undefined means "use component default"
+    data.version = 3;
   }
 
   return data as ProjectData;
@@ -130,6 +138,7 @@ export const updateProject = async (
     description?: string;
     clips?: EditorClip[];
     textOverlays?: TextOverlay[];
+    timelineScale?: number;
     status?: 'draft' | 'exported' | 'archived';
     thumbnailUrl?: string | null;
   }
@@ -153,8 +162,8 @@ export const updateProject = async (
       updateData.thumbnail_url = updates.thumbnailUrl;
     }
 
-    // Handle clips and/or textOverlays updates
-    if (updates.clips !== undefined || updates.textOverlays !== undefined) {
+    // Handle clips, textOverlays, or timelineScale updates
+    if (updates.clips !== undefined || updates.textOverlays !== undefined || updates.timelineScale !== undefined) {
       // Fetch current project data to merge with updates
       const { data: currentProject } = await supabase
         .from('editor_projects')
@@ -167,6 +176,7 @@ export const updateProject = async (
       const projectData: ProjectData = {
         clips: updates.clips ?? currentData.clips,
         textOverlays: updates.textOverlays ?? currentData.textOverlays,
+        timelineScale: updates.timelineScale ?? currentData.timelineScale,
         version: CURRENT_PROJECT_VERSION,
       };
 

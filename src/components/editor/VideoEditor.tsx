@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
-import type { EditorClip, PlaybackState, ExportState, TextOverlay, ClipTransition, CaptionSegment, CaptionStyle } from '@/types/editor';
+import type { EditorClip, PlaybackState, ExportState, TextOverlay, ClipTransition, CaptionSegment, CaptionStyle, AudioSegment } from '@/types/editor';
 import { getEffectiveDuration, getClipEndTime, createTextOverlay, DEFAULT_CAPTION_STYLE, createCaptionSegment } from '@/types/editor';
 import { ClipSelector } from './ClipSelector';
 import { EditorTimeline } from './EditorTimeline';
@@ -86,6 +86,12 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
   // Transition state
   const [selectedTransitionIndex, setSelectedTransitionIndex] = useState<number | null>(null);
   const [isTransitionPanelOpen, setIsTransitionPanelOpen] = useState(false);
+
+  // Audio segments state (detached audio)
+  const [audioSegments, setAudioSegments] = useState<AudioSegment[]>([]);
+
+  // Timeline scale (px/s) - persisted per project
+  const [timelineScale, setTimelineScale] = useState<number>(50);
 
   // Caption state
   const [captions, setCaptions] = useState<CaptionSegment[]>([]);
@@ -211,6 +217,9 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
       const projectData = project.project_data;
       setClips(projectData.clips || []);
       setTextOverlays(projectData.textOverlays || []);
+      if (projectData.timelineScale) {
+        setTimelineScale(projectData.timelineScale);
+      }
       setLastSaved(new Date(project.updated_at));
       setHasUnsavedChanges(false);
       setEditorMode('editing');
@@ -294,7 +303,7 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
         clearTimeout(autoSaveTimeoutRef.current);
       }
     };
-  }, [clips, textOverlays, user]);
+  }, [clips, textOverlays, timelineScale, user]);
 
   // Save project to database
   const saveProject = async () => {
@@ -309,6 +318,7 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
           name: projectName,
           clips,
           textOverlays,
+          timelineScale,
         });
         if (updated) {
           setCurrentProject(updated);
@@ -682,15 +692,16 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
     const activeClip = findActiveClip(playback.currentTime);
     if (!activeClip) return;
 
-    const audioInfo = activeClip.audioInfo || { hasAudio: true, volume: 1, muted: false };
+    const audioInfo = activeClip.audioInfo || { hasAudio: true, volume: 1 };
 
-    // Apply clip-specific audio settings combined with global mute/volume
-    if (isMuted || audioInfo.muted) {
+    if (isMuted || audioInfo.volume === 0) {
       videoRef.current.muted = true;
     } else {
       videoRef.current.muted = false;
       // Combine global volume with clip volume
-      videoRef.current.volume = volume * audioInfo.volume;
+      // HTML5 video.volume is clamped to 0-1; values >1 are applied via ffmpeg on export
+      const combinedVolume = volume * audioInfo.volume;
+      videoRef.current.volume = Math.min(1, combinedVolume);
     }
   }, [playback.currentTime, findActiveClip, isMuted, volume]);
 
@@ -952,33 +963,90 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
   // Audio handlers
   const [selectedAudioClipId, setSelectedAudioClipId] = useState<string | null>(null);
 
-  const handleToggleClipMute = useCallback((clipId: string) => {
-    setClips(prev => prev.map(clip => {
-      if (clip.id !== clipId) return clip;
-      const currentAudioInfo = clip.audioInfo || { hasAudio: true, volume: 1, muted: false };
-      return {
-        ...clip,
-        audioInfo: {
-          ...currentAudioInfo,
-          muted: !currentAudioInfo.muted,
-        },
-      };
-    }));
-  }, []);
+  const handleClipVolumeChange = useCallback((clipId: string, newVolume: number) => {
+    // Check if it's a detached audio segment
+    const isSegment = audioSegments.some(s => s.id === clipId);
+    if (isSegment) {
+      setAudioSegments(prev => prev.map(seg =>
+        seg.id === clipId ? { ...seg, volume: Math.max(0, Math.min(2, newVolume)) } : seg
+      ));
+      return;
+    }
 
-  const handleClipVolumeChange = useCallback((clipId: string, volume: number) => {
     setClips(prev => prev.map(clip => {
       if (clip.id !== clipId) return clip;
-      const currentAudioInfo = clip.audioInfo || { hasAudio: true, volume: 1, muted: false };
+      const currentAudioInfo = clip.audioInfo || { hasAudio: true, volume: 1 };
       return {
         ...clip,
         audioInfo: {
           ...currentAudioInfo,
-          volume: Math.max(0, Math.min(1, volume)),
+          volume: Math.max(0, Math.min(2, newVolume)),
         },
       };
     }));
-  }, []);
+  }, [audioSegments]);
+
+  const handleDetachAudio = useCallback((clipId: string) => {
+    const clip = clips.find(c => c.id === clipId);
+    if (!clip) return;
+    const audioInfo = clip.audioInfo || { hasAudio: true, volume: 1 };
+    if (!audioInfo.hasAudio) return;
+
+    // Create independent audio segment
+    const effectiveDuration = getEffectiveDuration(clip);
+    const segment: AudioSegment = {
+      id: `audio_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      sourceClipId: clip.id,
+      sourceUrl: clip.sourceUrl,
+      startTime: clip.startTime,
+      duration: effectiveDuration,
+      trimStart: clip.trimStart,
+      trimEnd: clip.trimEnd,
+      volume: audioInfo.volume,
+      linkedToVideo: false,
+    };
+
+    setAudioSegments(prev => [...prev, segment]);
+
+    // Mark video clip as having no audio
+    setClips(prev => prev.map(c =>
+      c.id === clipId
+        ? { ...c, audioInfo: { ...audioInfo, hasAudio: false } }
+        : c
+    ));
+
+    toast({
+      title: 'Audio Detached',
+      description: 'Audio is now independent. Right-click to reattach.',
+    });
+  }, [clips, toast]);
+
+  const handleReattachAudio = useCallback((segmentId: string) => {
+    const segment = audioSegments.find(s => s.id === segmentId);
+    if (!segment) return;
+
+    // Restore audio to the source clip
+    setClips(prev => prev.map(c =>
+      c.id === segment.sourceClipId
+        ? {
+            ...c,
+            audioInfo: {
+              hasAudio: true,
+              volume: segment.volume,
+            },
+          }
+        : c
+    ));
+
+    // Remove the detached segment
+    setAudioSegments(prev => prev.filter(s => s.id !== segmentId));
+
+    toast({
+      title: 'Audio Reattached',
+      description: 'Audio has been linked back to its video clip.',
+    });
+  }, [audioSegments, toast]);
+
 
   // Caption handlers
   const handleAddCaption = useCallback((caption: CaptionSegment) => {
@@ -1293,7 +1361,7 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
               <span>
                 {clips.length === 0
                   ? 'Add clips from your library to get started'
-                  : `${clips.length} clip${clips.length !== 1 ? 's' : ''} • ${formatTime(totalDuration)} total`}
+                  : ''}
               </span>
               {/* Save status indicator */}
               {clips.length > 0 && (
@@ -1303,17 +1371,17 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
                     {isSaving ? (
                       <>
                         <Cloud className="w-3 h-3 animate-pulse text-primary" />
-                        Saving...
+                        
                       </>
                     ) : hasUnsavedChanges ? (
                       <>
                         <CloudOff className="w-3 h-3 text-yellow-500" />
-                        Unsaved changes
+                        
                       </>
                     ) : lastSaved ? (
                       <>
                         <Cloud className="w-3 h-3 text-green-500" />
-                        Saved {formatLastSaved()}
+                        Saved
                       </>
                     ) : null}
                   </span>
@@ -1694,8 +1762,12 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
           showAudioTrack={true}
           selectedAudioClipId={selectedAudioClipId}
           onSelectAudioClip={setSelectedAudioClipId}
-          onToggleClipMute={handleToggleClipMute}
           onClipVolumeChange={handleClipVolumeChange}
+          onDetachAudio={handleDetachAudio}
+          onReattachAudio={handleReattachAudio}
+          audioSegments={audioSegments}
+          videoRef={videoRef}
+          isPlaying={playback.playing}
           // Caption props
           captions={captions}
           selectedCaptionId={selectedCaptionId}
@@ -1704,6 +1776,9 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
             if (id) setIsCaptionPanelOpen(true);
           }}
           onUpdateCaption={handleUpdateCaption}
+          // Scale props
+          scale={timelineScale}
+          onScaleChange={setTimelineScale}
         />
       </Card>
 

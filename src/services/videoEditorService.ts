@@ -44,6 +44,17 @@ interface TransitionExport {
 /**
  * Export request payload for the media processing service
  */
+/**
+ * Audio info export format for the media processing service
+ */
+interface ClipAudioExport {
+  volume: number;    // 0-1 (0-100%)
+  muted: boolean;
+}
+
+/**
+ * Export request payload for the media processing service
+ */
 interface ExportRequest {
   clips: {
     id: string;
@@ -52,6 +63,7 @@ interface ExportRequest {
     startTime: number;
     trimStart: number;
     trimEnd: number;
+    audioInfo?: ClipAudioExport;
   }[];
   textOverlays?: TextOverlayExport[];
   transitions?: TransitionExport[];
@@ -141,14 +153,21 @@ export const exportProject = async (
 
     // Build request payload
     const request: ExportRequest = {
-      clips: sortedClips.map(clip => ({
-        id: clip.id,
-        sourceUrl: clip.sourceUrl,
-        sourceDuration: clip.sourceDuration,
-        startTime: clip.startTime,
-        trimStart: clip.trimStart,
-        trimEnd: clip.trimEnd,
-      })),
+      clips: sortedClips.map(clip => {
+        const audioInfo = clip.audioInfo;
+        return {
+          id: clip.id,
+          sourceUrl: clip.sourceUrl,
+          sourceDuration: clip.sourceDuration,
+          startTime: clip.startTime,
+          trimStart: clip.trimStart,
+          trimEnd: clip.trimEnd,
+          audioInfo: audioInfo ? {
+            volume: audioInfo.muted ? 0 : audioInfo.volume,
+            muted: audioInfo.muted || !audioInfo.hasAudio,
+          } : undefined,
+        };
+      }),
       textOverlays: textOverlaysExport,
       transitions: transitionsExport.length > 0 ? transitionsExport : undefined,
       previewDimensions: previewDimensions,
@@ -233,14 +252,21 @@ export const exportProjectToLibrary = async (
   onProgress?.(5, 'preparing', 'Preparing export...');
 
   const request: ExportRequest = {
-    clips: sortedClips.map(clip => ({
-      id: clip.id,
-      sourceUrl: clip.sourceUrl,
-      sourceDuration: clip.sourceDuration,
-      startTime: clip.startTime,
-      trimStart: clip.trimStart,
-      trimEnd: clip.trimEnd,
-    })),
+    clips: sortedClips.map(clip => {
+      const audioInfo = clip.audioInfo;
+      return {
+        id: clip.id,
+        sourceUrl: clip.sourceUrl,
+        sourceDuration: clip.sourceDuration,
+        startTime: clip.startTime,
+        trimStart: clip.trimStart,
+        trimEnd: clip.trimEnd,
+        audioInfo: audioInfo ? {
+          volume: audioInfo.muted ? 0 : audioInfo.volume,
+          muted: audioInfo.muted || !audioInfo.hasAudio,
+        } : undefined,
+      };
+    }),
     userId,
     companyId: companyId || undefined,
     projectName,

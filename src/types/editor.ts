@@ -195,8 +195,7 @@ export const getTransitionsByCategory = (category: TransitionTypeInfo['category'
  */
 export interface ClipAudioInfo {
   hasAudio: boolean;          // Whether the clip has an audio track
-  volume: number;             // Volume level 0-1
-  muted: boolean;             // Whether audio is muted
+  volume: number;             // Volume level 0-2 (0-200%). 0 = mute, 1 = normal, 2 = max boost
   waveformUrl?: string;       // URL to waveform data (future enhancement)
 }
 
@@ -206,7 +205,6 @@ export interface ClipAudioInfo {
 export const DEFAULT_AUDIO_INFO: ClipAudioInfo = {
   hasAudio: true,             // Assume clips have audio by default
   volume: 1,
-  muted: false,
 };
 
 /**
@@ -408,4 +406,24 @@ export interface TranscriptSegment {
   start: number;
   end: number;
   text: string;
+}
+
+// ============================================
+// AUDIO SEGMENT TYPES
+// ============================================
+
+/**
+ * An independent audio segment that has been detached from its video clip.
+ * Can be moved, trimmed, and volume-adjusted independently.
+ */
+export interface AudioSegment {
+  id: string;
+  sourceClipId: string;        // Which video clip this audio came from
+  sourceUrl: string;           // Audio source (original video URL)
+  startTime: number;           // Position on timeline
+  duration: number;            // Length of audio segment
+  trimStart: number;           // Trim from beginning
+  trimEnd: number;             // Trim from end
+  volume: number;              // 0-2 range (0-200%). 0 = mute, 1 = normal, 2 = max boost
+  linkedToVideo: boolean;      // If true, moves with video clip
 }

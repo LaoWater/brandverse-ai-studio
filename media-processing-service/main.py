@@ -61,6 +61,11 @@ app.add_middleware(
 # Models
 # ============================================
 
+class ClipAudioInfo(BaseModel):
+    volume: float = 1.0      # 0.0 to 2.0 (0-200%). 0 = mute, 1 = normal, 2 = max boost
+    muted: bool = False       # Legacy field, kept for backwards compat. volume=0 is preferred.
+
+
 class VideoClip(BaseModel):
     id: str
     sourceUrl: str
@@ -68,6 +73,7 @@ class VideoClip(BaseModel):
     startTime: float
     trimStart: float
     trimEnd: float
+    audioInfo: Optional[ClipAudioInfo] = None
 
 
 class TextStyle(BaseModel):
@@ -202,28 +208,54 @@ def run_ffmpeg(args: List[str]) -> None:
     print("[FFmpeg] Command completed successfully")
 
 
-def trim_video(input_path: Path, output_path: Path, start_time: float, duration: float) -> None:
+def trim_video(input_path: Path, output_path: Path, start_time: float, duration: float,
+               audio_volume: Optional[float] = None, audio_muted: bool = False) -> None:
     """
     Trim video using FFmpeg with re-encoding for frame-accurate cuts.
 
     Uses -i before -ss for accurate seeking (input-based seeking with re-encode).
     Re-encodes with high quality settings (CRF 18) for near-lossless output.
     This approach ensures exact frame trimming regardless of keyframe positions.
+
+    Args:
+        audio_volume: Volume level 0.0-2.0. None means no adjustment (default volume).
+                      Values >1.0 boost the audio (up to 200%). 0.0 strips audio.
+        audio_muted: If True, strips audio entirely from the output.
     """
     end_time = start_time + duration
 
-    run_ffmpeg([
+    cmd = [
         "-i", str(input_path),
         "-ss", str(start_time),
         "-to", str(end_time),
         "-c:v", "libx264",
         "-preset", "veryfast",
         "-crf", "18",
-        "-c:a", "aac",
-        "-b:a", "192k",
+    ]
+
+    if audio_muted:
+        # Strip audio entirely
+        cmd.extend(["-an"])
+    elif audio_volume is not None and audio_volume != 1.0:
+        # Apply volume filter
+        cmd.extend([
+            "-af", f"volume={audio_volume}",
+            "-c:a", "aac",
+            "-b:a", "192k",
+        ])
+    else:
+        # Default: re-encode audio without volume change
+        cmd.extend([
+            "-c:a", "aac",
+            "-b:a", "192k",
+        ])
+
+    cmd.extend([
         "-avoid_negative_ts", "make_zero",
         str(output_path)
     ])
+
+    run_ffmpeg(cmd)
 
 
 def concatenate_videos(input_paths: List[Path], output_path: Path, work_dir: Path) -> None:
@@ -1121,14 +1153,28 @@ async def export_video(request: VideoExportRequest):
             input_path = downloaded_paths[i]
             effective_duration = clip.sourceDuration - clip.trimStart - clip.trimEnd
 
-            if clip.trimStart > 0 or clip.trimEnd > 0:
-                # Need to trim
+            # Extract audio settings
+            audio_volume = None
+            audio_muted = False
+            if clip.audioInfo:
+                # volume=0 means mute (replaces legacy muted flag)
+                audio_muted = clip.audioInfo.muted or clip.audioInfo.volume == 0
+                if not audio_muted and clip.audioInfo.volume != 1.0:
+                    audio_volume = min(clip.audioInfo.volume, 2.0)  # Cap at 200%
+                print(f"[Export:{job_id}] Clip {i+1} audio: volume={clip.audioInfo.volume}, muted={audio_muted}")
+
+            needs_trim = clip.trimStart > 0 or clip.trimEnd > 0
+            needs_audio_change = audio_muted or (audio_volume is not None and audio_volume != 1.0)
+
+            if needs_trim or needs_audio_change:
+                # Need to process (trim and/or audio adjustment)
                 trimmed_path = work_dir / f"trimmed_{i}.mp4"
-                print(f"[Export:{job_id}] Trimming clip {i+1}: start={clip.trimStart}, duration={effective_duration}")
-                trim_video(input_path, trimmed_path, clip.trimStart, effective_duration)
+                print(f"[Export:{job_id}] Processing clip {i+1}: start={clip.trimStart}, duration={effective_duration}, audio_vol={audio_volume}, muted={audio_muted}")
+                trim_video(input_path, trimmed_path, clip.trimStart, effective_duration,
+                          audio_volume=audio_volume, audio_muted=audio_muted)
                 trimmed_paths.append(trimmed_path)
             else:
-                # No trim needed
+                # No processing needed
                 trimmed_paths.append(input_path)
 
         # Calculate clip durations for transition offset calculations
