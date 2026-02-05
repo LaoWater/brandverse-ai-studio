@@ -122,9 +122,8 @@ const PartnershipAgreementEditor = () => {
 
         <h3 style="font-size: 12pt; margin-top: 15px; margin-bottom: 8px; font-weight: bold;">Expense Authorization:</h3>
         <ul style="margin-left: 20px;">
-          <li style="margin-bottom: 5px;"><strong>Individual Authority:</strong> Up to $2,500 per month per partner</li>
-          <li style="margin-bottom: 5px;"><strong>Joint Approval Required:</strong> Expenses over $2,500</li>
-          <li style="margin-bottom: 5px;"><strong>Emergency Expenses:</strong> Up to $5,000 with immediate notification to other partner</li>
+          <li style="margin-bottom: 5px;"><strong>Individual Authority:</strong> Up to $100 per month per partner</li>
+          <li style="margin-bottom: 5px;"><strong>Joint Approval Required:</strong> Expenses over $100</li>
         </ul>
 
         <h3 style="font-size: 12pt; margin-top: 15px; margin-bottom: 8px; font-weight: bold;">Compensation:</h3>
@@ -202,7 +201,7 @@ const PartnershipAgreementEditor = () => {
 
         <h3 style="font-size: 12pt; margin-top: 15px; margin-bottom: 8px; font-weight: bold;">Voluntary Withdrawal:</h3>
         <ul style="margin-left: 20px;">
-          <li style="margin-bottom: 5px;"><strong>Notice:</strong> 90 days written notice required</li>
+          <li style="margin-bottom: 5px;"><strong>Notice:</strong> 30 days written notice required</li>
           <li style="margin-bottom: 5px;"><strong>Buyout Right:</strong> Remaining partner may purchase departing partner's interest</li>
           <li style="margin-bottom: 5px;"><strong>Valuation:</strong> Independent business appraisal by certified business valuator</li>
           <li style="margin-bottom: 5px;"><strong>Payment Terms:</strong> 25% at closing, remainder over 36 months at 6% annual interest</li>
