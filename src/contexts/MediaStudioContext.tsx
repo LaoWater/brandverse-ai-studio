@@ -49,11 +49,12 @@ export type QualityTier = 'fast' | 'standard' | 'ultra';
 export type AspectRatio = '1:1' | '16:9' | '9:16' | '3:4' | '4:3' | '3:2';
 export type VideoAspectRatio = '16:9' | '9:16'; // Veo 3.1 only supports these two
 
-// Active video generation tracking (for non-blocking queue)
+// Active generation tracking (for non-blocking queue - images and videos)
 export interface ActiveGeneration {
   id: string;                    // Local UUID for tracking
-  pendingJobId?: string;         // pending_video_jobs.id (if persisted)
-  operationName: string;         // OpenAI/Google job ID
+  mediaType: 'image' | 'video'; // Type of media being generated
+  pendingJobId?: string;         // pending_video_jobs.id (if persisted, video only)
+  operationName: string;         // OpenAI/Google job ID (video) or empty (image)
   prompt: string;
   model: string;
   mode: string;
@@ -65,7 +66,10 @@ export interface ActiveGeneration {
   stage: string;                 // Current stage description
   startedAt: Date;
   completedAt?: Date;
-  videoUrl?: string;             // Set when completed
+  videoUrl?: string;             // Set when video completed
+  imageUrl?: string;             // Set when image completed
+  aspectRatio?: string;          // Image aspect ratio for display
+  numberOfImages?: number;       // Number of images requested
   error?: string;                // Set when failed
 }
 

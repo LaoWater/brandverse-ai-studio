@@ -1,14 +1,15 @@
 /**
- * GlobalVideoGenerationTracker
+ * GlobalGenerationTracker
  *
- * A global component that tracks video generation progress across all pages.
+ * A global component that tracks BOTH image and video generation progress across all pages.
  * This must be rendered at the App level, inside MediaStudioProvider.
  *
  * Features:
  * - Persists across page navigation
- * - Sets up polling service callbacks
- * - Shows progress, completion, and error states
- * - Improved UI/UX with proper dark/light mode support
+ * - Sets up video polling service callbacks
+ * - Tracks image generation progress (no polling - updates come from context)
+ * - Shows progress, completion, and error states for both media types
+ * - Proper dark/light mode support
  */
 
 import React, { useState, useEffect } from 'react';
@@ -19,6 +20,7 @@ import { videoPollingService } from '@/services/videoPollingService';
 import { Progress } from '@/components/ui/progress';
 import {
   Film,
+  ImageIcon,
   ChevronUp,
   ChevronDown,
   X,
@@ -29,6 +31,7 @@ import {
   Sparkles,
   Video,
   ExternalLink,
+  Layers,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -50,15 +53,33 @@ const truncatePrompt = (prompt: string, maxLength: number = 35): string => {
   return prompt.slice(0, maxLength) + '...';
 };
 
-// Get model display name
+// Get model display name (supports both video and image models)
 const getModelDisplayName = (model: string): string => {
   const modelNames: Record<string, string> = {
+    // Video models
     'sora-2': 'Sora 2',
     'sora-2-pro': 'Sora Pro',
     'veo-3.1-generate-001': 'Veo 3.1',
     'veo-3.1-fast-generate-001': 'Veo Fast',
+    // Image models
+    'gemini-2.5-flash-image': 'Gemini Flash',
+    'gemini-3-pro-image-preview': 'Gemini Pro',
+    'imagen-4.0-generate-001': 'Imagen 4',
+    'gpt-image-1.5': 'GPT Image',
   };
   return modelNames[model] || model;
+};
+
+// Get model badge color based on type
+const getModelBadgeColor = (model: string, mediaType: 'image' | 'video') => {
+  if (mediaType === 'image') {
+    if (model.includes('gpt')) return 'bg-green-500/10 text-green-600 dark:text-green-400';
+    if (model.includes('imagen')) return 'bg-blue-500/10 text-blue-600 dark:text-blue-400';
+    return 'bg-violet-500/10 text-violet-600 dark:text-violet-400';
+  }
+  // Video
+  if (isSoraModel(model as any)) return 'bg-orange-500/10 text-orange-600 dark:text-orange-400';
+  return 'bg-purple-500/10 text-purple-600 dark:text-purple-400';
 };
 
 // Get status color classes
@@ -110,7 +131,10 @@ const GenerationItem: React.FC<{
   const isActive = generation.status === 'starting' || generation.status === 'queued' || generation.status === 'processing';
   const isCompleted = generation.status === 'completed';
   const isFailed = generation.status === 'failed';
+  const isImage = generation.mediaType === 'image';
   const colors = getStatusColors(generation.status);
+
+  const MediaIcon = isImage ? ImageIcon : Video;
 
   return (
     <div className={cn(
@@ -144,9 +168,15 @@ const GenerationItem: React.FC<{
               alt="Input"
               className="w-full h-full object-cover"
             />
+          ) : isCompleted && isImage && generation.imageUrl ? (
+            <img
+              src={generation.imageUrl}
+              alt="Generated"
+              className="w-full h-full object-cover"
+            />
           ) : isActive ? (
             <div className="relative">
-              <Video className="w-5 h-5 text-blue-500/60" />
+              <MediaIcon className="w-5 h-5 text-blue-500/60" />
               <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
             </div>
           ) : isCompleted ? (
@@ -167,19 +197,39 @@ const GenerationItem: React.FC<{
           <div className="flex items-center gap-1.5 mt-0.5">
             <span className={cn(
               'text-xs font-medium px-1.5 py-0.5 rounded',
-              isSoraModel(generation.model as any)
-                ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400'
-                : 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
+              getModelBadgeColor(generation.model, generation.mediaType)
             )}>
               {getModelDisplayName(generation.model)}
             </span>
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              {generation.duration}s
-            </span>
-            <span className="text-xs text-gray-400 dark:text-gray-500">•</span>
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              {generation.resolution}
-            </span>
+            {isImage ? (
+              <>
+                {generation.aspectRatio && (
+                  <>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {generation.aspectRatio}
+                    </span>
+                  </>
+                )}
+                {generation.numberOfImages && generation.numberOfImages > 1 && (
+                  <>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">-</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {generation.numberOfImages}x
+                    </span>
+                  </>
+                )}
+              </>
+            ) : (
+              <>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {generation.duration}s
+                </span>
+                <span className="text-xs text-gray-400 dark:text-gray-500">-</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {generation.resolution}
+                </span>
+              </>
+            )}
           </div>
 
           {/* Progress bar for active */}
@@ -226,7 +276,7 @@ const GenerationItem: React.FC<{
 };
 
 // Main global tracker component
-const GlobalVideoGenerationTracker: React.FC = () => {
+const GlobalGenerationTracker: React.FC = () => {
   const { activeGenerations, updateActiveGeneration, removeActiveGeneration, clearCompletedGenerations } = useMediaStudio();
   const [isExpanded, setIsExpanded] = useState(true);
   const queryClient = useQueryClient();
@@ -234,9 +284,9 @@ const GlobalVideoGenerationTracker: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Set up polling service callbacks once on mount
+  // Set up video polling service callbacks once on mount
   useEffect(() => {
-    console.log('[GlobalVideoGenerationTracker] Setting up polling callbacks');
+    console.log('[GlobalGenerationTracker] Setting up video polling callbacks');
 
     videoPollingService.setCallbacks({
       onProgress: (id, progress, stage) => {
@@ -247,7 +297,7 @@ const GlobalVideoGenerationTracker: React.FC = () => {
         });
       },
       onComplete: (id, videoUrl, thumbnailUrl) => {
-        console.log('[GlobalVideoGenerationTracker] Generation completed:', id);
+        console.log('[GlobalGenerationTracker] Video generation completed:', id);
         updateActiveGeneration(id, {
           progress: 100,
           status: 'completed',
@@ -267,7 +317,7 @@ const GlobalVideoGenerationTracker: React.FC = () => {
         });
       },
       onError: (id, error) => {
-        console.log('[GlobalVideoGenerationTracker] Generation error:', id, error);
+        console.log('[GlobalGenerationTracker] Video generation error:', id, error);
         updateActiveGeneration(id, {
           status: 'failed',
           stage: 'Failed',
@@ -278,7 +328,7 @@ const GlobalVideoGenerationTracker: React.FC = () => {
 
     // Cleanup on unmount
     return () => {
-      console.log('[GlobalVideoGenerationTracker] Cleaning up polling service');
+      console.log('[GlobalGenerationTracker] Cleaning up polling service');
       videoPollingService.stopAll();
     };
   }, [updateActiveGeneration, queryClient, toast]);
@@ -291,6 +341,10 @@ const GlobalVideoGenerationTracker: React.FC = () => {
   const failedCount = activeGenerations.filter(g => g.status === 'failed').length;
   const totalCount = activeGenerations.length;
 
+  // Count by media type for header display
+  const imageCount = activeGenerations.filter(g => g.mediaType === 'image').length;
+  const videoCount = activeGenerations.filter(g => g.mediaType === 'video').length;
+
   // Auto-expand when new generation starts
   useEffect(() => {
     if (activeCount > 0) {
@@ -298,10 +352,13 @@ const GlobalVideoGenerationTracker: React.FC = () => {
     }
   }, [activeCount]);
 
-  // Navigate to media studio library
+  // Navigate to media studio library view
   const handleViewInLibrary = () => {
     if (location.pathname !== '/media-studio') {
-      navigate('/media-studio');
+      navigate('/media-studio?view=library');
+    } else {
+      // Already on media-studio, update the search param to trigger view switch
+      navigate('/media-studio?view=library', { replace: true });
     }
   };
 
@@ -310,8 +367,13 @@ const GlobalVideoGenerationTracker: React.FC = () => {
     return null;
   }
 
+  // Determine header icon based on what's generating
+  const hasImages = imageCount > 0;
+  const hasVideos = videoCount > 0;
+  const hasBoth = hasImages && hasVideos;
+
   return (
-    <div className="fixed bottom-4 left-4 z-[100]">
+    <div className="fixed bottom-8 left-4 z-[100]">
       {/* Collapsed state */}
       {!isExpanded ? (
         <button
@@ -341,7 +403,7 @@ const GlobalVideoGenerationTracker: React.FC = () => {
                 )}
               </>
             ) : completedCount > 0 ? (
-              `${completedCount} video${completedCount > 1 ? 's' : ''} ready`
+              `${completedCount} ready`
             ) : (
               `${failedCount} failed`
             )}
@@ -363,10 +425,16 @@ const GlobalVideoGenerationTracker: React.FC = () => {
           )}>
             <div className="flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-blue-500/10 dark:bg-blue-500/20">
-                <Film className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                {hasBoth ? (
+                  <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                ) : hasImages ? (
+                  <ImageIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                ) : (
+                  <Film className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                )}
               </div>
               <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-                Video Generation
+                Media Generation
               </span>
               {activeCount > 0 && (
                 <span className="px-2 py-0.5 text-xs font-bold bg-blue-500/15 text-blue-600 dark:text-blue-400 rounded-full animate-pulse">
@@ -408,7 +476,7 @@ const GlobalVideoGenerationTracker: React.FC = () => {
           {activeCount > 0 && (
             <div className="px-4 py-2.5 border-t border-gray-200 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/30">
               <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                Continue working - videos generate in the background
+                Continue working - media generates in the background
               </p>
             </div>
           )}
@@ -418,4 +486,4 @@ const GlobalVideoGenerationTracker: React.FC = () => {
   );
 };
 
-export default GlobalVideoGenerationTracker;
+export default GlobalGenerationTracker;
