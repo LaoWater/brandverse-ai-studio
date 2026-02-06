@@ -30,7 +30,7 @@ import GenerationSuccess from './pages/GenerationSuccess';
 import ChatButton from "./components/ChatButton";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PartnershipAgreementEditor from "./pages/PartnershipAgreementEditor";
-import GlobalVideoGenerationTracker from "./components/global/GlobalVideoGenerationTracker";
+import GlobalGenerationTracker from "./components/global/GlobalGenerationTracker";
 
 import CookiesPage from "@/pages/termeni/Cookies";
 import TermeniPage from "@/pages/termeni/Termeni";
@@ -101,8 +101,8 @@ const App = () => (
             <MediaStudioProvider>
               <BrowserRouter>
                 <ScrollManager />
-                {/* Global Video Generation Tracker - persists across all pages */}
-                <GlobalVideoGenerationTracker />
+                {/* Global Generation Tracker - persists across all pages (images + videos) */}
+                <GlobalGenerationTracker />
                 <div className="flex flex-col min-h-screen">
                   <Routes>
                 {/* Public routes - accessible without authentication */}

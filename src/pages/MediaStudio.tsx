@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import React from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import { useMediaStudio, isSoraModel } from '@/contexts/MediaStudioContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,17 +19,15 @@ import KeyframeImageUpload from '@/components/media/KeyframeImageUpload';
 import VideoPromptGuide from '@/components/media/VideoPromptGuide';
 import SoraFormatControls from '@/components/media/SoraFormatControls';
 import MediaLibrary from '@/components/media/MediaLibrary';
-// VideoGenerationQueue is now rendered globally via GlobalVideoGenerationTracker
+// VideoGenerationQueue is now rendered globally via GlobalGenerationTracker
 import { VideoEditor } from '@/components/editor';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Progress } from '@/components/ui/progress';
-import { Sparkles, Zap, ArrowRight, Loader, CheckCircle, Library, Plus, Film, RefreshCw, AlertCircle } from 'lucide-react';
+import { Sparkles, Zap, ArrowRight, Loader, Library, Plus, Film, RefreshCw, AlertCircle } from 'lucide-react';
 import type { MediaStudioView } from '@/types/editor';
 import { useToast } from '@/hooks/use-toast';
 import {
-  generateMediaWithProgress,
+  generateMedia,
   uploadReferenceImage,
   uploadVideoFrameImage,
   extractAndUploadLastFrame,
@@ -43,7 +41,7 @@ import {
   GenerationConfig,
 } from '@/services/mediaStudioService';
 import { videoPollingService } from '@/services/videoPollingService';
-// Note: videoPollingService callbacks are set up globally in GlobalVideoGenerationTracker
+// Note: videoPollingService callbacks are set up globally in GlobalGenerationTracker
 import GenerationErrorDialog, { GenerationError } from '@/components/media/GenerationErrorDialog';
 import { MediaType } from '@/contexts/MediaStudioContext';
 import {
@@ -82,12 +80,6 @@ const MediaStudioContent = () => {
     // Note: Sora image-to-video uses inputVideoImage (shared with Veo)
     soraRemixVideoId,
     isGenerating,
-    generationProgress,
-    currentStage,
-    startGeneration,
-    updateGenerationProgress,
-    completeGeneration,
-    resetGeneration,
     setMediaType,
     setVideoGenerationMode,
     addReferenceImageFromUrl,
@@ -107,9 +99,21 @@ const MediaStudioContent = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // View state: 'create' | 'library' | 'editor'
   const [currentView, setCurrentView] = useState<MediaStudioView>('create');
+
+  // Sync view state from URL search params (e.g. ?view=library from GlobalGenerationTracker)
+  useEffect(() => {
+    const viewParam = searchParams.get('view');
+    if (viewParam === 'library' || viewParam === 'create' || viewParam === 'editor') {
+      setCurrentView(viewParam as MediaStudioView);
+      // Clear the param so it doesn't persist on subsequent navigations
+      searchParams.delete('view');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   // State for video continuation feature
   const [isContinuingVideo, setIsContinuingVideo] = useState(false);
@@ -123,7 +127,7 @@ const MediaStudioContent = () => {
   const [pendingJobsCount, setPendingJobsCount] = useState(0);
   const [isRecovering, setIsRecovering] = useState(false);
 
-  // Note: Video polling service callbacks are now set up globally in GlobalVideoGenerationTracker
+  // Note: Video polling service callbacks are now set up globally in GlobalGenerationTracker
   // This component only needs to handle local error dialogs for failed generations
 
   // Watch for failed generations to show error dialog
@@ -153,231 +157,6 @@ const MediaStudioContent = () => {
     isSoraModel(selectedVideoModel) ? soraResolution : undefined
   );
 
-  // Generation mutation
-  const generateMutation = useMutation({
-    mutationFn: async () => {
-      // Check if user has enough credits
-      const userCredits = await getUserCredits();
-      if (!userCredits || userCredits.available_credits < generationCost) {
-        throw new Error(
-          `Insufficient credits. You need ${generationCost} credits but only have ${userCredits?.available_credits || 0}.`
-        );
-      }
-
-      // Deduct credits before generation
-      const deductSuccess = await deductCredits(generationCost);
-      if (!deductSuccess) {
-        throw new Error('Failed to deduct credits. Please try again.');
-      }
-
-      let referenceImageUrls: string[] = [];
-      let firstFrameUrl: string | undefined;
-      let lastFrameUrl: string | undefined;
-      let inputImageUrl: string | undefined;
-
-      if (mediaType === 'image') {
-        // Upload reference images for image generation
-        if (referenceImages.length > 0 && user) {
-          console.log('[MediaStudio] Uploading reference images...', referenceImages.length);
-          for (const image of referenceImages) {
-            const uploadedUrl = await uploadReferenceImage(image, user.id);
-            console.log('[MediaStudio] Reference image uploaded:', uploadedUrl);
-            if (uploadedUrl) {
-              referenceImageUrls.push(uploadedUrl);
-            } else {
-              console.error('[MediaStudio] Reference image upload failed - no URL returned');
-            }
-          }
-        }
-      } else {
-        // Check if this is a Sora model
-        const usingSora = isSoraModel(selectedVideoModel);
-
-        if (usingSora) {
-          // Sora-specific: Upload input image for image-to-video mode (uses shared inputVideoImage field)
-          if (videoGenerationMode === 'image-to-video' && inputVideoImage && user) {
-            console.log('[MediaStudio] Uploading Sora input image (from shared inputVideoImage)...');
-            inputImageUrl = await uploadVideoFrameImage(inputVideoImage, user.id, 'input');
-            if (!inputImageUrl) {
-              throw new Error('Failed to upload input image. Please try again.');
-            }
-            console.log('[MediaStudio] Sora input image uploaded:', inputImageUrl);
-          }
-        } else {
-          // Veo-specific: Upload frame images based on mode
-          if (videoGenerationMode === 'image-to-video' && inputVideoImage && user) {
-            console.log('[MediaStudio] Uploading input image for image-to-video...');
-            inputImageUrl = await uploadVideoFrameImage(inputVideoImage, user.id, 'input');
-            if (!inputImageUrl) {
-              throw new Error('Failed to upload input image. Please try again.');
-            }
-            console.log('[MediaStudio] Input image uploaded:', inputImageUrl);
-          } else if (videoGenerationMode === 'interpolation' && user) {
-            // Interpolation mode: upload both first and last frames
-            if (firstFrameImage) {
-              console.log('[MediaStudio] Uploading start image for interpolation...');
-              firstFrameUrl = await uploadVideoFrameImage(firstFrameImage, user.id, 'first');
-              if (!firstFrameUrl) {
-                throw new Error('Failed to upload start image. Please try again.');
-              }
-              console.log('[MediaStudio] Start image uploaded:', firstFrameUrl);
-            }
-            if (lastFrameImage) {
-              console.log('[MediaStudio] Uploading end image for interpolation...');
-              lastFrameUrl = await uploadVideoFrameImage(lastFrameImage, user.id, 'last');
-              if (!lastFrameUrl) {
-                throw new Error('Failed to upload end image. Please try again.');
-              }
-              console.log('[MediaStudio] End image uploaded:', lastFrameUrl);
-            }
-          }
-
-          // Upload video reference images (Veo 3.1 exclusive feature, max 3)
-          if (videoReferenceImages.length > 0 && user) {
-            console.log('[MediaStudio] Uploading video reference images...', videoReferenceImages.length);
-            for (const image of videoReferenceImages) {
-              const uploadedUrl = await uploadReferenceImage(image, user.id);
-              console.log('[MediaStudio] Video reference image uploaded:', uploadedUrl);
-              if (uploadedUrl) {
-                referenceImageUrls.push(uploadedUrl);
-              }
-            }
-          }
-        }
-      }
-
-      console.log(`[MediaStudio] Calling generateMediaWithProgress for ${mediaType}...`);
-
-      // Check if using Sora for video
-      const usingSora = mediaType === 'video' && isSoraModel(selectedVideoModel);
-
-      // Generate media with progress
-      const result = await generateMediaWithProgress(
-        {
-          prompt,
-          mediaType,
-          model: mediaType === 'image' ? selectedImageModel : selectedVideoModel,
-          aspectRatio,
-          // Image-specific
-          numberOfImages: mediaType === 'image' ? numberOfImages : undefined,
-          imageSize: mediaType === 'image' ? imageSize : undefined,
-          seed: mediaType === 'image' ? seed : undefined,
-          negativePrompt: mediaType === 'image' ? negativePrompt : (mediaType === 'video' && !usingSora ? videoNegativePrompt : undefined),
-          enhancePrompt: mediaType === 'image' ? enhancePrompt : undefined,
-          referenceImageUrls: referenceImageUrls.length > 0 ? referenceImageUrls : undefined,
-          // Video-specific (Veo 3.1 official params) - only for Veo models
-          videoMode: mediaType === 'video' ? videoGenerationMode : undefined,
-          videoDuration: mediaType === 'video' && !usingSora ? videoDuration : undefined,
-          videoResolution: mediaType === 'video' && !usingSora ? videoResolution : undefined,
-          generateAudio: mediaType === 'video' && !usingSora ? generateAudio : undefined,
-          inputImageUrl: mediaType === 'video' && !usingSora ? inputImageUrl : undefined,
-          firstFrameUrl: mediaType === 'video' && !usingSora ? firstFrameUrl : undefined,
-          lastFrameUrl: mediaType === 'video' && !usingSora ? lastFrameUrl : undefined,
-          // For extend-video mode (Veo only)
-          sourceVideoGcsUri: mediaType === 'video' && !usingSora && videoGenerationMode === 'extend-video' ? sourceVideoGcsUri || undefined : undefined,
-          // Sora-specific parameters
-          soraResolution: usingSora ? soraResolution : undefined,
-          soraDuration: usingSora ? soraDuration : undefined,
-          soraInputReferenceUrl: usingSora ? inputImageUrl : undefined, // Use the uploaded URL
-          soraRemixVideoId: usingSora && videoGenerationMode === 'remix' ? soraRemixVideoId || undefined : undefined,
-          // Common
-          userId: user.id,
-          companyId: selectedCompany?.id,
-        },
-        (progress, stage) => {
-          updateGenerationProgress(progress, stage);
-        }
-      );
-
-      return { result, mediaType };
-    },
-    onSuccess: async ({ result, mediaType: generatedMediaType }) => {
-      // Handle error result (when generateMedia returns success: false)
-      if (!result.success) {
-        resetGeneration(); // Close the modal immediately
-
-        const errorMessage = result.error || 'Something went wrong. Please try again.';
-
-        // Check if this is a structured error from Google API or a serious error
-        const isStructuredError = errorMessage.includes('GOOGLE_API_ERROR') ||
-                                  errorMessage.includes('Internal error') ||
-                                  errorMessage.includes('Service') ||
-                                  errorMessage.includes('Timeout');
-
-        if (isStructuredError) {
-          // Show the beautiful error dialog for serious/API errors
-          setGenerationError(errorMessage);
-          setShowErrorDialog(true);
-        } else {
-          // Show toast for simpler errors (like prompt issues)
-          const isHelpfulError = errorMessage.includes("couldn't generate") ||
-                                 errorMessage.includes("Tip:");
-          toast({
-            title: isHelpfulError ? 'Need More Details' : 'Generation Failed',
-            description: errorMessage,
-            variant: 'destructive',
-            duration: isHelpfulError ? 8000 : 5000,
-          });
-        }
-        return;
-      }
-
-      // Handle success result
-      // NOTE: The edge function already saves the media record to the database
-      // This ensures the record exists even if the user's browser crashes
-      // We only need to refresh the UI here
-      if (result.success && user) {
-        const isVideo = generatedMediaType === 'video';
-
-        completeGeneration(result.mediaUrl, result.thumbnailUrl);
-
-        // Invalidate library query to refresh with the new record from the database
-        queryClient.invalidateQueries({ queryKey: ['mediaLibrary'] });
-
-        // Show success toast
-        toast({
-          title: 'Success!',
-          description: `Your ${isVideo ? 'video' : 'image'} has been generated successfully.`,
-          className: 'bg-green-600/90 border-green-600 text-white',
-        });
-
-        // Auto-switch to library after 2 seconds
-        setTimeout(() => {
-          setCurrentView('library');
-          resetGeneration();
-        }, 2000);
-      }
-    },
-    onError: (error: any) => {
-      // This handles network/fetch errors or thrown exceptions
-      console.error('Generation error (network/exception):', error);
-
-      resetGeneration(); // Close the modal immediately
-
-      const errorMessage = error?.message || 'Network error. Please check your connection and try again.';
-
-      // Check if this looks like a Google API error or network issue
-      const isStructuredError = errorMessage.includes('GOOGLE_API_ERROR') ||
-                                errorMessage.includes('Internal error') ||
-                                errorMessage.includes('network') ||
-                                errorMessage.includes('fetch');
-
-      if (isStructuredError || errorMessage.length > 100) {
-        // Show the beautiful error dialog for serious errors
-        setGenerationError(errorMessage);
-        setShowErrorDialog(true);
-      } else {
-        // Show toast for simple errors
-        toast({
-          title: 'Connection Error',
-          description: errorMessage,
-          variant: 'destructive',
-          duration: 5000,
-        });
-      }
-    },
-  });
-
   const handleGenerate = () => {
     if (!prompt.trim()) {
       toast({
@@ -404,9 +183,8 @@ const MediaStudioContent = () => {
       return;
     }
 
-    // For IMAGE: Keep using the modal-based generation (faster, doesn't need queue)
-    startGeneration();
-    generateMutation.mutate();
+    // For IMAGE: Use non-blocking queue-based generation
+    handleImageGenerateNonBlocking();
   };
 
   // Non-blocking video generation handler
@@ -485,6 +263,7 @@ const MediaStudioContent = () => {
       // Add to active generations queue immediately (shows in UI)
       addActiveGeneration({
         id: localId,
+        mediaType: 'video',
         operationName: '', // Will be updated after API call
         prompt,
         model: selectedVideoModel,
@@ -547,6 +326,201 @@ const MediaStudioContent = () => {
         variant: 'destructive',
       });
     }
+  };
+
+  // Non-blocking image generation handler
+  const handleImageGenerateNonBlocking = async () => {
+    if (!user) return;
+
+    const localId = crypto.randomUUID();
+    let generationAdded = false;
+
+    // Limit concurrent image generations
+    const activeImageGenerations = activeGenerations.filter(
+      g => g.mediaType === 'image' && (g.status === 'starting' || g.status === 'queued' || g.status === 'processing')
+    );
+    if (activeImageGenerations.length >= 5) {
+      toast({
+        title: 'Too Many Active Generations',
+        description: 'Please wait for some images to finish before starting new ones.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      // Check credits first
+      const userCredits = await getUserCredits();
+      if (!userCredits || userCredits.available_credits < generationCost) {
+        toast({
+          title: 'Insufficient Credits',
+          description: `You need ${generationCost} credits but only have ${userCredits?.available_credits || 0}.`,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Deduct credits
+      const deductSuccess = await deductCredits(generationCost);
+      if (!deductSuccess) {
+        toast({
+          title: 'Error',
+          description: 'Failed to deduct credits. Please try again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Add to active generations queue immediately (shows in tracker)
+      addActiveGeneration({
+        id: localId,
+        mediaType: 'image',
+        operationName: '', // Images don't use operation names
+        prompt,
+        model: selectedImageModel,
+        mode: 'text-to-image',
+        resolution: imageSize,
+        duration: 0, // Not applicable for images
+        aspectRatio,
+        numberOfImages,
+        thumbnailUrl: undefined,
+      });
+      generationAdded = true;
+
+      // Show toast
+      toast({
+        title: 'Image Generation Started',
+        description: 'You can continue working while the image generates.',
+        className: 'bg-primary/90 border-primary text-white',
+      });
+
+      // Update progress: uploading reference images
+      updateActiveGeneration(localId, {
+        progress: 10,
+        stage: 'Preparing request...',
+        status: 'processing',
+      });
+
+      // Upload reference images if any
+      let referenceImageUrls: string[] = [];
+      if (referenceImages.length > 0 && user) {
+        updateActiveGeneration(localId, {
+          progress: 20,
+          stage: 'Uploading reference images...',
+        });
+        for (const image of referenceImages) {
+          const uploadedUrl = await uploadReferenceImage(image, user.id);
+          if (uploadedUrl) {
+            referenceImageUrls.push(uploadedUrl);
+          }
+        }
+      }
+
+      // Build generation config
+      const config: GenerationConfig = {
+        prompt,
+        mediaType: 'image',
+        model: selectedImageModel,
+        aspectRatio,
+        numberOfImages,
+        imageSize,
+        seed,
+        negativePrompt,
+        enhancePrompt,
+        referenceImageUrls: referenceImageUrls.length > 0 ? referenceImageUrls : undefined,
+        userId: user.id,
+        companyId: selectedCompany?.id,
+      };
+
+      // Update progress: generating
+      updateActiveGeneration(localId, {
+        progress: 35,
+        stage: `Generating with ${getImageModelDisplayName(selectedImageModel)}...`,
+      });
+
+      // Call the generation API (this is synchronous but we don't block the UI)
+      const result = await generateMedia(config);
+
+      if (!result.success) {
+        // Generation returned error
+        updateActiveGeneration(localId, {
+          status: 'failed',
+          stage: 'Failed',
+          error: result.error || 'Generation failed. Please try again.',
+        });
+
+        // Show error dialog for structured errors
+        const errorMessage = result.error || 'Something went wrong.';
+        const isStructuredError = errorMessage.includes('GOOGLE_API_ERROR') ||
+                                  errorMessage.includes('Internal error') ||
+                                  errorMessage.includes('Service') ||
+                                  errorMessage.includes('Timeout');
+
+        if (isStructuredError) {
+          setGenerationError(errorMessage);
+          setShowErrorDialog(true);
+        }
+        return;
+      }
+
+      // Success!
+      updateActiveGeneration(localId, {
+        progress: 100,
+        status: 'completed',
+        stage: 'Complete!',
+        imageUrl: result.mediaUrl,
+        completedAt: new Date(),
+      });
+
+      // Refresh library
+      queryClient.invalidateQueries({ queryKey: ['mediaLibrary'] });
+
+      // Show success toast
+      toast({
+        title: 'Image Ready!',
+        description: 'Your image has been generated successfully.',
+        className: 'bg-emerald-600/90 border-emerald-600 text-white',
+      });
+
+    } catch (error: any) {
+      console.error('Image generation error:', error);
+
+      if (generationAdded) {
+        updateActiveGeneration(localId, {
+          status: 'failed',
+          stage: 'Failed',
+          error: error.message || 'Image generation failed.',
+        });
+      }
+
+      // Show error for network/exception errors
+      const errorMessage = error?.message || 'Network error. Please check your connection.';
+      const isStructuredError = errorMessage.includes('GOOGLE_API_ERROR') ||
+                                errorMessage.includes('Internal error') ||
+                                errorMessage.length > 100;
+
+      if (isStructuredError) {
+        setGenerationError(errorMessage);
+        setShowErrorDialog(true);
+      } else {
+        toast({
+          title: 'Generation Failed',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      }
+    }
+  };
+
+  // Helper for image model display names
+  const getImageModelDisplayName = (model: string): string => {
+    const names: Record<string, string> = {
+      'gemini-2.5-flash-image': 'Gemini Flash',
+      'gemini-3-pro-image-preview': 'Gemini Pro',
+      'imagen-4.0-generate-001': 'Imagen 4',
+      'gpt-image-1.5': 'GPT Image',
+    };
+    return names[model] || model;
   };
 
   // Handler for using a library image for new generation
@@ -944,25 +918,16 @@ const MediaStudioContent = () => {
                       {/* Generate Button */}
                       <Button
                         onClick={handleGenerate}
-                        disabled={isGenerating || !prompt.trim()}
+                        disabled={!prompt.trim()}
                         className="w-full cosmic-button text-white font-semibold py-6 text-lg rounded-xl group force-text-white"
                       >
-                        {isGenerating ? (
-                          <>
-                            <Loader className="w-5 h-5 mr-2 animate-spin" />
-                            Generating...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="w-5 h-5 mr-2" />
-                            {mediaType === 'image'
-                              ? 'Generate Image'
-                              : videoGenerationMode === 'extend-video' && sourceVideoGcsUri
-                                ? 'Extend Video (+7s)'
-                                : 'Generate Video'}
-                            <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                          </>
-                        )}
+                        <Sparkles className="w-5 h-5 mr-2" />
+                        {mediaType === 'image'
+                          ? 'Generate Image'
+                          : videoGenerationMode === 'extend-video' && sourceVideoGcsUri
+                            ? 'Extend Video (+7s)'
+                            : 'Generate Video'}
+                        <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                       </Button>
                     </div>
                   </CardContent>
@@ -1028,101 +993,6 @@ const MediaStudioContent = () => {
         )}
       </div>
 
-      {/* Generation Progress Modal */}
-      <Dialog open={isGenerating} onOpenChange={(open) => {
-        // Prevent closing during generation
-        if (!open && isGenerating && generationProgress < 100) {
-          return;
-        }
-      }}>
-        <DialogContent className="bg-card/95 backdrop-blur-sm max-w-md border-primary/30">
-          <DialogTitle className="sr-only">Image Generation Progress</DialogTitle>
-          <DialogDescription className="sr-only">
-            {generationProgress < 100
-              ? `Generating your image: ${currentStage || 'Starting...'}`
-              : 'Image generation complete'}
-          </DialogDescription>
-          <div className="text-center py-8">
-            {generationProgress < 100 ? (
-              <>
-                {/* Enhanced Magic Spinner */}
-                <div className="relative inline-block mb-8 magic-spinner-container">
-                  {/* Animated glow background */}
-                  <div className="magic-glow-bg w-32 h-32" />
-
-                  {/* Rotating light rays */}
-                  <div className="magic-rays">
-                    <div className="magic-ray" style={{ transform: 'rotate(0deg)' }} />
-                    <div className="magic-ray" style={{ transform: 'rotate(45deg)' }} />
-                    <div className="magic-ray" style={{ transform: 'rotate(90deg)' }} />
-                    <div className="magic-ray" style={{ transform: 'rotate(135deg)' }} />
-                    <div className="magic-ray" style={{ transform: 'rotate(180deg)' }} />
-                    <div className="magic-ray" style={{ transform: 'rotate(225deg)' }} />
-                    <div className="magic-ray" style={{ transform: 'rotate(270deg)' }} />
-                    <div className="magic-ray" style={{ transform: 'rotate(315deg)' }} />
-                  </div>
-
-                  {/* Expanding rings */}
-                  <div className="magic-ring" />
-                  <div className="magic-ring" />
-                  <div className="magic-ring" />
-
-                  {/* Main rotating loader with 3D effect */}
-                  <div className="relative z-10">
-                    <Loader className="w-20 h-20 text-primary magic-spinner-ring" />
-                  </div>
-
-                  {/* Pulsing center core - custom animated element */}
-                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 magic-core-sparkle z-20">
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-white via-accent to-primary"
-                         style={{ boxShadow: '0 0 20px rgba(255, 255, 255, 0.8), 0 0 40px rgba(0, 212, 255, 0.5)' }} />
-                  </div>
-
-                  {/* Orbiting energy particles */}
-                  <div className="absolute top-1/2 left-1/2 w-3 h-3 bg-gradient-to-r from-primary to-accent rounded-full magic-particle" />
-                  <div className="absolute top-1/2 left-1/2 w-3 h-3 bg-gradient-to-r from-accent to-primary rounded-full magic-particle" />
-                  <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-white rounded-full magic-particle" />
-                  <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-accent rounded-full magic-particle" />
-
-                  {/* Floating stars */}
-                  <div className="absolute -top-2 -right-2 text-accent magic-star" style={{ animationDelay: '0s' }}>✦</div>
-                  <div className="absolute -top-2 -left-2 text-primary magic-star" style={{ animationDelay: '0.5s' }}>✦</div>
-                  <div className="absolute -bottom-2 -right-2 text-primary magic-star" style={{ animationDelay: '1s' }}>✦</div>
-                  <div className="absolute -bottom-2 -left-2 text-accent magic-star" style={{ animationDelay: '1.5s' }}>✦</div>
-                </div>
-
-                <h3 className="text-3xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent mb-3 animate-gradient-x">
-                  Creating Magic...
-                </h3>
-                <p className="text-gray-300 mb-6 text-lg">{currentStage || 'Initializing...'}</p>
-                <div className="space-y-3">
-                  <div className="relative">
-                    <Progress value={generationProgress} className="h-3 cosmic-progress-bar" />
-                  </div>
-                  <p className="text-base text-accent font-bold">{Math.round(generationProgress)}%</p>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="relative inline-block mb-6">
-                  <div className="w-16 h-16 rounded-full bg-green-600/20 flex items-center justify-center shadow-lg shadow-green-600/30">
-                    <CheckCircle className="w-10 h-10 text-green-500 success-checkmark" />
-                  </div>
-                  {/* Success particles */}
-                  <div className="absolute top-1/2 left-1/2 w-20 h-20 border-2 border-green-500/30 rounded-full animate-ping" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-3">
-                  Generation Complete!
-                </h3>
-                <p className="text-gray-300">
-                  Opening your library...
-                </p>
-              </>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* Generation Error Dialog */}
       <GenerationErrorDialog
         open={showErrorDialog}
@@ -1141,7 +1011,7 @@ const MediaStudioContent = () => {
         error={generationError}
       />
 
-      {/* Note: VideoGenerationQueue is now rendered globally in App.tsx via GlobalVideoGenerationTracker */}
+      {/* Note: VideoGenerationQueue is now rendered globally in App.tsx via GlobalGenerationTracker */}
     </div>
   );
 };
