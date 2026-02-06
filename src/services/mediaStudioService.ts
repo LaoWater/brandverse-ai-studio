@@ -1227,15 +1227,122 @@ const findExistingFileByHash = async (
 };
 
 /**
+ * Compress an image file to reduce size for API calls
+ * Uses Canvas API to resize and compress
+ */
+const MAX_REFERENCE_IMAGE_SIZE = 1.5 * 1024 * 1024; // 1.5MB target after compression
+const MAX_DIMENSION = 1536; // Max width or height
+
+export const compressImageForUpload = async (file: File): Promise<File> => {
+  // If file is small enough, return as-is
+  if (file.size <= MAX_REFERENCE_IMAGE_SIZE) {
+    console.log('[compressImageForUpload] File already small enough:', file.size);
+    return file;
+  }
+
+  console.log('[compressImageForUpload] Compressing large file:', {
+    originalSize: file.size,
+    originalName: file.name
+  });
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    img.onload = () => {
+      // Calculate new dimensions while maintaining aspect ratio
+      let { width, height } = img;
+
+      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+        if (width > height) {
+          height = Math.round((height * MAX_DIMENSION) / width);
+          width = MAX_DIMENSION;
+        } else {
+          width = Math.round((width * MAX_DIMENSION) / height);
+          height = MAX_DIMENSION;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      // Draw with high quality
+      if (ctx) {
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, width, height);
+      }
+
+      // Convert to blob with JPEG compression (much smaller than PNG)
+      // Start with high quality and reduce if needed
+      const compressWithQuality = (quality: number) => {
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(new Error('Failed to compress image'));
+              return;
+            }
+
+            console.log('[compressImageForUpload] Compressed result:', {
+              quality,
+              newSize: blob.size,
+              dimensions: `${width}x${height}`
+            });
+
+            // If still too large and quality > 0.5, try lower quality
+            if (blob.size > MAX_REFERENCE_IMAGE_SIZE && quality > 0.5) {
+              compressWithQuality(quality - 0.1);
+              return;
+            }
+
+            // Create new File with compressed data
+            const compressedFile = new File(
+              [blob],
+              file.name.replace(/\.[^/.]+$/, '.jpg'), // Change extension to jpg
+              { type: 'image/jpeg' }
+            );
+
+            resolve(compressedFile);
+          },
+          'image/jpeg',
+          quality
+        );
+      };
+
+      // Start with quality 0.85
+      compressWithQuality(0.85);
+    };
+
+    img.onerror = () => {
+      reject(new Error('Failed to load image for compression'));
+    };
+
+    // Load image from file
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => {
+      reject(new Error('Failed to read image file'));
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
+/**
  * Upload a reference image to storage with deduplication
  * Uses content hash to avoid uploading duplicate files
+ * Automatically compresses large images for API compatibility
  */
 export const uploadReferenceImage = async (file: File, userId: string): Promise<string | null> => {
   try {
-    const fileExt = file.name.split('.').pop() || 'png';
+    // Compress large images before uploading
+    const processedFile = await compressImageForUpload(file);
+    const fileExt = processedFile.name.split('.').pop() || 'png';
 
-    // Compute content hash for deduplication
-    const hash = await computeFileHash(file);
+    // Compute content hash for deduplication (on compressed file)
+    const hash = await computeFileHash(processedFile);
 
     // Check if this exact file already exists
     const existingUrl = await findExistingFileByHash(userId, hash, fileExt);
@@ -1249,7 +1356,7 @@ export const uploadReferenceImage = async (file: File, userId: string): Promise<
 
     const { data, error } = await supabase.storage
       .from('media-studio-images')
-      .upload(fileName, file, {
+      .upload(fileName, processedFile, {
         cacheControl: '3600',
         upsert: false
       });
@@ -1264,7 +1371,12 @@ export const uploadReferenceImage = async (file: File, userId: string): Promise<
       .from('media-studio-images')
       .getPublicUrl(data.path);
 
-    console.log('[uploadReferenceImage] New file uploaded:', publicUrl);
+    console.log('[uploadReferenceImage] New file uploaded:', {
+      publicUrl,
+      originalSize: file.size,
+      compressedSize: processedFile.size,
+      compressionRatio: ((1 - processedFile.size / file.size) * 100).toFixed(1) + '%'
+    });
     return publicUrl;
   } catch (error) {
     console.error('Error in uploadReferenceImage:', error);

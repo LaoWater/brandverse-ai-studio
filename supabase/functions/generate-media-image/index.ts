@@ -86,8 +86,12 @@ const getImageDimensions = (aspectRatio: string, size: '1K' | '2K' | '4K' = '1K'
   }
 };
 
+// Helper to compress/resize image using Canvas API (Deno doesn't have native Canvas, so we use ImageMagick via Wasm or simply limit size)
+// For now, we'll implement a size check and warn if too large, and use a workaround
+const MAX_REFERENCE_IMAGE_SIZE = 1024 * 1024; // 1MB limit per image for API stability
+
 // Helper to fetch and convert reference image to base64
-async function fetchReferenceImageAsBase64(imageUrl: string): Promise<{ data: string; mimeType: string }> {
+async function fetchReferenceImageAsBase64(imageUrl: string, maxSizeBytes: number = MAX_REFERENCE_IMAGE_SIZE): Promise<{ data: string; mimeType: string }> {
   logStep("Fetching reference image", { url: imageUrl });
 
   try {
@@ -98,16 +102,27 @@ async function fetchReferenceImageAsBase64(imageUrl: string): Promise<{ data: st
 
     const blob = await response.blob();
     const arrayBuffer = await blob.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuffer);
-
-    // Use Deno's standard library base64 encoding
-    const base64 = base64Encode(bytes);
-    const mimeType = blob.type || 'image/png';
+    let bytes = new Uint8Array(arrayBuffer);
+    let mimeType = blob.type || 'image/png';
 
     logStep("Reference image fetched", {
       size: arrayBuffer.byteLength,
       mimeType
     });
+
+    // Check if image is too large - if so, try to use JPEG conversion for smaller size
+    if (arrayBuffer.byteLength > maxSizeBytes) {
+      logStep("Reference image too large, will attempt to use as-is but may fail", {
+        size: arrayBuffer.byteLength,
+        maxSize: maxSizeBytes,
+        suggestion: "Consider using smaller reference images (< 1MB each)"
+      });
+      // Note: In a production environment, you'd want to resize the image here
+      // For now, we'll proceed but the API might reject it
+    }
+
+    // Use Deno's standard library base64 encoding
+    const base64 = base64Encode(bytes);
 
     return { data: base64, mimeType };
   } catch (error: any) {
@@ -275,17 +290,66 @@ async function generateWithGeminiPro(request: MediaGenerationRequest): Promise<s
   const requestParts: any[] = [];
 
   // Add all reference images first (Gemini 3 Pro supports up to 14)
+  // But we need to be careful about total size - Gemini has input limits
+  const MAX_TOTAL_IMAGE_SIZE = 4 * 1024 * 1024; // 4MB total for all images (base64 adds ~33% overhead)
+  const MAX_SINGLE_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB per single image
+
   if (referenceUrls.length > 0) {
+    let totalImageSize = 0;
+    const imageDataList: { data: string; mimeType: string; size: number }[] = [];
+
+    // First, fetch all images and calculate total size
     for (const imageUrl of referenceUrls) {
       const { data, mimeType } = await fetchReferenceImageAsBase64(imageUrl);
+      const rawSize = Math.ceil(data.length * 0.75); // Estimate raw size from base64
+      imageDataList.push({ data, mimeType, size: rawSize });
+      totalImageSize += rawSize;
+    }
+
+    logStep("Reference images size check", {
+      totalSize: totalImageSize,
+      maxAllowed: MAX_TOTAL_IMAGE_SIZE,
+      imageCount: referenceUrls.length,
+      individualSizes: imageDataList.map(img => img.size)
+    });
+
+    // Check if total size is too large
+    if (totalImageSize > MAX_TOTAL_IMAGE_SIZE) {
+      throw new Error(
+        `Reference images are too large (${(totalImageSize / 1024 / 1024).toFixed(1)}MB total). ` +
+        `Maximum allowed is ${MAX_TOTAL_IMAGE_SIZE / 1024 / 1024}MB. ` +
+        `Please use smaller or compressed images, or reduce the number of references.`
+      );
+    }
+
+    // Check if any single image is too large
+    for (let i = 0; i < imageDataList.length; i++) {
+      if (imageDataList[i].size > MAX_SINGLE_IMAGE_SIZE) {
+        logStep("Single image too large", {
+          index: i,
+          size: imageDataList[i].size,
+          maxAllowed: MAX_SINGLE_IMAGE_SIZE
+        });
+        throw new Error(
+          `Reference image ${i + 1} is too large (${(imageDataList[i].size / 1024 / 1024).toFixed(1)}MB). ` +
+          `Maximum per image is ${MAX_SINGLE_IMAGE_SIZE / 1024 / 1024}MB. ` +
+          `Please compress or resize this image.`
+        );
+      }
+    }
+
+    // Add validated images to request
+    for (const imgData of imageDataList) {
       requestParts.push({
         inlineData: {
-          mimeType: mimeType,
-          data: data
+          mimeType: imgData.mimeType,
+          data: imgData.data
         }
       });
     }
-    logStep(`${referenceUrls.length} reference image(s) added to Gemini Pro prompt`);
+    logStep(`${referenceUrls.length} reference image(s) added to Gemini Pro prompt`, {
+      totalSize: totalImageSize
+    });
   }
 
   // Add text prompt
@@ -338,14 +402,51 @@ async function generateWithGeminiPro(request: MediaGenerationRequest): Promise<s
     hasContent: !!candidate.content,
     hasParts: !!candidate.content?.parts,
     partsLength: candidate.content?.parts?.length || 0,
-    candidateKeys: Object.keys(candidate)
+    candidateKeys: Object.keys(candidate),
+    finishReason: candidate.finishReason
   });
+
+  // Check for problematic finish reasons BEFORE checking parts
+  if (candidate.finishReason === "OTHER" || candidate.finishReason === "SAFETY") {
+    logStep("Gemini Pro generation blocked", {
+      finishReason: candidate.finishReason,
+      candidate: JSON.stringify(candidate)
+    });
+
+    // Calculate total reference image size for the error message
+    const totalRefSize = referenceUrls.length > 0
+      ? `${referenceUrls.length} reference image(s) provided`
+      : "no reference images";
+
+    if (candidate.finishReason === "SAFETY") {
+      throw new Error(
+        `Gemini Pro blocked this request due to safety filters. ` +
+        `Try modifying your prompt or using different reference images.`
+      );
+    }
+
+    // finishReason: "OTHER" - often means input too large or other issues
+    throw new Error(
+      `Gemini Pro couldn't generate an image (reason: ${candidate.finishReason}). ` +
+      `This often happens when reference images are too large. ` +
+      `You have ${totalRefSize}. Try using smaller reference images (under 1MB each) or fewer references.`
+    );
+  }
 
   // Extract image from response
   const parts = candidate.content?.parts || [];
 
   if (parts.length === 0) {
     logStep("Empty parts - full candidate", { candidate: JSON.stringify(candidate) });
+
+    // Provide more helpful error based on context
+    if (referenceUrls.length >= 2) {
+      throw new Error(
+        `Gemini Pro returned empty content. When using multiple reference images, ` +
+        `ensure each image is under 1MB and total input isn't too large. ` +
+        `Try with a single reference image or smaller images.`
+      );
+    }
     throw new Error("No parts in Gemini Pro response content");
   }
 
