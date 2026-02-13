@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { encode as base64Encode } from "https://deno.land/std@0.190.0/encoding/base64.ts";
+import { encode as base64Encode, decode as base64Decode } from "https://deno.land/std@0.190.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -203,7 +203,7 @@ async function generateWithGemini(request: MediaGenerationRequest): Promise<stri
     throw new Error(`Gemini API error: ${error}`);
   }
 
-  const data = await response.json();
+  let data = await response.json();
 
   // Log response structure (not full data to avoid memory issues with base64)
   logStep("Gemini response received", { hasCandidates: !!data.candidates, candidateCount: data.candidates?.length });
@@ -213,6 +213,9 @@ async function generateWithGemini(request: MediaGenerationRequest): Promise<stri
   }
 
   const candidate = data.candidates[0];
+  // Free the response object early to reduce memory pressure
+  data = null as any;
+
   logStep("Candidate structure", {
     hasContent: !!candidate.content,
     hasParts: !!candidate.content?.parts,
@@ -224,8 +227,6 @@ async function generateWithGemini(request: MediaGenerationRequest): Promise<stri
   const parts = candidate.content?.parts || [];
 
   if (parts.length === 0) {
-    // Log the entire candidate to see structure
-    logStep("Empty parts - full candidate", { candidate: JSON.stringify(candidate) });
     throw new Error("No parts in Gemini response content");
   }
 
@@ -233,26 +234,21 @@ async function generateWithGemini(request: MediaGenerationRequest): Promise<stri
   const imagePart = parts.find((part: any) => part.inline_data || part.inlineData);
 
   if (!imagePart) {
-    // Check if Gemini returned a text response explaining why it couldn't generate
     const textPart = parts.find((part: any) => part.text);
-
     if (textPart && textPart.text) {
       logStep("Gemini returned text instead of image", { text: textPart.text });
-
-      // Return a helpful error message with Gemini's response
       throw new Error(
         `Gemini couldn't generate an image. It says: "${textPart.text}"\n\n` +
         `💡 Tip: Try a more descriptive prompt like "a modern coffee shop interior" or "a sunset over mountains"`
       );
     }
-
     logStep("No image part found", {
       partsStructure: parts.map((p: any) => Object.keys(p))
     });
     throw new Error("No image data in Gemini response. Try a more descriptive prompt.");
   }
 
-  // Handle both snake_case and camelCase
+  // Handle both snake_case and camelCase — return RAW base64 (no data URL wrapper)
   const imageData = imagePart.inline_data?.data || imagePart.inlineData?.data;
 
   if (!imageData) {
@@ -264,7 +260,7 @@ async function generateWithGemini(request: MediaGenerationRequest): Promise<stri
     mimeType: imagePart.inline_data?.mime_type || imagePart.inlineData?.mimeType
   });
 
-  return `data:image/png;base64,${imageData}`;
+  return imageData;
 }
 
 // Generate image using Gemini 3 Pro Image (Advanced reasoning, 4K support, multi-reference)
@@ -388,7 +384,7 @@ async function generateWithGeminiPro(request: MediaGenerationRequest): Promise<s
     throw new Error(`Gemini Pro API error: ${error}`);
   }
 
-  const data = await response.json();
+  let data = await response.json();
 
   // Log response structure (not full data to avoid memory issues with base64)
   logStep("Gemini Pro response received", { hasCandidates: !!data.candidates, candidateCount: data.candidates?.length });
@@ -398,6 +394,9 @@ async function generateWithGeminiPro(request: MediaGenerationRequest): Promise<s
   }
 
   const candidate = data.candidates[0];
+  // Free the response object early to reduce memory pressure
+  data = null as any;
+
   logStep("Candidate structure", {
     hasContent: !!candidate.content,
     hasParts: !!candidate.content?.parts,
@@ -408,12 +407,6 @@ async function generateWithGeminiPro(request: MediaGenerationRequest): Promise<s
 
   // Check for problematic finish reasons BEFORE checking parts
   if (candidate.finishReason === "OTHER" || candidate.finishReason === "SAFETY") {
-    logStep("Gemini Pro generation blocked", {
-      finishReason: candidate.finishReason,
-      candidate: JSON.stringify(candidate)
-    });
-
-    // Calculate total reference image size for the error message
     const totalRefSize = referenceUrls.length > 0
       ? `${referenceUrls.length} reference image(s) provided`
       : "no reference images";
@@ -425,7 +418,6 @@ async function generateWithGeminiPro(request: MediaGenerationRequest): Promise<s
       );
     }
 
-    // finishReason: "OTHER" - often means input too large or other issues
     throw new Error(
       `Gemini Pro couldn't generate an image (reason: ${candidate.finishReason}). ` +
       `This often happens when reference images are too large. ` +
@@ -437,9 +429,6 @@ async function generateWithGeminiPro(request: MediaGenerationRequest): Promise<s
   const parts = candidate.content?.parts || [];
 
   if (parts.length === 0) {
-    logStep("Empty parts - full candidate", { candidate: JSON.stringify(candidate) });
-
-    // Provide more helpful error based on context
     if (referenceUrls.length >= 2) {
       throw new Error(
         `Gemini Pro returned empty content. When using multiple reference images, ` +
@@ -454,25 +443,21 @@ async function generateWithGeminiPro(request: MediaGenerationRequest): Promise<s
   const imagePart = parts.find((part: any) => part.inline_data || part.inlineData);
 
   if (!imagePart) {
-    // Check if Gemini returned a text response explaining why it couldn't generate
     const textPart = parts.find((part: any) => part.text);
-
     if (textPart && textPart.text) {
       logStep("Gemini Pro returned text instead of image", { text: textPart.text });
-
       throw new Error(
         `Gemini Pro couldn't generate an image. It says: "${textPart.text}"\n\n` +
         `💡 Tip: Try a more detailed prompt or check your reference images for clarity.`
       );
     }
-
     logStep("No image part found", {
       partsStructure: parts.map((p: any) => Object.keys(p))
     });
     throw new Error("No image data in Gemini Pro response. Try a more descriptive prompt.");
   }
 
-  // Handle both snake_case and camelCase
+  // Handle both snake_case and camelCase — return RAW base64 (no data URL wrapper)
   const imageData = imagePart.inline_data?.data || imagePart.inlineData?.data;
 
   if (!imageData) {
@@ -484,7 +469,7 @@ async function generateWithGeminiPro(request: MediaGenerationRequest): Promise<s
     mimeType: imagePart.inline_data?.mime_type || imagePart.inlineData?.mimeType
   });
 
-  return `data:image/png;base64,${imageData}`;
+  return imageData;
 }
 
 // Generate image using Google Imagen 4
@@ -559,7 +544,7 @@ async function generateWithImagen(request: MediaGenerationRequest): Promise<stri
   const imageBase64 = data.predictions?.[0]?.bytesBase64Encoded;
   if (!imageBase64) throw new Error("No image data in Imagen response");
 
-  return `data:image/png;base64,${imageBase64}`;
+  return imageBase64;
 }
 
 // Generate image using OpenAI GPT-Image-1.5
@@ -664,19 +649,17 @@ async function generateWithGPT(request: MediaGenerationRequest): Promise<string>
     // Check if we got base64 data directly
     if (firstResult.b64_json) {
       logStep("Received base64 image data directly");
-      return `data:image/png;base64,${firstResult.b64_json}`;
+      return firstResult.b64_json;
     }
 
     // Otherwise, fetch from URL
     const imageUrl = firstResult.url;
     if (!imageUrl) {
-      logStep("Full OpenAI response for debugging", { response: JSON.stringify(data, null, 2) });
       throw new Error("No image URL or base64 data in OpenAI response");
     }
 
     logStep("Fetching image from URL", { url: imageUrl.substring(0, 50) });
 
-    // Fetch the image and convert to base64 data URL
     const imageResponse = await fetch(imageUrl);
     if (!imageResponse.ok) {
       throw new Error(`Failed to fetch generated image: ${imageResponse.status}`);
@@ -687,7 +670,7 @@ async function generateWithGPT(request: MediaGenerationRequest): Promise<string>
     const bytes = new Uint8Array(arrayBuffer);
     const base64 = base64Encode(bytes.buffer);
 
-    return `data:image/png;base64,${base64}`;
+    return base64;
   }
 
   // For generations without reference images, use JSON format
@@ -736,19 +719,17 @@ async function generateWithGPT(request: MediaGenerationRequest): Promise<string>
   // Check if we got base64 data directly
   if (firstResult.b64_json) {
     logStep("Received base64 image data directly");
-    return `data:image/png;base64,${firstResult.b64_json}`;
+    return firstResult.b64_json;
   }
 
   // Otherwise, fetch from URL
   const imageUrl = firstResult.url;
   if (!imageUrl) {
-    logStep("Full OpenAI response for debugging", { response: JSON.stringify(data, null, 2) });
     throw new Error("No image URL or base64 data in OpenAI response");
   }
 
   logStep("Fetching image from URL", { url: imageUrl.substring(0, 50) });
 
-  // Fetch the image and convert to base64 data URL
   const imageResponse = await fetch(imageUrl);
   if (!imageResponse.ok) {
     throw new Error(`Failed to fetch generated image: ${imageResponse.status}`);
@@ -759,23 +740,23 @@ async function generateWithGPT(request: MediaGenerationRequest): Promise<string>
   const bytes = new Uint8Array(arrayBuffer);
   const base64 = base64Encode(bytes.buffer);
 
-  return `data:image/png;base64,${base64}`;
+  return base64;
 }
 
 // Upload image to Supabase Storage
 async function uploadToStorage(
   supabaseClient: any,
-  imageDataUrl: string,
+  rawBase64: string,
   userId: string,
   companyId: string,
   model: string
 ): Promise<{ publicUrl: string; storagePath: string; fileSize: number }> {
   logStep("Uploading to Supabase Storage");
 
-  // Convert data URL to blob
-  const base64Data = imageDataUrl.split(',')[1];
-  const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+  // Decode base64 directly to Uint8Array (memory-efficient, no intermediate atob string)
+  const binaryData = base64Decode(rawBase64);
   const fileSize = binaryData.length;
+  logStep("Binary data decoded", { fileSize });
 
   // Create storage path
   const timestamp = Date.now();
@@ -903,39 +884,37 @@ serve(async (req) => {
       imageSize: request.image_size
     });
 
-    // Generate image based on model
-    let imageDataUrl: string;
+    // Generate image based on model - returns raw base64 string (no data URL prefix)
+    let rawBase64: string;
 
     switch (request.model) {
       case 'gemini-2.5-flash-image':
-        // Gemini 2.5 Flash - Fast & creative (1K/2K)
-        imageDataUrl = await generateWithGemini(request);
+        rawBase64 = await generateWithGemini(request);
         break;
       case 'gemini-3-pro-image-preview':
-        // Gemini 3 Pro - Advanced reasoning, 4K support, multi-reference (up to 14 images)
-        imageDataUrl = await generateWithGeminiPro(request);
+        rawBase64 = await generateWithGeminiPro(request);
         break;
       case 'imagen-4.0-generate-001':
       case 'imagen-4.0-ultra-generate-001':
-        // Imagen 4 supports 1K/2K quality (auto-selects standard or ultra variant)
-        imageDataUrl = await generateWithImagen(request);
+        rawBase64 = await generateWithImagen(request);
         break;
       case 'gpt-image-1.5':
-        // GPT supports standard/HD quality
-        imageDataUrl = await generateWithGPT(request);
+        rawBase64 = await generateWithGPT(request);
         break;
       default:
         throw new Error(`Unsupported model: ${request.model}`);
     }
 
-    // Upload to storage
+    // Upload to storage (passes raw base64 directly — no data URL wrapper)
     const { publicUrl, storagePath, fileSize } = await uploadToStorage(
       supabaseClient,
-      imageDataUrl,
+      rawBase64,
       user.id,
       request.company_id || 'default',
       request.model
     );
+    // Free the base64 string immediately after upload
+    rawBase64 = null as any;
 
     // Save media record to database (so it appears in user's library even if browser crashes)
     await saveMediaRecord(
