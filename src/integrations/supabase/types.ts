@@ -88,6 +88,72 @@ export type Database = {
           },
         ]
       }
+      editor_projects: {
+        Row: {
+          clip_count: number | null
+          company_id: string | null
+          created_at: string
+          description: string | null
+          exported_media_id: string | null
+          id: string
+          last_opened_at: string | null
+          name: string
+          project_data: Json
+          status: string
+          thumbnail_url: string | null
+          total_duration: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          clip_count?: number | null
+          company_id?: string | null
+          created_at?: string
+          description?: string | null
+          exported_media_id?: string | null
+          id?: string
+          last_opened_at?: string | null
+          name?: string
+          project_data?: Json
+          status?: string
+          thumbnail_url?: string | null
+          total_duration?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          clip_count?: number | null
+          company_id?: string | null
+          created_at?: string
+          description?: string | null
+          exported_media_id?: string | null
+          id?: string
+          last_opened_at?: string | null
+          name?: string
+          project_data?: Json
+          status?: string
+          thumbnail_url?: string | null
+          total_duration?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "editor_projects_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "editor_projects_exported_media_id_fkey"
+            columns: ["exported_media_id"]
+            isOneToOne: false
+            referencedRelation: "media_files"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       image_control: {
         Row: {
           caption_guidance: string | null
@@ -227,72 +293,6 @@ export type Database = {
           },
         ]
       }
-      pending_video_jobs: {
-        Row: {
-          id: string
-          user_id: string
-          company_id: string | null
-          operation_name: string
-          model: string
-          mode: string
-          prompt: string
-          size: string
-          seconds: number
-          input_reference_url: string | null
-          status: string
-          created_at: string
-          updated_at: string
-          expires_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          company_id?: string | null
-          operation_name: string
-          model: string
-          mode: string
-          prompt: string
-          size: string
-          seconds: number
-          input_reference_url?: string | null
-          status?: string
-          created_at?: string
-          updated_at?: string
-          expires_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          company_id?: string | null
-          operation_name?: string
-          model?: string
-          mode?: string
-          prompt?: string
-          size?: string
-          seconds?: number
-          input_reference_url?: string | null
-          status?: string
-          created_at?: string
-          updated_at?: string
-          expires_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "pending_video_jobs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pending_video_jobs_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       media_files: {
         Row: {
           aspect_ratio: string | null
@@ -375,6 +375,65 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "media_files_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pending_video_jobs: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          input_reference_url: string | null
+          mode: string
+          model: string
+          operation_name: string
+          prompt: string
+          seconds: number
+          size: string
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          input_reference_url?: string | null
+          mode: string
+          model: string
+          operation_name: string
+          prompt: string
+          seconds: number
+          size: string
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          input_reference_url?: string | null
+          mode?: string
+          model?: string
+          operation_name?: string
+          prompt?: string
+          seconds?: number
+          size?: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_video_jobs_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -793,6 +852,7 @@ export type Database = {
         Args: { media_id: string }
         Returns: boolean
       }
+      process_pending_video_jobs: { Args: never; Returns: undefined }
       reset_daily_credits: { Args: never; Returns: undefined }
     }
     Enums: {
