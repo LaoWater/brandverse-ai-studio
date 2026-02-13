@@ -177,7 +177,7 @@ async function resizeImageToTargetSize(
     const outputBuffer = await processedImage.encodeJPEG(90);
 
     // Create new blob
-    const resizedBlob = new Blob([outputBuffer], { type: 'image/jpeg' });
+    const resizedBlob = new Blob([outputBuffer.buffer], { type: 'image/jpeg' });
 
     logStep('Image resized successfully', {
       outputSize: resizedBlob.size,

@@ -108,7 +108,7 @@ async function fetchImageAsBase64(imageUrl: string): Promise<{ data: string; mim
     const bytes = new Uint8Array(arrayBuffer);
 
     // Use Deno's standard library base64 encoding
-    const base64 = base64Encode(bytes);
+    const base64 = base64Encode(bytes.buffer);
     const mimeType = blob.type || 'image/png';
 
     logStep("Image fetched", {

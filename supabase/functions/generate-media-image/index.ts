@@ -122,7 +122,7 @@ async function fetchReferenceImageAsBase64(imageUrl: string, maxSizeBytes: numbe
     }
 
     // Use Deno's standard library base64 encoding
-    const base64 = base64Encode(bytes);
+    const base64 = base64Encode(bytes.buffer);
 
     return { data: base64, mimeType };
   } catch (error: any) {
@@ -205,8 +205,8 @@ async function generateWithGemini(request: MediaGenerationRequest): Promise<stri
 
   const data = await response.json();
 
-  // Log the FULL response to debug
-  logStep("Gemini FULL response", { response: JSON.stringify(data, null, 2) });
+  // Log response structure (not full data to avoid memory issues with base64)
+  logStep("Gemini response received", { hasCandidates: !!data.candidates, candidateCount: data.candidates?.length });
 
   if (!data.candidates || data.candidates.length === 0) {
     throw new Error("No candidates in Gemini response");
@@ -390,8 +390,8 @@ async function generateWithGeminiPro(request: MediaGenerationRequest): Promise<s
 
   const data = await response.json();
 
-  // Log the FULL response to debug
-  logStep("Gemini Pro FULL response", { response: JSON.stringify(data, null, 2) });
+  // Log response structure (not full data to avoid memory issues with base64)
+  logStep("Gemini Pro response received", { hasCandidates: !!data.candidates, candidateCount: data.candidates?.length });
 
   if (!data.candidates || data.candidates.length === 0) {
     throw new Error("No candidates in Gemini Pro response");
@@ -685,7 +685,7 @@ async function generateWithGPT(request: MediaGenerationRequest): Promise<string>
     const imageBlob = await imageResponse.blob();
     const arrayBuffer = await imageBlob.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
-    const base64 = base64Encode(bytes);
+    const base64 = base64Encode(bytes.buffer);
 
     return `data:image/png;base64,${base64}`;
   }
@@ -757,7 +757,7 @@ async function generateWithGPT(request: MediaGenerationRequest): Promise<string>
   const imageBlob = await imageResponse.blob();
   const arrayBuffer = await imageBlob.arrayBuffer();
   const bytes = new Uint8Array(arrayBuffer);
-  const base64 = base64Encode(bytes);
+  const base64 = base64Encode(bytes.buffer);
 
   return `data:image/png;base64,${base64}`;
 }
