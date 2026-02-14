@@ -47,12 +47,22 @@
 
 | Variant | File | Dimensions | Format | Usage |
 |---------|------|-----------|--------|-------|
-| **Logomark (Simple)** | `public/logo-simple.png` | 1024×1024 | PNG (RGBA) | Favicon, app icon, small contexts |
-| **Logomark (Detailed)** | `public/logo.png` | 1024×1024 | PNG | General use, square contexts |
-| **Logo + Wordmark** | `public/logo-caption.png` | 1024×1024 | PNG | Full lockup with "Creators Multiverse" text |
-| **OG / Social Preview** | `public/logo-og.png` | 1536×1024 | PNG | Open Graph, social sharing |
-| **Animated SVG** | `src/components/CreatorsMultiverseLogo.tsx` | Scalable (200×200 viewBox) | React SVG | In-app navigation |
-| **Favicon** | `public/favicon.ico` | Multi-size | ICO | Browser tab |
+| **Logomark (Simple)** | [logo-simple.png](https://creators-multiverse.com/logo-simple.png) | 1024×1024 | PNG (RGBA) | Favicon, app icon, small contexts |
+| **Logomark (Detailed)** | [logo.png](https://creators-multiverse.com/logo.png) | 1024×1024 | PNG | General use, square contexts |
+| **Logo + Wordmark** | [logo-caption.png](https://creators-multiverse.com/logo-caption.png) | 1024×1024 | PNG | Full lockup with "Creators Multiverse" text |
+| **OG / Social Preview** | [logo-og.png](https://creators-multiverse.com/logo-og.png) | 1536×1024 | PNG | Open Graph, social sharing |
+| **Animated SVG** | [CreatorsMultiverseLogo.tsx](src/components/CreatorsMultiverseLogo.tsx) | Scalable (200×200 viewBox) | React SVG | In-app navigation |
+| **Favicon** | [favicon.ico](https://creators-multiverse.com/favicon.ico) | Multi-size | ICO | Browser tab |
+
+### 2.1.1 Logo Previews
+
+| Logomark (Simple) | Logomark (Detailed) | Logo + Wordmark |
+|:--:|:--:|:--:|
+| <img src="https://creators-multiverse.com/logo-simple.png" width="180" /> | <img src="https://creators-multiverse.com/logo.png" width="180" /> | <img src="https://creators-multiverse.com/logo-caption.png" width="180" /> |
+
+| OG / Social Preview |
+|:--:|
+| <img src="https://creators-multiverse.com/logo-og.png" width="540" /> |
 
 ### 2.2 Logo Description
 
@@ -534,21 +544,33 @@ Used in PostManager, HeroSection, and Footer components:
 
 ## 15. File Reference Index
 
-| Purpose | File Path |
-|---------|-----------|
-| Tailwind Config (colors, fonts, gradients) | `tailwind.config.ts` |
-| CSS Variables & Themes | `src/index.css` |
-| HTML Meta, Font Loading, SEO | `index.html` |
-| PWA Manifest | `public/manifest.json` |
-| Animated Logo Component | `src/components/CreatorsMultiverseLogo.tsx` |
-| Logo PNG (simple) | `public/logo-simple.png` |
-| Logo PNG (detailed) | `public/logo.png` |
-| Logo + Wordmark | `public/logo-caption.png` |
-| OG Social Image | `public/logo-og.png` |
-| Favicon | `public/favicon.ico` |
-| Text Overlay Presets | `src/components/editor/text-overlay/TextOverlayPanel.tsx` |
-| Font Loading (Video Editor) | `src/components/editor/text-overlay/TextStyleControls.tsx` |
-| Editor Type Definitions | `src/types/editor.ts` |
+### Source Files
+
+| Purpose | File |
+|---------|------|
+| Tailwind Config (colors, fonts, gradients) | [tailwind.config.ts](tailwind.config.ts) |
+| CSS Variables & Themes | [src/index.css](src/index.css) |
+| HTML Meta, Font Loading, SEO | [index.html](index.html) |
+| PWA Manifest | [public/manifest.json](public/manifest.json) |
+| Animated Logo Component | [CreatorsMultiverseLogo.tsx](src/components/CreatorsMultiverseLogo.tsx) |
+| Text Overlay Presets | [TextOverlayPanel.tsx](src/components/editor/text-overlay/TextOverlayPanel.tsx) |
+| Font Loading (Video Editor) | [TextStyleControls.tsx](src/components/editor/text-overlay/TextStyleControls.tsx) |
+| Editor Type Definitions | [editor.ts](src/types/editor.ts) |
+
+### Image Assets (click to view/download)
+
+| Purpose | Live URL |
+|---------|----------|
+| Logo (simple) | [logo-simple.png](https://creators-multiverse.com/logo-simple.png) |
+| Logo (detailed) | [logo.png](https://creators-multiverse.com/logo.png) |
+| Logo + Wordmark | [logo-caption.png](https://creators-multiverse.com/logo-caption.png) |
+| OG Social Image | [logo-og.png](https://creators-multiverse.com/logo-og.png) |
+| Favicon | [favicon.ico](https://creators-multiverse.com/favicon.ico) |
+| Command Center Hero | [CommandCenter.jpg](https://creators-multiverse.com/CommandCenter.jpg) |
+| Chat Assistant | [chat-assistant.png](https://creators-multiverse.com/chat-assistant.png) |
+| Video Editor Screenshot | [video-editor-screenshot.png](https://creators-multiverse.com/video-editor-screenshot.png) |
+| Phone Mockup | [PhoneCM.png](https://creators-multiverse.com/PhoneCM.png) |
+| Quantum Chip (branded) | [quantum_chip_cm.png](https://creators-multiverse.com/quantum_chip_cm.png) |
 
 ---
 
