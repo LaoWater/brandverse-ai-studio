@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useAdmin } from "@/hooks/useAdmin";
+import { AdminImpersonation } from "@/components/admin/AdminImpersonation";
 import Navigation from "@/components/Navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,7 +51,7 @@ const Settings = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { selectedCompany, refreshCompanies } = useCompany();
-
+  const { adminLevel } = useAdmin();
   const [activeTab, setActiveTab] = useState<TabId>('company');
 
   const [profile, setProfile] = useState({
@@ -758,6 +760,10 @@ const Settings = () => {
               </CardHeader>
 
               <CardContent className="space-y-6">
+                {adminLevel >= 3 && (
+                  <AdminImpersonation />
+                )}
+
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10">
                     <div className="space-y-0.5">
