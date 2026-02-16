@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export const useAdmin = () => {
   const [isAdmin, setIsAdmin] = useState(false);
+  const [adminLevel, setAdminLevel] = useState(0);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
@@ -12,6 +13,7 @@ export const useAdmin = () => {
     const checkAdminStatus = async () => {
       if (!user) {
         setIsAdmin(false);
+        setAdminLevel(0);
         setLoading(false);
         return;
       }
@@ -25,8 +27,11 @@ export const useAdmin = () => {
       if (error) {
         console.error('Error checking admin status:', error);
         setIsAdmin(false);
+        setAdminLevel(0);
       } else {
-        setIsAdmin((data?.admin_level ?? 0) > 0);
+        const level = data?.admin_level ?? 0;
+        setAdminLevel(level);
+        setIsAdmin(level > 0);
       }
       
       setLoading(false);
@@ -35,5 +40,5 @@ export const useAdmin = () => {
     checkAdminStatus();
   }, [user]);
 
-  return { isAdmin, loading };
+  return { isAdmin, adminLevel, loading };
 };
