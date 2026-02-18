@@ -9,6 +9,8 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { CompanyProvider } from "@/contexts/CompanyContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { MediaStudioProvider } from "@/contexts/MediaStudioContext";
+import { CookieConsentProvider } from "@/contexts/CookieConsentContext";
+import { CookieConsentBanner, CookieConsentSettings, CookieSettingsButton } from "@/components/cookie-consent";
 import Footer from "@/components/Footer";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
@@ -96,6 +98,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <ThemeProvider>
+        <CookieConsentProvider>
         <AuthProvider>
           <CompanyProvider>
             <MediaStudioProvider>
@@ -206,12 +209,16 @@ const App = () => (
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 <ChatButton />
+                <CookieSettingsButton />
                 <Footer />
               </div>
+              <CookieConsentBanner />
+              <CookieConsentSettings />
               </BrowserRouter>
             </MediaStudioProvider>
           </CompanyProvider>
         </AuthProvider>
+        </CookieConsentProvider>
       </ThemeProvider>
     </TooltipProvider>
   </QueryClientProvider>

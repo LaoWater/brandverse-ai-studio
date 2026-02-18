@@ -109,24 +109,11 @@
     }
     </script>
 
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z249PRHMG9"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-Z249PRHMG9', {
-        page_title: 'Creators Multiverse - AI-Powered Content Generation Platform',
-        page_location: window.location.href,
-        content_group1: 'Homepage'
-      });
-    </script>
+    <!-- Google Analytics is loaded dynamically via CookieConsentContext after user consent -->
 
     <!-- Preconnect to external domains for performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preconnect" href="https://www.googletagmanager.com" />
     <link rel="dns-prefetch" href="https://api.creators-multiverse.com" />
 
     <!-- Font Loading -->
@@ -149,31 +136,7 @@
     <!-- React App Script -->
     <script type="module" src="/src/main.tsx"></script>
 
-    <!-- Performance monitoring (optional) -->
-    <script>
-      // Monitor Core Web Vitals
-      function sendToAnalytics(metric) {
-        gtag('event', metric.name, {
-          event_category: 'Web Vitals',
-          value: Math.round(metric.name === 'CLS' ? metric.value * 1000 : metric.value),
-          event_label: metric.id,
-          non_interaction: true,
-        });
-      }
-
-      // Load web-vitals library dynamically if needed
-      if ('performance' in window) {
-        import('https://unpkg.com/web-vitals@3/dist/web-vitals.js').then(({getCLS, getFID, getFCP, getLCP, getTTFB}) => {
-          getCLS(sendToAnalytics);
-          getFID(sendToAnalytics);
-          getFCP(sendToAnalytics);
-          getLCP(sendToAnalytics);
-          getTTFB(sendToAnalytics);
-        }).catch(() => {
-          // Silently fail if web-vitals can't be loaded
-        });
-      }
-    </script>
+    <!-- Web Vitals monitoring is now handled via CookieConsentContext after user consent -->
 
     <!-- Fallback for users without JavaScript -->
     <noscript>

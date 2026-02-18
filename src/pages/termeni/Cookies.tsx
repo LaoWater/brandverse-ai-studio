@@ -1,7 +1,9 @@
 import React from 'react';
 import Navigation from "@/components/Navigation";
+import { useCookieConsent } from "@/contexts/CookieConsentContext";
 
 export default function CookiesPage() {
+  const { openSettings } = useCookieConsent();
   React.useEffect(() => {
     if (window.location.hash) {
       const id = window.location.hash.slice(1);
@@ -192,6 +194,12 @@ export default function CookiesPage() {
                 <p className="text-gray-300 text-lg leading-relaxed">
                   You have full control over cookies. On your first visit to our site, you can choose which categories of cookies you accept through the consent banner. Strictly necessary cookies do not require consent.
                 </p>
+                <button
+                  onClick={openSettings}
+                  className="cosmic-button mt-2 px-6 py-2.5 rounded-lg text-sm font-semibold"
+                >
+                  Manage Cookie Preferences
+                </button>
                 <p className="text-gray-300 text-lg leading-relaxed">
                   You can also modify cookie settings directly from your browser. You can delete all cookies that are already on your device and set most browsers to prevent them from being placed. Below are instructions for the most popular browsers:
                 </p>
