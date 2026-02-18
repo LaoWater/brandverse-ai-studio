@@ -199,6 +199,11 @@ export const SEO_CREDITS = {
   ENGAGEMENT: 2,      // Find engagement opportunities
 } as const;
 
+export const POST_FROM_MEDIA_CREDITS = {
+  AI_GENERATED_TEXT: 2,  // Per platform, AI writes the post text
+  MANUAL_TEXT: 0,        // User writes their own text
+} as const;
+
 export type SeoAction = 'analysis' | 'blog' | 'engagement';
 
 export const getSeoCredits = (action: SeoAction): number => {

@@ -21,6 +21,7 @@ import MediaFiltersComponent from './MediaFilters';
 import MediaPreviewModal from './MediaPreviewModal';
 import MediaEditDialog from './MediaEditDialog';
 import ImportVideoDialog from './ImportVideoDialog';
+import CreatePostFromMediaModal from './CreatePostFromMediaModal';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -61,6 +62,8 @@ const MediaLibrary = ({
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [showAllCompanies, setShowAllCompanies] = useState(isStudioContext); // Default to true for Studio, false for Post
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [createPostMedia, setCreatePostMedia] = useState<MediaFile | null>(null);
+  const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
 
   // Multi-select state
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -296,6 +299,12 @@ const MediaLibrary = ({
     setIsEditDialogOpen(true);
   };
 
+  const handleCreatePost = (media: MediaFile) => {
+    setCreatePostMedia(media);
+    setIsCreatePostOpen(true);
+    setIsPreviewOpen(false);
+  };
+
   const handleSaveEdit = async (mediaId: string, updates: Partial<MediaFile>) => {
     await updateMetadataMutation.mutateAsync({ mediaId, updates });
   };
@@ -486,6 +495,7 @@ const MediaLibrary = ({
             isSelectionMode={isSelectionMode}
             selectedIds={selectedIds}
             onToggleSelection={handleToggleSelection}
+            onCreatePost={handleCreatePost}
           />
 
           {/* Infinite scroll sentinel & loading indicator */}
@@ -534,6 +544,7 @@ const MediaLibrary = ({
         }
         onContinueVideo={onContinueVideo}
         onExtendVideo={onExtendVideo}
+        onCreatePost={handleCreatePost}
         isContinuingVideo={isContinuingVideo}
         continueVideoProgress={continueVideoProgress}
       />
@@ -562,6 +573,17 @@ const MediaLibrary = ({
           });
         }}
         companyId={selectedCompany?.id}
+      />
+
+      {/* Create Post from Media Modal */}
+      <CreatePostFromMediaModal
+        media={createPostMedia}
+        isOpen={isCreatePostOpen}
+        onClose={() => {
+          setIsCreatePostOpen(false);
+          setCreatePostMedia(null);
+        }}
+        onPostCreated={() => queryClient.invalidateQueries({ queryKey: ['posts'] })}
       />
     </div>
   );

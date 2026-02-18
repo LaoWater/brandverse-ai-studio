@@ -15,6 +15,7 @@ interface MediaGridProps {
   isSelectionMode?: boolean;
   selectedIds?: Set<string>;
   onToggleSelection?: (id: string) => void;
+  onCreatePost?: (media: MediaFile) => void;
 }
 
 const MediaGrid = ({
@@ -28,6 +29,7 @@ const MediaGrid = ({
   isSelectionMode = false,
   selectedIds = new Set(),
   onToggleSelection,
+  onCreatePost,
 }: MediaGridProps) => {
   // Loading skeleton
   if (isLoading) {
@@ -130,6 +132,7 @@ const MediaGrid = ({
               isSelectionMode={isSelectionMode}
               isSelected={selectedIds.has(item.id)}
               onToggleSelection={onToggleSelection}
+              onCreatePost={onCreatePost}
             />
           </motion.div>
         ))}

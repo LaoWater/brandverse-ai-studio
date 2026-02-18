@@ -42,17 +42,40 @@ serve(async (req) => {
       });
     }
 
-    const { email } = await req.json();
-    if (!email || typeof email !== "string" || !email.includes("@")) {
+    const body = await req.json();
+    const rawEmail = typeof body?.email === "string" ? body.email : "";
+    const targetEmail = rawEmail.trim().toLowerCase();
+    if (!targetEmail || !targetEmail.includes("@")) {
       throw new Error("Valid email is required");
     }
 
-    console.log(`[ADMIN-IMPERSONATE] Admin ${user.email} requesting impersonation of ${email}`);
+    const requestedRedirectTo = typeof body?.redirectTo === "string"
+      ? body.redirectTo.trim()
+      : "";
+    const origin = req.headers.get("origin")?.trim() ?? "";
+    const fallbackRedirectTo = origin ? `${origin}/auth/callback` : "";
+    const redirectToCandidate = requestedRedirectTo || fallbackRedirectTo;
+
+    let redirectTo: string | undefined;
+    if (redirectToCandidate) {
+      try {
+        const parsed = new URL(redirectToCandidate);
+        if (!["http:", "https:"].includes(parsed.protocol)) {
+          throw new Error("Only http/https redirect URLs are allowed");
+        }
+        redirectTo = parsed.toString();
+      } catch {
+        throw new Error("Valid redirectTo URL is required");
+      }
+    }
+
+    console.log(`[ADMIN-IMPERSONATE] Admin ${user.email} requesting impersonation of ${targetEmail}`);
 
     // Generate magic link for target user
     const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
       type: "magiclink",
-      email: email.trim().toLowerCase(),
+      email: targetEmail,
+      ...(redirectTo ? { options: { redirectTo } } : {}),
     });
 
     if (linkError) {
@@ -64,11 +87,12 @@ serve(async (req) => {
       throw new Error("No action link returned");
     }
 
-    console.log(`[ADMIN-IMPERSONATE] Magic link generated successfully for ${email}`);
+    console.log(`[ADMIN-IMPERSONATE] Magic link generated successfully for ${targetEmail}`);
 
     return new Response(JSON.stringify({ 
       action_link: linkData.properties.action_link,
-      target_email: email 
+      target_email: targetEmail,
+      redirect_to: redirectTo ?? null,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

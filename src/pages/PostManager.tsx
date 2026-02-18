@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Edit, Trash2, Eye, Filter, Plus, Calendar, Image, Video, Instagram, Facebook, Twitter, Linkedin, Search, X, Library, AlertCircle } from "lucide-react";
+import { Edit, Trash2, Eye, Filter, Plus, Calendar, Image, Video, Instagram, Facebook, Twitter, Linkedin, Search, X, Library, AlertCircle, Send } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
@@ -17,6 +17,7 @@ import { EditPostDialog } from "@/components/EditPostDialog";
 import { FaXTwitter, FaInstagram, FaFacebook, FaLinkedin } from "react-icons/fa6";
 import { useCompany } from "@/contexts/CompanyContext";
 import MediaLibrary from "@/components/media/MediaLibrary";
+import PostActionButton from "@/components/shared/PostActionButton";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -602,6 +603,11 @@ const PostManager = () => {
                               </TableCell>
                               <TableCell>
                                 <div className="flex gap-2">
+                                  <PostActionButton
+                                    platform={post.platform_type}
+                                    postContent={post.details || undefined}
+                                    mediaUrl={post.has_picture || post.has_video || undefined}
+                                  />
                                   <Button
                                     size="sm"
                                     variant="outline"
@@ -659,6 +665,11 @@ const PostManager = () => {
                             {post.has_video && <Video className="w-4 h-4 text-purple-400" />}
                           </div>
                           <div className="flex gap-2">
+                            <PostActionButton
+                              platform={post.platform_type}
+                              postContent={post.details || undefined}
+                              mediaUrl={post.has_picture || post.has_video || undefined}
+                            />
                             <Button
                               size="sm"
                               variant="outline"
@@ -722,6 +733,11 @@ const PostManager = () => {
                                     {post.has_video && <Video className="w-4 h-4 text-purple-400" />}
                                   </div>
                                   <div className="flex gap-2">
+                                    <PostActionButton
+                                      platform={post.platform_type}
+                                      postContent={post.details || undefined}
+                                      mediaUrl={post.has_picture || post.has_video || undefined}
+                                    />
                                     <Button
                                       size="sm"
                                       variant="outline"

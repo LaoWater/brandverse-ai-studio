@@ -3,13 +3,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, UserCheck, ExternalLink, Loader2 } from "lucide-react";
+import { Shield, UserCheck, Loader2, Copy, ExternalLink } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 export const AdminImpersonation = () => {
   const [targetEmail, setTargetEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const [generatedLink, setGeneratedLink] = useState("");
+  const [generatedForEmail, setGeneratedForEmail] = useState("");
 
   const handleImpersonate = async () => {
     const email = targetEmail.trim().toLowerCase();
@@ -31,28 +33,49 @@ export const AdminImpersonation = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({
+            email,
+            redirectTo: `${window.location.origin}/auth/callback`,
+          }),
         }
       );
 
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "Failed");
 
-      // Open magic link in new tab so admin stays logged in
-      window.open(result.action_link, "_blank");
+      setGeneratedLink(result.action_link || "");
+      setGeneratedForEmail(result.target_email || email);
       toast({
-        title: "Impersonation link opened",
-        description: `A new tab was opened logged in as ${email}. Close it when done.`,
+        title: "Impersonation link generated",
+        description: `Copy and open the link to sign in as ${email}.`,
       });
-      setTargetEmail("");
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
       toast({
         title: "Impersonation failed",
-        description: err.message,
+        description: message,
         variant: "destructive",
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    if (!generatedLink) return;
+
+    try {
+      await navigator.clipboard.writeText(generatedLink);
+      toast({
+        title: "Link copied",
+        description: "Impersonation link copied to clipboard.",
+      });
+    } catch {
+      toast({
+        title: "Copy failed",
+        description: "Could not copy link. Please copy it manually.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -66,7 +89,7 @@ export const AdminImpersonation = () => {
           <div>
             <CardTitle className="text-foreground text-lg">Admin Impersonation</CardTitle>
             <CardDescription className="text-muted-foreground text-sm">
-              Sign in as any user to debug their issues (opens in new tab)
+              Generate a login link for any user and open it in a separate tab
             </CardDescription>
           </div>
         </div>
@@ -97,12 +120,36 @@ export const AdminImpersonation = () => {
             ) : (
               <UserCheck className="w-4 h-4" />
             )}
-            Impersonate
-            <ExternalLink className="w-3 h-3" />
+            Generate link
           </Button>
         </div>
+
+        {generatedLink && (
+          <div className="mt-4 space-y-2">
+            <Label className="text-foreground text-sm font-medium">
+              Magic link for {generatedForEmail}
+            </Label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Input value={generatedLink} readOnly className="settings-input font-mono text-xs" />
+              <Button type="button" onClick={handleCopyLink} variant="outline" className="gap-2">
+                <Copy className="w-4 h-4" />
+                Copy
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="gap-2"
+                onClick={() => window.open(generatedLink, "_blank")}
+              >
+                <ExternalLink className="w-4 h-4" />
+                Open
+              </Button>
+            </div>
+          </div>
+        )}
+
         <p className="text-xs text-muted-foreground mt-3">
-          ⚠️ This action is logged. The magic link opens in a new tab — your admin session stays active here.
+          ⚠️ This action is logged. Generate, copy, and open the link in another tab when needed.
         </p>
       </CardContent>
     </Card>

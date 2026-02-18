@@ -11,6 +11,7 @@ import {
   Clock,
   Sparkles,
   Check,
+  Send,
 } from 'lucide-react';
 import { MediaFile } from '@/services/mediaStudioService';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,7 @@ interface MediaCardProps {
   isSelectionMode?: boolean;
   isSelected?: boolean;
   onToggleSelection?: (id: string) => void;
+  onCreatePost?: (media: MediaFile) => void;
 }
 
 const MediaCard = ({
@@ -44,6 +46,7 @@ const MediaCard = ({
   isSelectionMode = false,
   isSelected = false,
   onToggleSelection,
+  onCreatePost,
 }: MediaCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -338,6 +341,15 @@ const MediaCard = ({
                 <Heart className="w-4 h-4 mr-2" />
                 {media.is_favorite ? 'Remove from Favorites' : 'Add to Favorites'}
               </DropdownMenuItem>
+              {onCreatePost && (
+                <DropdownMenuItem
+                  onClick={() => onCreatePost(media)}
+                  className="text-white hover:bg-white/10 cursor-pointer"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Create Post
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator className="bg-primary/20" />
               <DropdownMenuItem
                 onClick={() => onDelete(media.id)}

@@ -20,6 +20,7 @@ import {
   Loader2,
   Play,
   Pencil,
+  Send,
 } from 'lucide-react';
 import { MediaFile } from '@/services/mediaStudioService';
 import { Button } from '@/components/ui/button';
@@ -39,6 +40,7 @@ interface MediaPreviewModalProps {
   onUseForVideoGeneration?: (media: MediaFile) => void;
   onContinueVideo?: (media: MediaFile) => void;
   onExtendVideo?: (media: MediaFile, gcsUri: string) => void; // New: Extend video using GCS URI
+  onCreatePost?: (media: MediaFile) => void;
   isContinuingVideo?: boolean;
   continueVideoProgress?: string;
 }
@@ -79,6 +81,7 @@ const MediaPreviewModal = ({
   onUseForVideoGeneration,
   onContinueVideo,
   onExtendVideo,
+  onCreatePost,
   isContinuingVideo = false,
   continueVideoProgress = '',
 }: MediaPreviewModalProps) => {
@@ -284,6 +287,23 @@ const MediaPreviewModal = ({
                       <Pencil className="w-4 h-4 mr-2" />
                       Edit Details
                     </Button>
+                  )}
+
+                  {/* Create Post from Media */}
+                  {onCreatePost && (
+                    <>
+                      <Separator className="bg-primary/20" />
+                      <Button
+                        onClick={() => {
+                          onCreatePost(media);
+                          onClose();
+                        }}
+                        className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white"
+                      >
+                        <Send className="w-4 h-4 mr-2" />
+                        Create Post from This Media
+                      </Button>
+                    </>
                   )}
 
                   {/* Use for Generation - Only for images */}
