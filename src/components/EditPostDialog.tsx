@@ -54,12 +54,12 @@ export const EditPostDialog = ({
   const handleCopyDetails = async () => {
     // ... (keep existing implementation)
     if (!detailsContent) {
-      toast({ title: "Nothing to copy", variant: "default", className: "bg-yellow-500/10 text-yellow-400" });
+      toast({ title: "Nothing to copy", variant: "default" });
       return;
     }
     try {
       await navigator.clipboard.writeText(detailsContent);
-      toast({ title: "Content Copied! ✨", description: "Post details copied to clipboard.", className: "bg-primary/90 border-primary text-white" });
+      toast({ title: "Content Copied! ✨", description: "Post details copied to clipboard." });
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
@@ -87,7 +87,7 @@ export const EditPostDialog = ({
     }
 
     setIsDownloading(true);
-    toast({ title: "Preparing download...", description: "Fetching media file. Please wait.", className: "bg-blue-600 text-white border-blue-600" });
+    toast({ title: "Preparing download...", description: "Fetching media file. Please wait." });
 
     try {
       const response = await fetch(downloadableMediaUrl);
@@ -130,7 +130,7 @@ export const EditPostDialog = ({
       document.body.removeChild(link);
       URL.revokeObjectURL(link.href); // Clean up the blob URL
 
-      toast({ title: "Download Started! 🚀", description: `"${filename}" should begin downloading shortly.`, className: "bg-primary/90 border-primary text-white" });
+      toast({ title: "Download Started! 🚀", description: `"${filename}" should begin downloading shortly.` });
     } catch (error) {
       console.error("Download error:", error);
       toast({

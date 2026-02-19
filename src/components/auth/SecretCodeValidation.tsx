@@ -42,7 +42,6 @@ export const SecretCodeValidation = ({ onValidated, onCancel }: SecretCodeValida
         toast({
           title: "Access Granted ✓",
           description: "Welcome to the partner program!",
-          className: "bg-green-600/90 border-green-500 text-white"
         });
         onValidated();
       } else {

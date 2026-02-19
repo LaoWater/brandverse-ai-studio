@@ -313,7 +313,6 @@ const GlobalGenerationTracker: React.FC = () => {
         toast({
           title: 'Video Ready!',
           description: 'Your video has been generated successfully.',
-          className: 'bg-emerald-600/90 border-emerald-600 text-white',
         });
       },
       onError: (id, error) => {

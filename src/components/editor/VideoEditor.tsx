@@ -343,7 +343,6 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
           toast({
             title: 'Project Saved',
             description: 'Your project has been saved.',
-            className: 'bg-green-600/90 border-green-600 text-white',
           });
         }
       }
@@ -1266,7 +1265,6 @@ export const VideoEditor = ({ onBack, projectId: initialProjectId, onProjectChan
       toast({
         title: 'Export Complete!',
         description: successMessage,
-        className: 'bg-green-600/90 border-green-600 text-white',
       });
     } catch (error: any) {
       console.error('[VideoEditor] Export failed:', error);

@@ -40,6 +40,7 @@ const PostManager = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('posts');
   const [postedConfirmDialog, setPostedConfirmDialog] = useState<{ isOpen: boolean; postId: string | null }>({ isOpen: false, postId: null });
+  const [deleteConfirmDialog, setDeleteConfirmDialog] = useState<{ isOpen: boolean; postId: string | null }>({ isOpen: false, postId: null });
   const [filters, setFilters] = useState({
     platform: 'all',
     status: 'all',
@@ -117,7 +118,6 @@ const PostManager = () => {
       toast({
         title: "Post Updated! ✨",
         description: "Post has been successfully updated.",
-        className: "bg-primary/90 border-primary text-white"
       });
       setIsEditDialogOpen(false);
       setSelectedPost(null);
@@ -145,7 +145,6 @@ const PostManager = () => {
       toast({
         title: "Post Deleted",
         description: "Post has been successfully deleted.",
-        className: "bg-primary/90 border-primary text-white"
       });
     },
     onError: (error) => {
@@ -221,9 +220,14 @@ const PostManager = () => {
   };
 
   const handleDeletePost = (postId: string) => {
-    if (confirm('Are you sure you want to delete this post?')) {
-      deletePostMutation.mutate(postId);
+    setDeleteConfirmDialog({ isOpen: true, postId });
+  };
+
+  const confirmDeletePost = () => {
+    if (deleteConfirmDialog.postId) {
+      deletePostMutation.mutate(deleteConfirmDialog.postId);
     }
+    setDeleteConfirmDialog({ isOpen: false, postId: null });
   };
 
   const handleQuickStatusUpdate = (postId: string, newStatus: PostStatus) => {
@@ -790,15 +794,15 @@ const PostManager = () => {
 
       {/* Posted Status Confirmation Dialog */}
       <AlertDialog open={postedConfirmDialog.isOpen} onOpenChange={(open) => !open && setPostedConfirmDialog({ isOpen: false, postId: null })}>
-        <AlertDialogContent className="bg-[#1a1a2e] border border-white/10">
+        <AlertDialogContent className="bg-card border-border">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-3 text-white">
+            <AlertDialogTitle className="flex items-center gap-3 text-foreground">
               <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
                 <AlertCircle className="w-5 h-5 text-amber-500" />
               </div>
               Multi-Platform Distribution
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-300 text-base leading-relaxed">
+            <AlertDialogDescription className="text-muted-foreground text-base leading-relaxed">
               <span className="block mb-3">
                 Multi-platform auto-posting is currently in <span className="text-amber-500 font-semibold">testing phase</span> and will be available soon!
               </span>
@@ -808,7 +812,7 @@ const PostManager = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-white/5 text-white border-white/10 hover:bg-white/10">
+            <AlertDialogCancel className="bg-secondary text-foreground border-border hover:bg-secondary/80">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
@@ -816,6 +820,34 @@ const PostManager = () => {
               className="bg-gradient-to-r from-primary to-accent text-white hover:opacity-90"
             >
               Continue & Mark as Posted
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Post Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmDialog.isOpen} onOpenChange={(open) => !open && setDeleteConfirmDialog({ isOpen: false, postId: null })}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-3 text-foreground">
+              <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-destructive" />
+              </div>
+              Delete Post
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground text-base leading-relaxed">
+              Are you sure you want to delete this post? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-secondary text-foreground border-border hover:bg-secondary/80">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeletePost}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

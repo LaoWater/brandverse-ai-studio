@@ -278,7 +278,6 @@ const MediaStudioContent = () => {
       toast({
         title: 'Video Generation Started',
         description: 'You can continue working while the video generates.',
-        className: 'bg-primary/90 border-primary text-white',
       });
 
       // Start the async generation
@@ -391,7 +390,6 @@ const MediaStudioContent = () => {
       toast({
         title: 'Image Generation Started',
         description: 'You can continue working while the image generates.',
-        className: 'bg-primary/90 border-primary text-white',
       });
 
       // Update progress: uploading reference images
@@ -479,7 +477,6 @@ const MediaStudioContent = () => {
       toast({
         title: 'Image Ready!',
         description: 'Your image has been generated successfully.',
-        className: 'bg-emerald-600/90 border-emerald-600 text-white',
       });
 
     } catch (error: any) {
@@ -535,7 +532,6 @@ const MediaStudioContent = () => {
         toast({
           title: 'Image Added',
           description: 'Image added as reference. Enter a prompt to generate variations.',
-          className: 'bg-primary/90 border-primary text-white',
         });
       } else {
         // For video generation: set as input image and switch to image-to-video mode
@@ -547,7 +543,6 @@ const MediaStudioContent = () => {
         toast({
           title: 'Image Added',
           description: 'Image set for video generation. Enter a prompt to animate it.',
-          className: 'bg-accent/90 border-accent text-white',
         });
       }
 
@@ -604,7 +599,6 @@ const MediaStudioContent = () => {
       toast({
         title: 'Ready to Continue',
         description: 'Last frame extracted! Enter a prompt to continue this video.',
-        className: 'bg-accent/90 border-accent text-white',
       });
     } catch (error: any) {
       console.error('Failed to continue video:', error);
@@ -634,7 +628,6 @@ const MediaStudioContent = () => {
     toast({
       title: 'Ready to Extend',
       description: 'Enter a prompt describing how you want to continue this video.',
-      className: 'bg-green-600/90 border-green-600 text-white',
     });
   };
 
@@ -675,7 +668,6 @@ const MediaStudioContent = () => {
           toast({
             title: `${result.recovered} Video${result.recovered > 1 ? 's' : ''} Recovered!`,
             description: `Successfully recovered ${result.recovered} video${result.recovered > 1 ? 's' : ''} from pending jobs.${result.stillPending > 0 ? ` ${result.stillPending} still processing.` : ''}`,
-            className: 'bg-green-600/90 border-green-600 text-white',
           });
           // Switch to library to show recovered videos
           setCurrentView('library');
@@ -683,7 +675,6 @@ const MediaStudioContent = () => {
           toast({
             title: 'Videos Still Processing',
             description: `${result.stillPending} video${result.stillPending > 1 ? 's are' : ' is'} still being generated. Check back in a few minutes.`,
-            className: 'bg-primary/90 border-primary text-white',
           });
         } else if (result.expired > 0 || result.failed > 0) {
           toast({

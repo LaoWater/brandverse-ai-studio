@@ -154,7 +154,6 @@ const CreatePostFromMediaModal = ({
       toast({
         title: 'Content Generated',
         description: `Created post text for ${selectedPlatforms.size} platform${selectedPlatforms.size > 1 ? 's' : ''}.`,
-        className: 'bg-green-600/90 border-green-600 text-white',
       });
     } catch (error) {
       console.error('Error generating post text:', error);
@@ -209,7 +208,6 @@ const CreatePostFromMediaModal = ({
       toast({
         title: 'Posts Saved',
         description: `${postsToSave.length} draft post${postsToSave.length > 1 ? 's' : ''} created successfully.`,
-        className: 'bg-green-600/90 border-green-600 text-white',
       });
 
       onPostCreated?.();

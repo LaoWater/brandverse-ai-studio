@@ -169,7 +169,6 @@ const MediaLibrary = ({
       toast({
         title: 'Deleted',
         description: 'Media deleted successfully',
-        className: 'bg-green-600/90 border-green-600 text-white',
       });
     },
     onError: () => {
@@ -200,7 +199,6 @@ const MediaLibrary = ({
       toast({
         title: 'Deleted',
         description: `Successfully deleted ${successCount} of ${totalCount} items`,
-        className: 'bg-green-600/90 border-green-600 text-white',
       });
     },
     onError: () => {
@@ -569,7 +567,6 @@ const MediaLibrary = ({
           toast({
             title: 'Video Imported',
             description: 'Video has been added to your library.',
-            className: 'bg-green-600/90 border-green-600 text-white',
           });
         }}
         companyId={selectedCompany?.id}

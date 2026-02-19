@@ -194,9 +194,9 @@ export const calculateMediaStudioCreditsByTier = (
  * SEO Agent Credit Costs
  */
 export const SEO_CREDITS = {
-  ANALYSIS: 3,        // Deep website analysis + LLM processing
+  ANALYSIS: 5,        // Real website crawl + Serper search + LLM analysis
   BLOG_POST: 1,       // Generate SEO-optimized blog post
-  ENGAGEMENT: 2,      // Find engagement opportunities
+  ENGAGEMENT: 3,      // Real engagement search via Serper + LLM response crafting
 } as const;
 
 export const POST_FROM_MEDIA_CREDITS = {

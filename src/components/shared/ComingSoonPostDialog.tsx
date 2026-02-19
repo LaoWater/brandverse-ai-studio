@@ -136,7 +136,6 @@ const ComingSoonPostDialog = ({
       toast({
         title: 'Copied!',
         description: `${type === 'content' ? 'Post content' : 'Media URL'} copied to clipboard.`,
-        className: 'bg-green-600/90 border-green-600 text-white',
       });
     } catch {
       toast({

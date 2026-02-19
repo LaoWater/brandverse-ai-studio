@@ -45,6 +45,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getUserCredits, SEO_CREDITS } from "@/services/creditsService";
+import {
+  searchEngagement as searchEngagementAPI,
+  analyzePresence,
+  type EngagementOpportunity,
+  type AnalyzePresenceResult,
+} from "@/services/seoService";
 
 type SeoTab = 'overview' | 'analysis' | 'engine';
 
@@ -69,6 +75,10 @@ const SeoAgent = () => {
   const [isGeneratingBlog, setIsGeneratingBlog] = useState(false);
   const [isSearchingEngagement, setIsSearchingEngagement] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Progress state for long-running operations
+  const [analysisStage, setAnalysisStage] = useState('');
+  const [engagementStage, setEngagementStage] = useState('');
 
   // Credits state
   const [userCredits, setUserCredits] = useState<number>(0);
@@ -167,7 +177,7 @@ const SeoAgent = () => {
     enabled: !!selectedCompany?.id
   });
 
-  // Run SEO Analysis
+  // Run SEO Analysis - calls Python backend for real search data
   const runAnalysis = async () => {
     if (!selectedCompany?.id) {
       toast.error("Please select a company first");
@@ -186,25 +196,64 @@ const SeoAgent = () => {
     }
 
     setIsAnalyzing(true);
+    setAnalysisStage('Deducting credits...');
     try {
-      const { data, error } = await supabase.functions.invoke('seo-analysis', {
-        body: {
-          company_id: selectedCompany.id,
-          website_url: websiteUrl.trim(),
-          target_audience: targetAudience,
-          buyer_persona: buyerPersona,
-          competitors: competitors.split(',').map(c => c.trim()).filter(Boolean),
-          keywords: keywords.split(',').map(k => k.trim()).filter(Boolean)
-        }
+      // Step 1: Deduct credits via Supabase RPC
+      const { error: creditError } = await supabase.rpc('deduct_credits', {
+        _user_id: user!.id,
+        _credits_to_deduct: SEO_CREDITS.ANALYSIS,
+      });
+      if (creditError) throw new Error('Insufficient credits');
+
+      setUserCredits(prev => prev - SEO_CREDITS.ANALYSIS);
+      setAnalysisStage('Crawling your website...');
+
+      // Step 2: Call Python backend for real analysis
+      const keywordsList = keywords.split(',').map(k => k.trim()).filter(Boolean);
+      const competitorsList = competitors.split(',').map(c => c.trim()).filter(Boolean);
+
+      const result = await analyzePresence({
+        website_url: websiteUrl.trim(),
+        company_name: selectedCompany.name || '',
+        keywords: keywordsList,
+        competitors: competitorsList,
+        target_audience: targetAudience,
+        buyer_persona: buyerPersona,
+        mission: selectedCompany.mission || '',
+        tone_of_voice: selectedCompany.tone_of_voice || '',
       });
 
-      if (error) {
-        throw new Error(error.message || 'Analysis failed');
+      setAnalysisStage('Saving results...');
+
+      // Step 3: Save results to Supabase
+      // Cast to any because search_data/competitor_data columns are added by migration 20260219
+      // and may not be in auto-generated types yet
+      const insertPayload: any = {
+        company_id: selectedCompany.id,
+        user_id: user!.id,
+        target_audience: targetAudience,
+        buyer_persona: { description: buyerPersona },
+        competitors: competitorsList,
+        keywords: keywordsList,
+        analysis_result: { text: result.analysis },
+        visibility_score: result.visibility_score,
+        platform_scores: result.platform_scores,
+        recommendations: result.recommendations,
+        search_data: result.search_evidence,
+        competitor_data: result.competitor_data,
+        status: 'completed',
+        credits_used: SEO_CREDITS.ANALYSIS,
+      };
+      const { error: saveError } = await supabase
+        .from('seo_analysis')
+        .insert(insertPayload);
+
+      if (saveError) {
+        console.error('Failed to save analysis:', saveError);
+        // Still show results even if save fails
       }
 
-      // Update local credits state
-      setUserCredits(prev => prev - SEO_CREDITS.ANALYSIS);
-      toast.success("SEO Analysis completed!");
+      toast.success("SEO Analysis completed with real search data!");
       queryClient.invalidateQueries({ queryKey: ['seo-analysis'] });
 
       // Auto-switch to engine tab after successful analysis
@@ -214,6 +263,7 @@ const SeoAgent = () => {
       toast.error(error.message || "Failed to run analysis");
     } finally {
       setIsAnalyzing(false);
+      setAnalysisStage('');
     }
   };
 
@@ -258,7 +308,7 @@ const SeoAgent = () => {
     }
   };
 
-  // Search for engagement opportunities
+  // Search for REAL engagement opportunities via Python backend + Serper.dev
   const searchEngagement = async () => {
     if (!selectedCompany?.id || !latestAnalysis) {
       toast.error("Please run an analysis first");
@@ -272,29 +322,73 @@ const SeoAgent = () => {
     }
 
     setIsSearchingEngagement(true);
+    setEngagementStage('Deducting credits...');
     try {
-      const { data, error } = await supabase.functions.invoke('seo-engine', {
-        body: {
-          action: 'find_engagement',
-          company_id: selectedCompany.id,
-          analysis_id: latestAnalysis.id
-        }
+      // Step 1: Deduct credits
+      const { error: creditError } = await supabase.rpc('deduct_credits', {
+        _user_id: user!.id,
+        _credits_to_deduct: SEO_CREDITS.ENGAGEMENT,
+      });
+      if (creditError) throw new Error('Insufficient credits');
+
+      setUserCredits(prev => prev - SEO_CREDITS.ENGAGEMENT);
+      setEngagementStage('Searching Reddit, YouTube, forums...');
+
+      // Step 2: Call Python backend for real engagement search
+      const result = await searchEngagementAPI({
+        company_name: selectedCompany.name || '',
+        keywords: latestAnalysis.keywords || [],
+        industry: '',
+        target_audience: latestAnalysis.target_audience || '',
+        website_url: websiteUrl.trim(),
+        tone_of_voice: selectedCompany.tone_of_voice || '',
       });
 
-      if (error) {
-        throw new Error(error.message || 'Engagement search failed');
+      setEngagementStage('Saving opportunities...');
+
+      // Step 3: Save each opportunity to Supabase
+      if (result.opportunities && result.opportunities.length > 0) {
+        const rows = result.opportunities.map((opp: EngagementOpportunity) => ({
+          company_id: selectedCompany.id,
+          user_id: user!.id,
+          analysis_id: latestAnalysis.id,
+          platform: _normalizePlatform(opp.platform),
+          source_url: opp.url,
+          source_title: opp.title,
+          source_content: opp.snippet,
+          suggested_response: opp.suggested_response,
+          response_reasoning: opp.engagement_reason,
+          relevance_score: opp.relevance_score,
+          status: 'pending',
+        }));
+
+        const { error: saveError } = await supabase
+          .from('seo_engagement_opportunities')
+          .insert(rows);
+
+        if (saveError) {
+          console.error('Failed to save opportunities:', saveError);
+        }
       }
 
-      // Update local credits state
-      setUserCredits(prev => prev - SEO_CREDITS.ENGAGEMENT);
-      toast.success("Found new engagement opportunities!");
+      toast.success(`Found ${result.opportunities?.length || 0} real engagement opportunities!`);
       queryClient.invalidateQueries({ queryKey: ['seo-engagement'] });
 
     } catch (error: any) {
       toast.error(error.message || "Failed to find engagement opportunities");
     } finally {
       setIsSearchingEngagement(false);
+      setEngagementStage('');
     }
+  };
+
+  // Normalize platform name for database constraint
+  const _normalizePlatform = (platform: string): string => {
+    const p = platform.toLowerCase().trim();
+    if (p === 'x' || p === 'twitter/x' || p === 'x/twitter') return 'twitter';
+    const valid = ['reddit', 'twitter', 'facebook', 'youtube', 'quora', 'forum', 'linkedin'];
+    if (valid.includes(p)) return p;
+    return 'other';
   };
 
   // Update engagement opportunity status
@@ -765,7 +859,7 @@ const SeoAgent = () => {
                           {isAnalyzing ? (
                             <>
                               <Loader2 className="mr-2 w-5 h-5 animate-spin" />
-                              Analyzing your website...
+                              {analysisStage || 'Analyzing...'}
                             </>
                           ) : (
                             <>
@@ -807,15 +901,23 @@ const SeoAgent = () => {
                               <p className="text-gray-400">Visibility Score</p>
                             </div>
 
-                            {/* Platform Scores */}
+                            {/* Platform Scores with Evidence */}
                             {latestAnalysis.platform_scores && Object.keys(latestAnalysis.platform_scores).length > 0 && (
                               <div className="flex flex-wrap gap-2">
-                                {Object.entries(latestAnalysis.platform_scores).map(([platform, score]) => (
-                                  <div key={platform} className="px-3 py-2 bg-white/5 rounded-lg text-center">
-                                    <div className="text-lg font-semibold text-white">{score as number}</div>
-                                    <div className="text-xs text-gray-500 capitalize">{platform}</div>
-                                  </div>
-                                ))}
+                                {Object.entries(latestAnalysis.platform_scores).map(([platform, score]) => {
+                                  const evidence = (latestAnalysis as any).search_data?.[platform];
+                                  return (
+                                    <div key={platform} className="px-3 py-2 bg-white/5 rounded-lg text-center min-w-[80px]">
+                                      <div className="text-lg font-semibold text-white">{score as number}</div>
+                                      <div className="text-xs text-gray-500 capitalize">{platform}</div>
+                                      {evidence?.mention_count !== undefined && (
+                                        <div className="text-[10px] text-gray-600 mt-1">
+                                          {evidence.mention_count} mentions
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
                               </div>
                             )}
                           </div>
@@ -996,7 +1098,7 @@ const SeoAgent = () => {
                           Engagement Finder
                         </CardTitle>
                         <CardDescription className="text-gray-400">
-                          Find opportunities to engage on Reddit, X, and forums
+                          Find real discussions on Reddit, YouTube, Quora, and forums where you can engage
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
@@ -1008,7 +1110,7 @@ const SeoAgent = () => {
                           {isSearchingEngagement ? (
                             <>
                               <Loader2 className="mr-2 w-5 h-5 animate-spin" />
-                              Searching...
+                              {engagementStage || 'Searching...'}
                             </>
                           ) : (
                             <>
@@ -1036,10 +1138,11 @@ const SeoAgent = () => {
                               key={opportunity.id}
                               className="p-4 bg-white/5 rounded-lg border border-white/10"
                             >
-                              <div className="flex items-center gap-2 mb-2">
+                              <div className="flex items-center gap-2 mb-2 flex-wrap">
                                 <Badge className="bg-white/10 text-white border-0 capitalize">
                                   {opportunity.platform === 'reddit' && <FaRedditAlien className="w-3 h-3 mr-1" />}
                                   {opportunity.platform === 'twitter' && <FaXTwitter className="w-3 h-3 mr-1" />}
+                                  {opportunity.platform === 'youtube' && <Youtube className="w-3 h-3 mr-1" />}
                                   {opportunity.platform}
                                 </Badge>
                                 {opportunity.relevance_score && (
@@ -1047,6 +1150,10 @@ const SeoAgent = () => {
                                     {opportunity.relevance_score}% match
                                   </Badge>
                                 )}
+                                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
+                                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                                  Verified URL
+                                </Badge>
                               </div>
 
                               <h4 className="text-white font-medium mb-2">{opportunity.source_title}</h4>

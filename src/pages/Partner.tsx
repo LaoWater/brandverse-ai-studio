@@ -110,7 +110,6 @@ const Partner = () => {
       toast({
         title: "Secret Code Created! ✨",
         description: "New influencer secret code has been generated.",
-        className: "bg-primary/90 border-primary text-white"
       });
     },
     onError: (error: any) => {
@@ -132,7 +131,6 @@ const Partner = () => {
       toast({
         title: "Code Status Updated",
         description: "Secret code status has been updated.",
-        className: "bg-primary/90 border-primary text-white"
       });
     },
     onError: (error: any) => {
