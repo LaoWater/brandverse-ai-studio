@@ -98,7 +98,7 @@ Format your response as JSON:
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      model: "gpt-4o",
+      model: "gpt-5.2",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
@@ -202,7 +202,7 @@ Format as JSON:
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      model: "gpt-4o",
+      model: "gpt-5.2",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
