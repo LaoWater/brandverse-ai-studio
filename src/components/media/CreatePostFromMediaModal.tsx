@@ -238,9 +238,9 @@ const CreatePostFromMediaModal = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="bg-card border-primary/20 max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+        <DialogContent className="bg-card border-border max-w-4xl max-h-[90vh] overflow-y-auto p-0" data-theme-aware>
           <DialogHeader className="p-6 pb-0">
-            <DialogTitle className="text-white text-xl flex items-center gap-2">
+            <DialogTitle className="text-foreground text-xl flex items-center gap-2">
               <Send className="w-5 h-5 text-primary" />
               Create Post from Media
             </DialogTitle>
@@ -249,7 +249,7 @@ const CreatePostFromMediaModal = ({
           <div className="flex flex-col md:flex-row gap-0 md:gap-6 p-6 pt-4">
             {/* Left: Media Preview */}
             <div className="w-full md:w-[280px] flex-shrink-0 space-y-3">
-              <div className="relative rounded-lg overflow-hidden bg-black/50 border border-white/10">
+              <div className="relative rounded-lg overflow-hidden bg-black/30 border border-border">
                 {isVideo ? (
                   <video
                     src={media.public_url}
@@ -265,7 +265,7 @@ const CreatePostFromMediaModal = ({
                   />
                 )}
                 <Badge className={cn(
-                  'absolute top-2 left-2 text-xs',
+                  'absolute top-2 left-2 text-xs text-white',
                   isVideo ? 'bg-purple-500/80' : 'bg-blue-500/80',
                 )}>
                   {isVideo ? <Video className="w-3 h-3 mr-1" /> : <ImageIcon className="w-3 h-3 mr-1" />}
@@ -275,21 +275,21 @@ const CreatePostFromMediaModal = ({
 
               {media.custom_title && (
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">Title</p>
-                  <p className="text-sm text-white">{media.custom_title}</p>
+                  <p className="text-xs text-muted-foreground mb-1">Title</p>
+                  <p className="text-sm text-foreground">{media.custom_title}</p>
                 </div>
               )}
 
               {media.prompt && (
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">Prompt</p>
-                  <p className="text-xs text-gray-300 line-clamp-4 bg-white/5 rounded p-2">
+                  <p className="text-xs text-muted-foreground mb-1">Prompt</p>
+                  <p className="text-xs text-muted-foreground line-clamp-4 bg-secondary/50 rounded p-2">
                     {media.prompt}
                   </p>
                 </div>
               )}
 
-              <div className="flex items-center gap-2 text-xs text-gray-500">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Coins className="w-3 h-3" />
                 <span>{availableCredits} credits available</span>
               </div>
@@ -299,7 +299,7 @@ const CreatePostFromMediaModal = ({
             <div className="flex-1 space-y-5 min-w-0">
               {/* Platform Selection */}
               <div>
-                <Label className="text-sm text-gray-300 mb-2 block">Select Platforms</Label>
+                <Label className="text-sm text-muted-foreground mb-2 block">Select Platforms</Label>
                 <div className="flex flex-wrap gap-2">
                   {PLATFORMS.map(platform => {
                     const isSelected = selectedPlatforms.has(platform.id);
@@ -311,8 +311,8 @@ const CreatePostFromMediaModal = ({
                         className={cn(
                           'flex items-center gap-2 px-3 py-2 rounded-lg border transition-all text-sm',
                           isSelected
-                            ? `border-primary bg-primary/20 text-white`
-                            : 'border-white/10 bg-white/5 text-gray-400 hover:border-white/20 hover:text-gray-300',
+                            ? 'border-primary bg-primary/20 text-foreground'
+                            : 'border-border bg-secondary/50 text-muted-foreground hover:border-primary/30 hover:text-foreground',
                         )}
                       >
                         <Icon className="w-4 h-4" />
@@ -324,19 +324,19 @@ const CreatePostFromMediaModal = ({
                 </div>
               </div>
 
-              <Separator className="bg-primary/10" />
+              <Separator className="bg-border" />
 
               {/* Mode Toggle */}
               <div className="flex items-center gap-2">
-                <Label className="text-sm text-gray-300">Mode:</Label>
-                <div className="flex rounded-lg border border-white/10 overflow-hidden">
+                <Label className="text-sm text-muted-foreground">Mode:</Label>
+                <div className="flex rounded-lg border border-border overflow-hidden">
                   <button
                     onClick={() => setMode('manual')}
                     className={cn(
                       'flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors',
                       mode === 'manual'
-                        ? 'bg-primary/20 text-white'
-                        : 'text-gray-400 hover:text-gray-300',
+                        ? 'bg-primary/20 text-foreground'
+                        : 'text-muted-foreground hover:text-foreground',
                     )}
                   >
                     <Pencil className="w-3 h-3" />
@@ -347,8 +347,8 @@ const CreatePostFromMediaModal = ({
                     className={cn(
                       'flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors',
                       mode === 'ai'
-                        ? 'bg-primary/20 text-white'
-                        : 'text-gray-400 hover:text-gray-300',
+                        ? 'bg-primary/20 text-foreground'
+                        : 'text-muted-foreground hover:text-foreground',
                     )}
                   >
                     <Wand2 className="w-3 h-3" />
@@ -359,14 +359,14 @@ const CreatePostFromMediaModal = ({
 
               {/* Title / Topic */}
               <div>
-                <Label className="text-sm text-gray-300 mb-1.5 block">
+                <Label className="text-sm text-muted-foreground mb-1.5 block">
                   {mode === 'ai' ? 'Topic / Title (optional)' : 'Post Title'}
                 </Label>
                 <Input
                   value={userTitle}
                   onChange={(e) => setUserTitle(e.target.value)}
                   placeholder={mode === 'ai' ? 'Guide the AI with a topic or title...' : 'Enter post title...'}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                  className="bg-secondary/50 border-border text-foreground placeholder:text-muted-foreground"
                 />
               </div>
 
@@ -405,22 +405,22 @@ const CreatePostFromMediaModal = ({
               {/* Content Area */}
               {mode === 'manual' ? (
                 <div>
-                  <Label className="text-sm text-gray-300 mb-1.5 block">Post Content</Label>
+                  <Label className="text-sm text-muted-foreground mb-1.5 block">Post Content</Label>
                   <Textarea
                     value={manualContent}
                     onChange={(e) => setManualContent(e.target.value)}
                     placeholder="Write your post content here. This will be used for all selected platforms..."
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 min-h-[120px] resize-y"
+                    className="bg-secondary/50 border-border text-foreground placeholder:text-muted-foreground min-h-[120px] resize-y"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Same content will be used for all {selectedPlatforms.size} selected platform{selectedPlatforms.size !== 1 ? 's' : ''}.
                   </p>
                 </div>
               ) : (
                 Object.keys(generatedPosts).length > 0 && (
                   <div className="space-y-4">
-                    <Separator className="bg-primary/10" />
-                    <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                    <Separator className="bg-border" />
+                    <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-accent" />
                       Generated Content
                     </h3>
@@ -434,9 +434,9 @@ const CreatePostFromMediaModal = ({
                       return (
                         <div key={platform} className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <Icon className="w-4 h-4 text-gray-400" />
-                            <span className="text-sm font-medium text-gray-300">{platformInfo.name}</span>
-                            <Badge variant="outline" className="text-xs border-white/10 text-gray-500">
+                            <Icon className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm font-medium text-foreground">{platformInfo.name}</span>
+                            <Badge variant="outline" className="text-xs border-border text-muted-foreground">
                               {gen.title}
                             </Badge>
                           </div>
@@ -446,7 +446,7 @@ const CreatePostFromMediaModal = ({
                               ...prev,
                               [platform]: e.target.value,
                             }))}
-                            className="bg-white/5 border-white/10 text-white text-sm min-h-[80px] resize-y"
+                            className="bg-secondary/50 border-border text-foreground text-sm min-h-[80px] resize-y"
                           />
                         </div>
                       );

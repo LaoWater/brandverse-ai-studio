@@ -21,7 +21,8 @@ import {
   Crown,
   LogOut,
   Palette,
-  ChevronRight
+  ChevronRight,
+  Save
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
@@ -835,7 +836,20 @@ const Settings = () => {
                 Manage your profile, companies, and preferences
               </p>
             </div>
-            <CompanySelector />
+            <div className="flex items-center gap-3">
+              {(activeTab === 'profile' || activeTab === 'company') && (
+                <Button
+                  size="icon"
+                  onClick={activeTab === 'profile' ? handleSaveProfile : handleSaveCompany}
+                  disabled={saving}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md"
+                  title="Save"
+                >
+                  <Save className="w-4 h-4" />
+                </Button>
+              )}
+              <CompanySelector />
+            </div>
           </div>
 
           {/* Tab Navigation */}

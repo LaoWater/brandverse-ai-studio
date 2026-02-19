@@ -149,17 +149,17 @@ const ComingSoonPostDialog = ({
 
   return (
     <AlertDialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <AlertDialogContent className="bg-card border-primary/20 max-w-md">
+      <AlertDialogContent className="bg-card border-border max-w-md" data-theme-aware>
         <AlertDialogHeader className="text-center">
           <div className="mx-auto mb-4">
             <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${config.gradient} flex items-center justify-center shadow-lg`}>
               <IconComponent className="w-8 h-8 text-white" />
             </div>
           </div>
-          <AlertDialogTitle className="text-white text-xl">
+          <AlertDialogTitle className="text-foreground text-xl">
             Auto-posting to {config.name} is coming soon!
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-gray-400 text-sm leading-relaxed">
+          <AlertDialogDescription className="text-muted-foreground text-sm leading-relaxed">
             For now, copy your content and media to post manually.
             We're working on direct platform integrations.
           </AlertDialogDescription>
@@ -170,7 +170,7 @@ const ComingSoonPostDialog = ({
             <Button
               variant="outline"
               onClick={() => handleCopy(postContent, 'content')}
-              className="w-full border-primary/30 text-white hover:bg-primary/10 justify-start"
+              className="w-full border-border text-foreground hover:bg-primary/10 justify-start"
             >
               {copiedContent ? (
                 <Check className="w-4 h-4 mr-2 text-green-400" />
@@ -185,7 +185,7 @@ const ComingSoonPostDialog = ({
             <Button
               variant="outline"
               onClick={() => handleCopy(mediaUrl, 'media')}
-              className="w-full border-primary/30 text-white hover:bg-primary/10 justify-start"
+              className="w-full border-border text-foreground hover:bg-primary/10 justify-start"
             >
               {copiedMedia ? (
                 <Check className="w-4 h-4 mr-2 text-green-400" />
@@ -207,11 +207,11 @@ const ComingSoonPostDialog = ({
 
         {/* Progress indicator */}
         <div className="pt-2 pb-1">
-          <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+          <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
             <span>Platform Integration</span>
             <span>{config.timeline}</span>
           </div>
-          <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+          <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
             <div className="h-full bg-gradient-to-r from-primary to-accent rounded-full w-1/4 transition-all" />
           </div>
         </div>
@@ -219,7 +219,7 @@ const ComingSoonPostDialog = ({
         <AlertDialogFooter>
           <AlertDialogAction
             onClick={onClose}
-            className="w-full bg-white/10 text-white hover:bg-white/20 border-0"
+            className="w-full bg-secondary text-foreground hover:bg-secondary/80 border-0"
           >
             Close
           </AlertDialogAction>

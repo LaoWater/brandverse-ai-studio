@@ -121,24 +121,24 @@ const PostHistorySidebar = ({ companyId, onWordClick }: PostHistorySidebarProps)
 
   return (
     <div
-      className="hidden lg:flex flex-col flex-shrink-0 bg-gray-900/80 backdrop-blur-sm border-r border-white/10 rounded-l-lg overflow-hidden transition-all duration-300 ease-in-out"
+      className="hidden lg:flex flex-col flex-shrink-0 bg-card backdrop-blur-sm border-r border-border rounded-l-lg overflow-hidden transition-all duration-300 ease-in-out"
       style={{ width: isExpanded ? 320 : 72 }}
     >
       {/* Header - always visible */}
-      <div className="flex items-center justify-between p-3 border-b border-white/10 flex-shrink-0">
+      <div className="flex items-center justify-between p-3 border-b border-border flex-shrink-0">
         {isExpanded ? (
           <>
             <div className="flex items-center gap-2 min-w-0">
               <BarChart3 className="w-4 h-4 text-accent flex-shrink-0" />
-              <span className="text-sm font-medium text-white truncate">Post History</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-gray-400 flex-shrink-0">
+              <span className="text-sm font-medium text-foreground truncate">Post History</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-foreground/10 text-muted-foreground flex-shrink-0">
                 {stats.totalPosts}
               </span>
             </div>
             <Button
               variant="ghost"
               size="sm"
-              className="w-7 h-7 p-0 text-gray-400 hover:text-white flex-shrink-0"
+              className="w-7 h-7 p-0 text-muted-foreground hover:text-foreground flex-shrink-0"
               onClick={() => setIsExpanded(false)}
             >
               <ChevronLeft className="w-4 h-4" />
@@ -149,7 +149,7 @@ const PostHistorySidebar = ({ companyId, onWordClick }: PostHistorySidebarProps)
             <Button
               variant="ghost"
               size="sm"
-              className="w-9 h-9 p-0 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg"
+              className="w-9 h-9 p-0 text-muted-foreground hover:text-foreground rounded-lg"
               onClick={() => setIsExpanded(true)}
             >
               <ChevronRight className="w-4 h-4" />
@@ -163,8 +163,8 @@ const PostHistorySidebar = ({ companyId, onWordClick }: PostHistorySidebarProps)
         <div className="flex flex-col items-center py-4 px-1.5 gap-4 flex-1">
           {/* Total posts count */}
           <div className="text-center">
-            <span className="text-lg font-bold text-white">{stats.totalPosts}</span>
-            <p className="text-[8px] text-gray-500 uppercase tracking-wider mt-0.5">Posts</p>
+            <span className="text-lg font-bold text-foreground">{stats.totalPosts}</span>
+            <p className="text-[8px] text-muted-foreground/60 uppercase tracking-wider mt-0.5">Posts</p>
           </div>
 
           {/* Platform icons with counts */}
@@ -174,8 +174,8 @@ const PostHistorySidebar = ({ companyId, onWordClick }: PostHistorySidebarProps)
               if (!Icon) return null;
               return (
                 <div key={platform} className="flex flex-col items-center gap-0.5" title={`${platform}: ${count}`}>
-                  <Icon className={`w-4 h-4 ${PLATFORM_COLORS_TEXT[platform] || 'text-gray-400'}`} />
-                  <span className="text-[9px] text-gray-500 font-medium">{count}</span>
+                  <Icon className={`w-4 h-4 ${PLATFORM_COLORS_TEXT[platform] || 'text-muted-foreground'}`} />
+                  <span className="text-[9px] text-muted-foreground/60 font-medium">{count}</span>
                 </div>
               );
             })}
@@ -184,7 +184,7 @@ const PostHistorySidebar = ({ companyId, onWordClick }: PostHistorySidebarProps)
           {/* Mini status dots */}
           {Object.keys(stats.statusCounts).length > 0 && (
             <div className="flex flex-col items-center gap-2 mt-1">
-              <div className="w-6 h-px bg-white/10" />
+              <div className="w-6 h-px bg-border" />
               {Object.entries(stats.statusCounts).map(([status, count]) => (
                 <div key={status} className="flex flex-col items-center gap-0.5" title={`${status}: ${count}`}>
                   <div className={`w-2.5 h-2.5 rounded-full ${
@@ -192,7 +192,7 @@ const PostHistorySidebar = ({ companyId, onWordClick }: PostHistorySidebarProps)
                     status === 'approved' ? 'bg-green-500' :
                     status === 'posted' ? 'bg-blue-500' : 'bg-gray-500'
                   }`} />
-                  <span className="text-[8px] text-gray-500">{count}</span>
+                  <span className="text-[8px] text-muted-foreground/60">{count}</span>
                 </div>
               ))}
             </div>
@@ -206,10 +206,10 @@ const PostHistorySidebar = ({ companyId, onWordClick }: PostHistorySidebarProps)
           <div className="p-3 space-y-4">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
               <input
                 placeholder="Search posts..."
-                className="w-full bg-white/5 border border-white/10 text-white text-xs pl-8 pr-3 h-8 rounded-md placeholder:text-gray-500 focus:outline-none focus:border-accent"
+                className="w-full bg-transparent border border-border text-foreground text-xs pl-8 pr-3 h-8 rounded-md placeholder:text-muted-foreground/60 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
                 onChange={(e) => debouncedSearch(e.target.value)}
               />
             </div>
@@ -224,10 +224,10 @@ const PostHistorySidebar = ({ companyId, onWordClick }: PostHistorySidebarProps)
                   <button
                     key={platform}
                     type="button"
-                    className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] transition-colors ${
+                    className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] transition-colors border ${
                       isActive
-                        ? 'bg-accent text-accent-foreground'
-                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                        ? 'bg-accent text-accent-foreground border-accent'
+                        : 'border-border text-muted-foreground hover:border-foreground/20 hover:text-foreground'
                     }`}
                     onClick={() => setPlatformFilter(isActive ? null : platform)}
                   >
@@ -247,7 +247,7 @@ const PostHistorySidebar = ({ companyId, onWordClick }: PostHistorySidebarProps)
                   className={`px-2 py-0.5 rounded-full text-[10px] capitalize transition-colors ${
                     statusFilter === status
                       ? 'bg-accent text-accent-foreground'
-                      : STATUS_COLORS[status] || 'bg-white/5 text-gray-400'
+                      : STATUS_COLORS[status] || 'text-muted-foreground'
                   }`}
                   onClick={() => setStatusFilter(statusFilter === status ? null : status)}
                 >
@@ -259,17 +259,17 @@ const PostHistorySidebar = ({ companyId, onWordClick }: PostHistorySidebarProps)
             {/* Platform breakdown bars */}
             {stats.totalPosts > 0 && (
               <div className="space-y-1.5">
-                <p className="text-[10px] text-gray-500 uppercase tracking-wider">Platform Breakdown</p>
+                <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">Platform Breakdown</p>
                 {Object.entries(stats.platformCounts).map(([platform, count]) => (
                   <div key={platform} className="flex items-center gap-2">
-                    <span className="text-[10px] text-gray-400 w-16 capitalize truncate">{platform}</span>
-                    <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
+                    <span className="text-[10px] text-muted-foreground w-16 capitalize truncate">{platform}</span>
+                    <div className="flex-1 h-2 bg-foreground/5 rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full ${PLATFORM_COLORS_BG[platform] || 'bg-gray-500'}`}
                         style={{ width: `${(count / maxPlatformCount) * 100}%` }}
                       />
                     </div>
-                    <span className="text-[10px] text-gray-500 w-6 text-right">{count}</span>
+                    <span className="text-[10px] text-muted-foreground/60 w-6 text-right">{count}</span>
                   </div>
                 ))}
               </div>
@@ -278,8 +278,8 @@ const PostHistorySidebar = ({ companyId, onWordClick }: PostHistorySidebarProps)
             {/* Word Cloud */}
             {stats.wordFrequency.length > 0 && (
               <div className="space-y-2">
-                <p className="text-[10px] text-gray-500 uppercase tracking-wider">Trending Words</p>
-                <div className="p-2 bg-white/5 rounded-lg border border-white/5">
+                <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">Trending Words</p>
+                <div className="p-2 rounded-lg border border-border">
                   <WordCloud words={stats.wordFrequency} onWordClick={onWordClick} />
                 </div>
               </div>
@@ -287,7 +287,7 @@ const PostHistorySidebar = ({ companyId, onWordClick }: PostHistorySidebarProps)
 
             {/* Post list */}
             <div className="space-y-1">
-              <p className="text-[10px] text-gray-500 uppercase tracking-wider">
+              <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">
                 Recent Posts {filtered.length !== posts.length && `(${filtered.length} filtered)`}
               </p>
 
@@ -296,7 +296,7 @@ const PostHistorySidebar = ({ companyId, onWordClick }: PostHistorySidebarProps)
                   <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
                 </div>
               ) : visible.length === 0 ? (
-                <p className="text-xs text-gray-500 text-center py-4">
+                <p className="text-xs text-muted-foreground/60 text-center py-4">
                   {companyId ? 'No posts yet' : 'Select a company'}
                 </p>
               ) : (
@@ -306,20 +306,20 @@ const PostHistorySidebar = ({ companyId, onWordClick }: PostHistorySidebarProps)
                     return (
                       <div
                         key={post.id}
-                        className="flex items-start gap-2 p-2 rounded-lg hover:bg-white/5 transition-colors"
+                        className="flex items-start gap-2 p-2 rounded-lg hover:bg-foreground/5 transition-colors"
                       >
                         {PlatformIcon && (
-                          <PlatformIcon className="w-3.5 h-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                          <PlatformIcon className="w-3.5 h-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs text-white truncate">{post.title}</p>
+                          <p className="text-xs text-foreground truncate">{post.title}</p>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className={`text-[9px] px-1 py-0.5 rounded ${STATUS_COLORS[post.status || 'draft'] || 'bg-white/5 text-gray-400'}`}>
+                            <span className={`text-[9px] px-1 py-0.5 rounded ${STATUS_COLORS[post.status || 'draft'] || 'text-muted-foreground'}`}>
                               {post.status || 'draft'}
                             </span>
-                            <span className="text-[9px] text-gray-500">{formatDate(post.created_date)}</span>
-                            {post.has_picture && <ImageIcon className="w-2.5 h-2.5 text-gray-500" />}
-                            {post.has_video && <VideoIcon className="w-2.5 h-2.5 text-gray-500" />}
+                            <span className="text-[9px] text-muted-foreground/60">{formatDate(post.created_date)}</span>
+                            {post.has_picture && <ImageIcon className="w-2.5 h-2.5 text-muted-foreground/60" />}
+                            {post.has_video && <VideoIcon className="w-2.5 h-2.5 text-muted-foreground/60" />}
                           </div>
                         </div>
                       </div>
@@ -331,7 +331,7 @@ const PostHistorySidebar = ({ companyId, onWordClick }: PostHistorySidebarProps)
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="w-full text-[10px] text-gray-400 hover:text-white mt-1"
+                      className="w-full text-[10px] text-muted-foreground hover:text-foreground mt-1"
                       onClick={() => setVisibleCount(prev => prev + ITEMS_PER_PAGE)}
                     >
                       Load more ({filtered.length - visibleCount} remaining)

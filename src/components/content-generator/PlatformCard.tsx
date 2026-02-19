@@ -77,20 +77,20 @@ const PlatformCard = ({
 
   return (
     <div
-      className={`p-4 rounded-lg bg-white/5 border transition-colors
-                  ${isSelected ? 'border-accent ring-1 ring-accent' : 'border-white/10 hover:bg-white/10'}`}
+      className={`p-4 rounded-lg bg-secondary/30 border transition-colors
+                  ${isSelected ? 'border-accent ring-1 ring-accent' : 'border-border hover:bg-secondary/50'}`}
     >
       <div
         className="flex items-center space-x-3 cursor-pointer"
         onClick={() => onPlatformToggle(platform.id)}
       >
         <div className={`w-5 h-5 rounded border-2 flex items-center justify-center
-                        ${isSelected ? 'bg-accent border-accent' : 'border-white/20'}`}>
+                        ${isSelected ? 'bg-accent border-accent' : 'border-border'}`}>
           {isSelected && <Check className="w-3 h-3 text-gray-900" />}
         </div>
         <div className="flex items-center space-x-2 flex-1">
           <IconComponent className={`w-5 h-5 ${platform.color}`} />
-          <span className="text-white">
+          <span className="text-foreground">
             {platform.label}
           </span>
         </div>
@@ -132,30 +132,30 @@ const PlatformCard = ({
 
                       <div className="space-y-6 mt-6">
                         <div className="p-6 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20">
-                          <div className="space-y-4" style={{ color: 'rgb(15, 15, 23)' }}>
-                            <p className="text-lg font-medium" style={{ color: 'rgb(126, 58, 242)' }}>
+                          <div className="space-y-4">
+                            <p className="text-lg font-medium text-purple-400">
                               The Current Reality
                             </p>
-                            <p style={{ color: 'rgb(15, 15, 23)' }}>
-                              Current video models have significant limitations, with quality content generation costs reaching up to <span className="font-semibold" style={{ color: 'rgb(234, 179, 8)' }}>$0.70 per second</span> and often falling short of creating favorable engaging content-cost equity.
+                            <p className="text-foreground">
+                              Current video models have significant limitations, with quality content generation costs reaching up to <span className="font-semibold text-yellow-400">$0.70 per second</span> and often falling short of creating favorable engaging content-cost equity.
                             </p>
 
-                            <p className="text-lg font-medium mt-6" style={{ color: 'rgb(126, 58, 242)' }}>
+                            <p className="text-lg font-medium mt-6 text-purple-400">
                               Our Vision Forward
                             </p>
-                            <p style={{ color: 'rgb(15, 15, 23)' }}>
+                            <p className="text-foreground">
                               We are working on a revolutionary new way to automatize Video Creation - which will include a comprehensive pipeline of Video Scripts generation, creating clear scripts blueprints & execution plans, so they can easily be filmed.
                             </p>
 
-                            <p style={{ color: 'rgb(15, 15, 23)' }}>
+                            <p className="text-foreground">
                               As Leading AI Providers companies grow stronger and video models improve, we will transition to video generation as well - keeping the same Promise towards our clients and our very mission.
                             </p>
 
                             <div className="p-4 rounded-lg bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 mt-6">
-                              <p className="font-medium text-center" style={{ color: 'rgb(14, 116, 144)' }}>
+                              <p className="font-medium text-center text-cyan-400">
                                 Our mission is to generate Human-Level-Performance quality content, not just Content.
                               </p>
-                              <p className="text-center text-sm mt-2" style={{ color: 'rgb(75, 85, 99)' }}>
+                              <p className="text-center text-sm mt-2 text-muted-foreground">
                                 Because we want to create something as close to HLP as possible.
                               </p>
                             </div>
@@ -178,7 +178,7 @@ const PlatformCard = ({
                                 ? 'text-gray-500 cursor-not-allowed opacity-50'
                                 : selectedMedia === value
                                   ? 'bg-accent text-accent-foreground hover:bg-accent/90'
-                                  : 'text-gray-300 hover:bg-white/5 hover:text-white'}`}
+                                  : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'}`}
                   onClick={() => !isDisabledByAttachment && onMediaTypeSelect(platform.id, value as 'text' | 'image' | 'video')}
                   title={isDisabledByAttachment ? "Using library media" : undefined}
                 >
@@ -191,10 +191,10 @@ const PlatformCard = ({
 
           {/* Media Library Button */}
           {onOpenMediaBrowser && (
-            <div className="mt-2 pt-2 border-t border-white/10">
+            <div className="mt-2 pt-2 border-t border-border">
               {hasAttachedMedia ? (
-                <div className="flex items-center gap-2 p-2 bg-white/5 rounded-lg border border-white/10">
-                  <div className="w-8 h-8 rounded bg-white/10 overflow-hidden flex-shrink-0">
+                <div className="flex items-center gap-2 p-2 bg-secondary/30 rounded-lg border border-border">
+                  <div className="w-8 h-8 rounded bg-secondary overflow-hidden flex-shrink-0">
                     {attachedMedia.thumbnailUrl ? (
                       <img src={attachedMedia.thumbnailUrl} alt="" className="w-full h-full object-cover" />
                     ) : (
@@ -207,7 +207,7 @@ const PlatformCard = ({
                       </div>
                     )}
                   </div>
-                  <span className="text-xs text-gray-300 truncate flex-1">{attachedMedia.fileName}</span>
+                  <span className="text-xs text-muted-foreground truncate flex-1">{attachedMedia.fileName}</span>
                   {attachedMedia.fileType === 'image' && onFinesseImage && (
                     <Button
                       type="button"
@@ -234,7 +234,7 @@ const PlatformCard = ({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="w-full text-xs text-gray-300 hover:text-white hover:bg-white/10 justify-start relative group"
+                  className="w-full text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/50 justify-start relative group"
                   onClick={() => onOpenMediaBrowser(platform.id)}
                 >
                   <div className="absolute inset-0 rounded bg-gradient-to-r from-cyan-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -247,13 +247,13 @@ const PlatformCard = ({
 
           {/* Platform-specific Image Control Button */}
           {(selectedMedia === 'image' || selectedMedia === 'text') && !hasAttachedMedia && (
-            <div className="mt-2 pt-2 border-t border-white/10">
+            <div className="mt-2 pt-2 border-t border-border">
               <Dialog>
                 <DialogTrigger asChild>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="w-full text-xs text-gray-300 hover:text-white hover:bg-white/10 justify-start relative group"
+                    className="w-full text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/50 justify-start relative group"
                     type="button"
                   >
                     <div className="absolute inset-0 rounded bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>

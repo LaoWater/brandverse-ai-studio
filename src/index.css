@@ -884,14 +884,15 @@
   }
 
   /* Dialog content text should be dark in light mode */
-  html.light [role="dialog"] {
+  /* Skip dialogs with data-theme-aware - those use proper theme tokens */
+  html.light [role="dialog"]:not([data-theme-aware]) {
     color: rgb(15 15 23) !important;
   }
 
-  html.light [role="dialog"] h2,
-  html.light [role="dialog"] p,
-  html.light [role="dialog"] span,
-  html.light [role="dialog"] button {
+  html.light [role="dialog"]:not([data-theme-aware]) h2,
+  html.light [role="dialog"]:not([data-theme-aware]) p,
+  html.light [role="dialog"]:not([data-theme-aware]) span,
+  html.light [role="dialog"]:not([data-theme-aware]) button {
     color: rgb(15 15 23) !important;
   }
 
@@ -919,10 +920,24 @@
     background-color: transparent !important;
   }
 
-  /* Override any gradient backgrounds that use CSS variables - but keep icon containers, social media icons, hero cards, light rays, hardcoded hex gradients, and pricing elements vibrant */
+  /* Override any gradient backgrounds that use CSS variables - but keep icon containers, social media icons, hero cards, light rays, hardcoded hex gradients, pricing elements, and theme-aware components vibrant */
   html.light [class*="bg-gradient-to"]:not(.icon-gradient-container):not(.rounded-full):not(.hero-card-bg):not(.hero-light-rays):not([class*="from-[#"]):not([class*="from-sky-"]):not([class*="from-indigo-"]):not([class*="from-emerald-"]):not([class*="from-violet-"]):not([class*="from-cyan-"]):not([class*="from-amber-"]):not([class*="from-yellow-"]):not([class*="bg-clip-text"]):not(.pricing-glow) {
     background-image: none !important;
     background-color: transparent !important;
+  }
+
+  /* Preserve all gradients inside theme-aware containers */
+  html.light [data-theme-aware] [class*="bg-gradient-to-r"] {
+    background-image: linear-gradient(to right, var(--tw-gradient-stops)) !important;
+  }
+  html.light [data-theme-aware] [class*="bg-gradient-to-br"] {
+    background-image: linear-gradient(to bottom right, var(--tw-gradient-stops)) !important;
+  }
+  html.light [data-theme-aware] [class*="bg-gradient-to-b"]:not([class*="bg-gradient-to-br"]) {
+    background-image: linear-gradient(to bottom, var(--tw-gradient-stops)) !important;
+  }
+  html.light [data-theme-aware] [class*="bg-gradient-to-l"] {
+    background-image: linear-gradient(to left, var(--tw-gradient-stops)) !important;
   }
 
   /* ============================================ */
@@ -1597,25 +1612,25 @@
     }
   }
 
-  /* Override any residual yellow/brown text colors in toasts */
-  .toast,
-  .toast *,
-  [role="status"],
-  [role="status"] *,
-  [data-sonner-toast],
-  [data-sonner-toast] *,
-  [data-radix-toast-root],
-  [data-radix-toast-root] * {
+  /* Override any residual yellow/brown text colors in toasts - dark mode only */
+  html:not(.light) .toast,
+  html:not(.light) .toast *,
+  html:not(.light) [role="status"],
+  html:not(.light) [role="status"] *,
+  html:not(.light) [data-sonner-toast],
+  html:not(.light) [data-sonner-toast] *,
+  html:not(.light) [data-radix-toast-root],
+  html:not(.light) [data-radix-toast-root] * {
     color: white !important;
   }
 
-  [data-sonner-toast] [data-description],
-  [data-radix-toast-description] {
+  html:not(.light) [data-sonner-toast] [data-description],
+  html:not(.light) [data-radix-toast-description] {
     color: rgba(255, 255, 255, 0.9) !important;
   }
 
-  /* TOAST STYLING - Fixed color alignment */
-  [data-sonner-toast] {
+  /* TOAST STYLING - Dark mode (default) */
+  html:not(.light) [data-sonner-toast] {
     background: linear-gradient(135deg, rgba(91, 95, 238, 0.9) 0%, rgba(0, 212, 255, 0.1) 100%) !important;
     border: 1px solid rgba(91, 95, 238, 0.4) !important;
     color: white !important;
@@ -1623,22 +1638,22 @@
     box-shadow: 0 10px 25px rgba(91, 95, 238, 0.3) !important;
   }
 
-  [data-sonner-toast][data-type="success"] {
+  html:not(.light) [data-sonner-toast][data-type="success"] {
     background: linear-gradient(135deg, rgba(34, 197, 94, 0.9) 0%, rgba(91, 95, 238, 0.1) 100%) !important;
     border: 1px solid rgba(34, 197, 94, 0.4) !important;
   }
 
-  [data-sonner-toast][data-type="error"] {
+  html:not(.light) [data-sonner-toast][data-type="error"] {
     background: linear-gradient(135deg, rgba(239, 68, 68, 0.9) 0%, rgba(91, 95, 238, 0.1) 100%) !important;
     border: 1px solid rgba(239, 68, 68, 0.4) !important;
   }
 
-  [data-sonner-toast] [data-title] {
+  html:not(.light) [data-sonner-toast] [data-title] {
     color: white !important;
     font-weight: 600 !important;
   }
 
-  [data-sonner-toast] [data-description] {
+  html:not(.light) [data-sonner-toast] [data-description] {
     color: rgba(255, 255, 255, 0.9) !important;
   }
 
@@ -3519,40 +3534,48 @@ html.light [class*="cosmic-button"] path {
 /* 2. Toast Notification Fix for Light Mode - Comprehensive */
 html.light [data-radix-toast-root],
 html.light .group.toast,
-html.light .group.toaster,
-html.light [data-sonner-toast],
-html.light [data-sonner-toast] > div {
-  background-color: rgb(15 15 23) !important;
-  background: rgb(15 15 23) !important;
-  color: white !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
+html.light [data-sonner-toast] {
+  background-color: rgb(255 255 255) !important;
+  background: rgb(255 255 255) !important;
+  color: rgb(15 15 23) !important;
+  border-color: rgba(91, 95, 238, 0.2) !important;
 }
 
-/* Ensure toast text content is white */
+html.light [data-sonner-toast] > div {
+  background: transparent !important;
+}
+
+/* Ensure toast text content is dark in light mode */
 html.light [data-radix-toast-title],
 html.light [data-radix-toast-description],
 html.light .group.toast .text-muted-foreground,
 html.light .group.toast p,
-html.light .group.toast span, 
+html.light .group.toast span,
 html.light .group.toast div,
 html.light [data-sonner-toast] [data-title],
 html.light [data-sonner-toast] [data-description],
 html.light [data-sonner-toast] [data-icon] {
-  color: rgba(255, 255, 255, 0.95) !important;
+  color: rgb(15 15 23) !important;
 }
 
-/* Ensure toast buttons are white */
+html.light [data-radix-toast-description],
+html.light [data-sonner-toast] [data-description] {
+  color: rgb(75 85 99) !important;
+}
+
+/* Toast buttons in light mode */
 html.light [data-radix-toast-close],
 html.light [data-radix-toast-action],
 html.light .group.toast button,
 html.light [data-sonner-toast] button {
-  color: white !important;
-  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: rgb(75 85 99) !important;
+  border-color: rgba(15, 15, 23, 0.15) !important;
 }
 
 html.light [data-radix-toast-close]:hover,
 html.light [data-sonner-toast] button:hover {
-  background-color: rgba(255, 255, 255, 0.1) !important;
+  background-color: rgba(15, 15, 23, 0.05) !important;
+  color: rgb(15 15 23) !important;
 }
 
 /* 3. Fix for seconds/duration badge in Media Card */

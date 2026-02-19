@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Image as ImageIcon, Video as VideoIcon, Search, Check } from "lucide-react";
 import { getUserMediaLibrary, type MediaFile } from "@/services/mediaStudioService";
@@ -90,19 +89,19 @@ const MediaBrowserSheet = ({ isOpen, onClose, userId, companyId, onSelectMedia }
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="border-l border-white/10 !w-[400px] sm:!w-[440px] !max-w-[440px] !p-0 flex flex-col" style={{ background: 'linear-gradient(135deg, rgba(15,15,30,0.98) 0%, rgba(20,20,40,0.98) 100%)', backdropFilter: 'blur(12px)' }}>
+      <SheetContent className="border-l border-border !w-[400px] sm:!w-[440px] !max-w-[440px] !p-0 flex flex-col bg-card backdrop-blur-xl">
         <SheetTitle className="sr-only">Media Library</SheetTitle>
-        <div className="px-5 pt-5 pb-4 border-b border-white/10 space-y-3 flex-shrink-0">
+        <div className="px-5 pt-5 pb-4 border-b border-border space-y-3 flex-shrink-0">
           <div className="pr-8">
-            <h3 className="text-white text-lg font-semibold">Media Library</h3>
-            <p className="text-gray-400 text-sm mt-0.5">Select media from your MediaStudio library</p>
+            <h3 className="text-foreground text-lg font-semibold">Media Library</h3>
+            <p className="text-muted-foreground text-sm mt-0.5">Select media from your MediaStudio library</p>
           </div>
 
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 z-10" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
             <input
               placeholder="Search media..."
-              className="w-full bg-white/5 border border-white/20 text-white pl-9 pr-3 h-9 text-sm rounded-md placeholder:text-gray-500 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+              className="w-full bg-secondary/50 border border-border text-foreground pl-9 pr-3 h-9 text-sm rounded-md placeholder:text-muted-foreground/60 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -116,7 +115,7 @@ const MediaBrowserSheet = ({ isOpen, onClose, userId, companyId, onSelectMedia }
                 variant="ghost"
                 size="sm"
                 className={`text-xs capitalize ${
-                  tab === t ? 'bg-accent text-accent-foreground' : 'text-gray-400 hover:text-white'
+                  tab === t ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground'
                 }`}
                 onClick={() => setTab(t)}
               >
@@ -135,8 +134,8 @@ const MediaBrowserSheet = ({ isOpen, onClose, userId, companyId, onSelectMedia }
             </div>
           ) : visible.length === 0 ? (
             <div className="text-center py-12">
-              <ImageIcon className="w-8 h-8 mx-auto text-gray-500 mb-2" />
-              <p className="text-sm text-gray-400">
+              <ImageIcon className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
+              <p className="text-sm text-muted-foreground">
                 {search ? 'No media matching your search' : 'No media in your library yet'}
               </p>
             </div>
@@ -146,10 +145,10 @@ const MediaBrowserSheet = ({ isOpen, onClose, userId, companyId, onSelectMedia }
                 <button
                   key={item.id}
                   type="button"
-                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors text-left group"
+                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/50 transition-colors text-left group"
                   onClick={() => handleSelect(item)}
                 >
-                  <div className="w-12 h-12 rounded bg-white/10 overflow-hidden flex-shrink-0 relative">
+                  <div className="w-12 h-12 rounded bg-secondary overflow-hidden flex-shrink-0 relative">
                     {item.thumbnail_url ? (
                       <img
                         src={item.thumbnail_url}
@@ -169,7 +168,7 @@ const MediaBrowserSheet = ({ isOpen, onClose, userId, companyId, onSelectMedia }
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <ImageIcon className="w-5 h-5 text-gray-500" />
+                        <ImageIcon className="w-5 h-5 text-muted-foreground/50" />
                       </div>
                     )}
                     {item.file_type === 'video' && (
@@ -180,14 +179,14 @@ const MediaBrowserSheet = ({ isOpen, onClose, userId, companyId, onSelectMedia }
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white truncate">
+                    <p className="text-sm text-foreground truncate">
                       {item.custom_title || item.file_name}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-gray-400">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
                         {item.model_used}
                       </span>
-                      <span className="text-[10px] text-gray-500">
+                      <span className="text-[10px] text-muted-foreground/60">
                         {formatDate(item.created_at)}
                       </span>
                     </div>
@@ -206,7 +205,7 @@ const MediaBrowserSheet = ({ isOpen, onClose, userId, companyId, onSelectMedia }
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="w-full text-xs text-gray-400 hover:text-white mt-2"
+                  className="w-full text-xs text-muted-foreground hover:text-foreground mt-2"
                   onClick={() => setVisibleCount(prev => prev + ITEMS_PER_PAGE)}
                 >
                   Load more ({filtered.length - visibleCount} remaining)

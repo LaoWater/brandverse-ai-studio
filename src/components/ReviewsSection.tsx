@@ -17,7 +17,7 @@ const ReviewsSection = () => {
       name: "Lao W.",
       role: "Solo Content Creator",
       company: "Re-Connect",
-      website: "https://reconnectv2.com",
+      website: "https://www.facebook.com/Reconnect.Course",
       logo: "reconnect.png", // Logo for Re-Connect
       review: "As a fitness influencer/course Creator, Marketing consistency was my biggest challenge. And to be honest, i don't like. I hate it. But with this AI, it takes me 5 minutes to generate Full content for all my platforms.",
       rating: 5,
