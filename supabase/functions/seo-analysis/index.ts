@@ -308,24 +308,6 @@ serve(async (req) => {
 
     logStep("User authenticated", { userId: user.id });
 
-    // Check and deduct credits BEFORE running analysis
-    const { data: deductResult, error: deductError } = await supabaseClient.rpc('deduct_credits', {
-      _user_id: user.id,
-      _credits_to_deduct: SEO_ANALYSIS_CREDITS
-    });
-
-    if (deductError) {
-      logStep("Credit deduction error", { error: deductError.message });
-      throw new Error(`Failed to process credits: ${deductError.message}`);
-    }
-
-    if (!deductResult) {
-      logStep("Insufficient credits");
-      throw new Error(`Insufficient credits. SEO Analysis requires ${SEO_ANALYSIS_CREDITS} credits.`);
-    }
-
-    logStep("Credits deducted", { credits: SEO_ANALYSIS_CREDITS });
-
     // Parse request
     const request: AnalysisRequest = await req.json();
 
@@ -381,6 +363,24 @@ serve(async (req) => {
       request.keywords || []
     );
 
+    // Analysis succeeded — NOW deduct credits (only on full success)
+    const { data: deductResult, error: deductError } = await supabaseClient.rpc('deduct_credits', {
+      _user_id: user.id,
+      _credits_to_deduct: SEO_ANALYSIS_CREDITS
+    });
+
+    if (deductError) {
+      logStep("Credit deduction error", { error: deductError.message });
+      throw new Error(`Failed to process credits: ${deductError.message}`);
+    }
+
+    if (!deductResult) {
+      logStep("Insufficient credits");
+      throw new Error(`Insufficient credits. SEO Analysis requires ${SEO_ANALYSIS_CREDITS} credits.`);
+    }
+
+    logStep("Credits deducted after successful analysis", { credits: SEO_ANALYSIS_CREDITS });
+
     // Save analysis to database
     const { data: savedAnalysis, error: saveError } = await supabaseClient
       .from('seo_analysis')
@@ -420,6 +420,8 @@ serve(async (req) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
+
+    // No credit refund needed — credits are only deducted AFTER full pipeline success.
 
     return new Response(JSON.stringify({
       success: false,

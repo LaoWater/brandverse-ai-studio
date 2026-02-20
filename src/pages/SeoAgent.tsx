@@ -51,6 +51,12 @@ import {
   type EngagementOpportunity,
   type AnalyzePresenceResult,
 } from "@/services/seoService";
+import SeoProgressCard, {
+  type SeoStage,
+  ANALYSIS_STAGES,
+  ENGAGEMENT_STAGES,
+  BLOG_STAGES,
+} from "@/components/seo/SeoProgressCard";
 
 type SeoTab = 'overview' | 'analysis' | 'engine';
 
@@ -60,6 +66,12 @@ const SeoAgent = () => {
   const { user, loading: authLoading } = useAuth();
   const { selectedCompany, loading: companyLoading } = useCompany();
   const [activeTab, setActiveTab] = useState<SeoTab>('overview');
+
+  // Scroll to top when tab changes
+  const switchTab = (tab: SeoTab) => {
+    setActiveTab(tab);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Analysis form state - Website is PRIMARY
   const [websiteUrl, setWebsiteUrl] = useState('');
@@ -76,9 +88,59 @@ const SeoAgent = () => {
   const [isSearchingEngagement, setIsSearchingEngagement] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Progress state for long-running operations
-  const [analysisStage, setAnalysisStage] = useState('');
-  const [engagementStage, setEngagementStage] = useState('');
+  // Staged progress for long-running operations
+  const [analysisStages, setAnalysisStages] = useState<SeoStage[]>([]);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [engagementStages, setEngagementStages] = useState<SeoStage[]>([]);
+  const [engagementError, setEngagementError] = useState<string | null>(null);
+  const [blogStages, setBlogStages] = useState<SeoStage[]>([]);
+  const [blogError, setBlogError] = useState<string | null>(null);
+  const analysisStage =
+    analysisStages.find(stage => stage.status === 'in-progress')?.label ?? '';
+
+  // Helper: advance a stage in a stage list
+  const advanceStage = (
+    setter: React.Dispatch<React.SetStateAction<SeoStage[]>>,
+    stageId: string,
+    status: SeoStage['status'] = 'in-progress'
+  ) => {
+    setter(prev => prev.map(s => {
+      if (s.id === stageId) return { ...s, status };
+      // Complete any previously in-progress stage when advancing to a new one
+      if (status === 'in-progress' && s.status === 'in-progress') return { ...s, status: 'completed' };
+      return s;
+    }));
+  };
+
+  // Helper: mark all remaining stages as error
+  const failRemainingStages = (setter: React.Dispatch<React.SetStateAction<SeoStage[]>>) => {
+    setter(prev => prev.map(s =>
+      s.status === 'in-progress' || s.status === 'pending' ? { ...s, status: 'error' } : s
+    ));
+  };
+
+  // Helper: complete all stages
+  const completeAllStages = (setter: React.Dispatch<React.SetStateAction<SeoStage[]>>) => {
+    setter(prev => prev.map(s => ({ ...s, status: 'completed' })));
+  };
+
+  // Helper: run timed stage transitions while waiting for API
+  const runTimedStages = (
+    setter: React.Dispatch<React.SetStateAction<SeoStage[]>>,
+    stageIds: string[],
+    intervalMs: number
+  ) => {
+    let idx = 0;
+    const timer = setInterval(() => {
+      idx++;
+      if (idx < stageIds.length) {
+        advanceStage(setter, stageIds[idx]);
+      } else {
+        clearInterval(timer);
+      }
+    }, intervalMs);
+    return timer;
+  };
 
   // Credits state
   const [userCredits, setUserCredits] = useState<number>(0);
@@ -196,19 +258,19 @@ const SeoAgent = () => {
     }
 
     setIsAnalyzing(true);
-    setAnalysisStage('Deducting credits...');
+    setAnalysisError(null);
+    // Initialize stages with first one active
+    const stages = ANALYSIS_STAGES.map(s => ({ ...s, status: 'pending' as const }));
+    stages[0] = { ...stages[0], status: 'in-progress' as const };
+    setAnalysisStages(stages);
+
+    // Timed stage transitions to simulate backend progress (the API is a single call,
+    // but we know the pipeline: crawl → search google → scan social → competitors → LLM → save)
+    const stageIds = ANALYSIS_STAGES.map(s => s.id);
+    const timer = runTimedStages(setAnalysisStages, stageIds, 2500);
+
     try {
-      // Step 1: Deduct credits via Supabase RPC
-      const { error: creditError } = await supabase.rpc('deduct_credits', {
-        _user_id: user!.id,
-        _credits_to_deduct: SEO_CREDITS.ANALYSIS,
-      });
-      if (creditError) throw new Error('Insufficient credits');
-
-      setUserCredits(prev => prev - SEO_CREDITS.ANALYSIS);
-      setAnalysisStage('Crawling your website...');
-
-      // Step 2: Call Python backend for real analysis
+      // Step 1: Call Python backend for real analysis (before deducting credits)
       const keywordsList = keywords.split(',').map(k => k.trim()).filter(Boolean);
       const competitorsList = competitors.split(',').map(c => c.trim()).filter(Boolean);
 
@@ -223,11 +285,18 @@ const SeoAgent = () => {
         tone_of_voice: selectedCompany.tone_of_voice || '',
       });
 
-      setAnalysisStage('Saving results...');
+      clearInterval(timer);
+
+      // Step 2: Analysis succeeded — advance to save stage & deduct credits
+      advanceStage(setAnalysisStages, 'save');
+      const { error: creditError } = await supabase.rpc('deduct_credits', {
+        _user_id: user!.id,
+        _credits_to_deduct: SEO_CREDITS.ANALYSIS,
+      });
+      if (creditError) throw new Error('Insufficient credits');
+      setUserCredits(prev => prev - SEO_CREDITS.ANALYSIS);
 
       // Step 3: Save results to Supabase
-      // Cast to any because search_data/competitor_data columns are added by migration 20260219
-      // and may not be in auto-generated types yet
       const insertPayload: any = {
         company_id: selectedCompany.id,
         user_id: user!.id,
@@ -250,20 +319,30 @@ const SeoAgent = () => {
 
       if (saveError) {
         console.error('Failed to save analysis:', saveError);
-        // Still show results even if save fails
       }
 
+      completeAllStages(setAnalysisStages);
       toast.success("SEO Analysis completed with real search data!");
       queryClient.invalidateQueries({ queryKey: ['seo-analysis'] });
 
-      // Auto-switch to engine tab after successful analysis
-      setActiveTab('engine');
+      // Brief pause to show completion state, then reveal results in-place
+      setTimeout(() => {
+        setIsAnalyzing(false);
+        setAnalysisStages([]);
+        // Scroll up to see the results
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 1500);
 
     } catch (error: any) {
+      clearInterval(timer);
+      console.error('[SEO] Analysis failed:', error);
+      failRemainingStages(setAnalysisStages);
+      setAnalysisError(error.message || "Failed to run analysis");
       toast.error(error.message || "Failed to run analysis");
-    } finally {
-      setIsAnalyzing(false);
-      setAnalysisStage('');
+      // Keep error state visible for a few seconds, then allow retry
+      setTimeout(() => {
+        setIsAnalyzing(false);
+      }, 4000);
     }
   };
 
@@ -281,6 +360,14 @@ const SeoAgent = () => {
     }
 
     setIsGeneratingBlog(true);
+    setBlogError(null);
+    const stages = BLOG_STAGES.map(s => ({ ...s, status: 'pending' as const }));
+    stages[0] = { ...stages[0], status: 'in-progress' as const };
+    setBlogStages(stages);
+
+    const stageIds = BLOG_STAGES.map(s => s.id);
+    const timer = runTimedStages(setBlogStages, stageIds, 3000);
+
     try {
       const { data, error } = await supabase.functions.invoke('seo-engine', {
         body: {
@@ -295,16 +382,27 @@ const SeoAgent = () => {
         throw new Error(error.message || 'Blog generation failed');
       }
 
-      // Update local credits state
+      clearInterval(timer);
+      completeAllStages(setBlogStages);
       setUserCredits(prev => prev - SEO_CREDITS.BLOG_POST);
       toast.success("Blog post generated!");
       setBlogTopic('');
       queryClient.invalidateQueries({ queryKey: ['seo-blog-posts'] });
 
+      setTimeout(() => {
+        setIsGeneratingBlog(false);
+        setBlogStages([]);
+      }, 1500);
+
     } catch (error: any) {
+      clearInterval(timer);
+      console.error('[SEO] Blog generation failed:', error);
+      failRemainingStages(setBlogStages);
+      setBlogError(error.message || "Failed to generate blog post");
       toast.error(error.message || "Failed to generate blog post");
-    } finally {
-      setIsGeneratingBlog(false);
+      setTimeout(() => {
+        setIsGeneratingBlog(false);
+      }, 4000);
     }
   };
 
@@ -322,19 +420,16 @@ const SeoAgent = () => {
     }
 
     setIsSearchingEngagement(true);
-    setEngagementStage('Deducting credits...');
+    setEngagementError(null);
+    const stages = ENGAGEMENT_STAGES.map(s => ({ ...s, status: 'pending' as const }));
+    stages[0] = { ...stages[0], status: 'in-progress' as const };
+    setEngagementStages(stages);
+
+    const stageIds = ENGAGEMENT_STAGES.map(s => s.id);
+    const timer = runTimedStages(setEngagementStages, stageIds, 3000);
+
     try {
-      // Step 1: Deduct credits
-      const { error: creditError } = await supabase.rpc('deduct_credits', {
-        _user_id: user!.id,
-        _credits_to_deduct: SEO_CREDITS.ENGAGEMENT,
-      });
-      if (creditError) throw new Error('Insufficient credits');
-
-      setUserCredits(prev => prev - SEO_CREDITS.ENGAGEMENT);
-      setEngagementStage('Searching Reddit, YouTube, forums...');
-
-      // Step 2: Call Python backend for real engagement search
+      // Step 1: Call Python backend for real engagement search (before deducting credits)
       const result = await searchEngagementAPI({
         company_name: selectedCompany.name || '',
         keywords: latestAnalysis.keywords || [],
@@ -344,7 +439,16 @@ const SeoAgent = () => {
         tone_of_voice: selectedCompany.tone_of_voice || '',
       });
 
-      setEngagementStage('Saving opportunities...');
+      clearInterval(timer);
+
+      // Step 2: API succeeded — now deduct credits
+      advanceStage(setEngagementStages, 'save');
+      const { error: creditError } = await supabase.rpc('deduct_credits', {
+        _user_id: user!.id,
+        _credits_to_deduct: SEO_CREDITS.ENGAGEMENT,
+      });
+      if (creditError) throw new Error('Insufficient credits');
+      setUserCredits(prev => prev - SEO_CREDITS.ENGAGEMENT);
 
       // Step 3: Save each opportunity to Supabase
       if (result.opportunities && result.opportunities.length > 0) {
@@ -371,14 +475,24 @@ const SeoAgent = () => {
         }
       }
 
+      completeAllStages(setEngagementStages);
       toast.success(`Found ${result.opportunities?.length || 0} real engagement opportunities!`);
       queryClient.invalidateQueries({ queryKey: ['seo-engagement'] });
 
+      setTimeout(() => {
+        setIsSearchingEngagement(false);
+        setEngagementStages([]);
+      }, 1500);
+
     } catch (error: any) {
+      clearInterval(timer);
+      console.error('[SEO] Engagement search failed:', error);
+      failRemainingStages(setEngagementStages);
+      setEngagementError(error.message || "Failed to find engagement opportunities");
       toast.error(error.message || "Failed to find engagement opportunities");
-    } finally {
-      setIsSearchingEngagement(false);
-      setEngagementStage('');
+      setTimeout(() => {
+        setIsSearchingEngagement(false);
+      }, 4000);
     }
   };
 
@@ -494,12 +608,61 @@ const SeoAgent = () => {
   const needsCompanySetup = !companyLoading && (!selectedCompany || !selectedCompany.name);
   const hasAnalysis = !!latestAnalysis;
 
-  // Format analysis result for display
-  const formatAnalysisResult = (result: any) => {
+  // Format analysis result for display — render markdown-like text with headings, bold, bullets
+  const formatAnalysisResult = (result: any): string => {
     if (!result) return '';
     if (typeof result === 'string') return result;
     if (result.text) return result.text;
     return JSON.stringify(result, null, 2);
+  };
+
+  // Render analysis text with basic markdown support
+  const renderAnalysisText = (text: string) => {
+    const lines = text.split('\n');
+    return lines.map((line, i) => {
+      const trimmed = line.trim();
+      if (!trimmed) return <div key={i} className="h-3" />;
+
+      // ## Heading
+      if (trimmed.startsWith('## ')) {
+        return <h3 key={i} className="text-lg font-semibold text-white mt-5 mb-2">{trimmed.slice(3)}</h3>;
+      }
+      // # Heading
+      if (trimmed.startsWith('# ')) {
+        return <h2 key={i} className="text-xl font-bold text-white mt-6 mb-3">{trimmed.slice(2)}</h2>;
+      }
+      // ### Heading
+      if (trimmed.startsWith('### ')) {
+        return <h4 key={i} className="text-base font-semibold text-white mt-4 mb-1">{trimmed.slice(4)}</h4>;
+      }
+      // Bullet point
+      if (trimmed.startsWith('- ') || trimmed.startsWith('* ') || trimmed.startsWith('• ')) {
+        const content = trimmed.slice(2);
+        return (
+          <div key={i} className="flex items-start gap-2 ml-2 my-1">
+            <span className="text-accent mt-1.5 text-xs">●</span>
+            <span className="text-gray-300 text-sm" dangerouslySetInnerHTML={{ __html: boldify(content) }} />
+          </div>
+        );
+      }
+      // Numbered list
+      const numberedMatch = trimmed.match(/^(\d+)\.\s(.+)/);
+      if (numberedMatch) {
+        return (
+          <div key={i} className="flex items-start gap-2 ml-2 my-1">
+            <span className="text-accent font-medium text-sm min-w-[20px]">{numberedMatch[1]}.</span>
+            <span className="text-gray-300 text-sm" dangerouslySetInnerHTML={{ __html: boldify(numberedMatch[2]) }} />
+          </div>
+        );
+      }
+      // Regular paragraph
+      return <p key={i} className="text-gray-300 text-sm my-1" dangerouslySetInnerHTML={{ __html: boldify(trimmed) }} />;
+    });
+  };
+
+  // Simple bold: **text** → <strong>
+  const boldify = (text: string): string => {
+    return text.replace(/\*\*(.+?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>');
   };
 
   return (
@@ -530,7 +693,7 @@ const SeoAgent = () => {
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => switchTab(tab.id)}
                   className={`relative z-10 px-3 py-2 sm:px-6 sm:py-3.5 rounded-full text-sm sm:text-lg font-semibold transition-colors duration-200 ${
                     activeTab === tab.id
                       ? 'text-white'
@@ -672,7 +835,7 @@ const SeoAgent = () => {
                   <Button
                     size="lg"
                     className="cosmic-button px-6 py-4 sm:px-8 sm:py-6 text-base sm:text-lg font-semibold"
-                    onClick={() => setActiveTab('analysis')}
+                    onClick={() => switchTab('analysis')}
                   >
                     <Rocket className="mr-2 w-4 h-4 sm:w-5 sm:h-5" />
                     Start Analysis
@@ -850,90 +1013,123 @@ const SeoAgent = () => {
                       )}
 
                       {/* Run Analysis Button */}
-                      <div className="space-y-2">
-                        <Button
-                          className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white py-6 text-lg font-semibold"
-                          onClick={runAnalysis}
-                          disabled={isAnalyzing || !websiteUrl.trim() || userCredits < SEO_CREDITS.ANALYSIS}
-                        >
-                          {isAnalyzing ? (
-                            <>
-                              <Loader2 className="mr-2 w-5 h-5 animate-spin" />
-                              {analysisStage || 'Analyzing...'}
-                            </>
-                          ) : (
-                            <>
-                              <Search className="mr-2 w-5 h-5" />
-                              Run SEO Analysis
-                              <span className="ml-2 flex items-center text-sm opacity-80">
-                                <Coins className="w-4 h-4 mr-1" />
-                                {SEO_CREDITS.ANALYSIS}
-                              </span>
-                            </>
-                          )}
-                        </Button>
-                        <p className="text-center text-sm text-gray-400">
-                          Your credits: <span className={userCredits < SEO_CREDITS.ANALYSIS ? 'text-red-400' : 'text-accent'}>{userCredits}</span>
-                        </p>
-                      </div>
+                      {!isAnalyzing && (
+                        <div className="space-y-2">
+                          <Button
+                            className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white py-6 text-lg font-semibold"
+                            onClick={runAnalysis}
+                            disabled={!websiteUrl.trim() || userCredits < SEO_CREDITS.ANALYSIS}
+                          >
+                            <Search className="mr-2 w-5 h-5" />
+                            Run SEO Analysis
+                            <span className="ml-2 flex items-center text-sm opacity-80">
+                              <Coins className="w-4 h-4 mr-1" />
+                              {SEO_CREDITS.ANALYSIS}
+                            </span>
+                          </Button>
+                          <p className="text-center text-sm text-gray-400">
+                            Your credits: <span className={userCredits < SEO_CREDITS.ANALYSIS ? 'text-red-400' : 'text-accent'}>{userCredits}</span>
+                          </p>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
 
+                  {/* Analysis Progress Card */}
+                  {isAnalyzing && analysisStages.length > 0 && (
+                    <SeoProgressCard
+                      stages={analysisStages}
+                      title="Analyzing Your Online Presence"
+                      subtitle={
+                        analysisStage
+                          ? `${analysisStage} - scanning ${websiteUrl} across all major platforms`
+                          : `Scanning ${websiteUrl} across all major platforms`
+                      }
+                      error={analysisError}
+                    />
+                  )}
+
                   {/* Previous Analysis Results */}
-                  {latestAnalysis && (
-                    <Card className="cosmic-card">
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-white">Latest Analysis Results</CardTitle>
-                          <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                            {new Date(latestAnalysis.created_at).toLocaleDateString()}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        {/* Visibility Score */}
-                        {latestAnalysis.visibility_score && (
-                          <div className="mb-6 flex items-center justify-center gap-8">
-                            <div className="text-center">
-                              <div className="text-6xl font-bold text-accent mb-1">
-                                {latestAnalysis.visibility_score}
+                  {latestAnalysis && !isAnalyzing && (
+                    <div className="space-y-6">
+                      {/* Visibility Score & Platform Scores Card */}
+                      <Card className="cosmic-card">
+                        <CardHeader>
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-white flex items-center gap-2">
+                              <CheckCircle2 className="w-5 h-5 text-green-400" />
+                              Analysis Results
+                            </CardTitle>
+                            <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                              {new Date(latestAnalysis.created_at).toLocaleDateString()}
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          {latestAnalysis.visibility_score && (
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10">
+                              <div className="text-center">
+                                <div className="text-6xl sm:text-7xl font-bold text-accent mb-1">
+                                  {latestAnalysis.visibility_score}
+                                </div>
+                                <p className="text-gray-400 text-sm">Visibility Score</p>
                               </div>
-                              <p className="text-gray-400">Visibility Score</p>
+
+                              {latestAnalysis.platform_scores && Object.keys(latestAnalysis.platform_scores).length > 0 && (
+                                <div className="flex flex-wrap justify-center gap-2">
+                                  {Object.entries(latestAnalysis.platform_scores).map(([platform, score]) => {
+                                    const evidence = (latestAnalysis as any).search_data?.[platform];
+                                    const scoreNum = score as number;
+                                    const scoreColor = scoreNum >= 70 ? 'text-green-400' : scoreNum >= 40 ? 'text-yellow-400' : 'text-red-400';
+                                    return (
+                                      <div key={platform} className="px-3 py-2 bg-white/5 rounded-lg text-center min-w-[80px] border border-white/5">
+                                        <div className={`text-xl font-bold ${scoreColor}`}>{scoreNum}</div>
+                                        <div className="text-xs text-gray-400 capitalize">{platform}</div>
+                                        {evidence?.mention_count !== undefined && (
+                                          <div className="text-[10px] text-gray-500 mt-1">
+                                            {evidence.mention_count} mention{evidence.mention_count !== 1 ? 's' : ''}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
                             </div>
+                          )}
+                        </CardContent>
+                      </Card>
 
-                            {/* Platform Scores with Evidence */}
-                            {latestAnalysis.platform_scores && Object.keys(latestAnalysis.platform_scores).length > 0 && (
-                              <div className="flex flex-wrap gap-2">
-                                {Object.entries(latestAnalysis.platform_scores).map(([platform, score]) => {
-                                  const evidence = (latestAnalysis as any).search_data?.[platform];
-                                  return (
-                                    <div key={platform} className="px-3 py-2 bg-white/5 rounded-lg text-center min-w-[80px]">
-                                      <div className="text-lg font-semibold text-white">{score as number}</div>
-                                      <div className="text-xs text-gray-500 capitalize">{platform}</div>
-                                      {evidence?.mention_count !== undefined && (
-                                        <div className="text-[10px] text-gray-600 mt-1">
-                                          {evidence.mention_count} mentions
-                                        </div>
-                                      )}
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        )}
+                      {/* Full Analysis Interpretation */}
+                      {latestAnalysis.analysis_result && (
+                        <Card className="cosmic-card">
+                          <CardHeader>
+                            <CardTitle className="text-white flex items-center gap-2">
+                              <Brain className="w-5 h-5 text-accent" />
+                              Deep Analysis
+                            </CardTitle>
+                            <CardDescription className="text-gray-400">
+                              Comprehensive interpretation from our agentic pipeline
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="bg-white/5 rounded-lg p-4 sm:p-6">
+                              {renderAnalysisText(formatAnalysisResult(latestAnalysis.analysis_result))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
 
-                        {/* Analysis Text */}
-                        {latestAnalysis.analysis_result && (
-                          <div className="bg-white/5 rounded-lg p-6 text-gray-300 whitespace-pre-wrap max-h-96 overflow-y-auto">
-                            {formatAnalysisResult(latestAnalysis.analysis_result)}
-                          </div>
-                        )}
-
-                        {/* Recommendations */}
-                        {latestAnalysis.recommendations && latestAnalysis.recommendations.length > 0 && (
-                          <div className="mt-6">
-                            <h4 className="text-white font-semibold mb-3">Top Recommendations</h4>
+                      {/* Recommendations */}
+                      {latestAnalysis.recommendations && latestAnalysis.recommendations.length > 0 && (
+                        <Card className="cosmic-card">
+                          <CardHeader>
+                            <CardTitle className="text-white flex items-center gap-2">
+                              <Rocket className="w-5 h-5 text-accent" />
+                              Top Recommendations
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
                             <div className="space-y-2">
                               {latestAnalysis.recommendations.map((rec: string, idx: number) => (
                                 <div key={idx} className="flex items-start gap-3 p-3 bg-accent/10 rounded-lg">
@@ -944,20 +1140,30 @@ const SeoAgent = () => {
                                 </div>
                               ))}
                             </div>
-                          </div>
-                        )}
+                          </CardContent>
+                        </Card>
+                      )}
 
-                        <div className="mt-6 flex justify-center">
-                          <Button
-                            className="bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white"
-                            onClick={() => setActiveTab('engine')}
-                          >
-                            Go to SEO Engine
-                            <ArrowRight className="ml-2 w-4 h-4" />
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
+                      {/* Action Buttons */}
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                        <Button
+                          variant="outline"
+                          className="border-white/20 text-white hover:bg-white/10"
+                          onClick={runAnalysis}
+                          disabled={isAnalyzing || !websiteUrl.trim()}
+                        >
+                          <RefreshCw className="mr-2 w-4 h-4" />
+                          Re-run Analysis
+                        </Button>
+                        <Button
+                          className="bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white"
+                          onClick={() => switchTab('engine')}
+                        >
+                          Go to SEO Engine
+                          <ArrowRight className="ml-2 w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
                   )}
                 </>
               )}
@@ -1004,7 +1210,7 @@ const SeoAgent = () => {
                     </p>
                     <Button
                       className="cosmic-button"
-                      onClick={() => setActiveTab('analysis')}
+                      onClick={() => switchTab('analysis')}
                     >
                       <BarChart3 className="mr-2 w-5 h-5" />
                       Go to Analysis
@@ -1036,29 +1242,32 @@ const SeoAgent = () => {
                             className="bg-white/5 border-white/20 text-white mt-2"
                           />
                         </div>
-                        <Button
-                          className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white"
-                          onClick={generateBlogPost}
-                          disabled={isGeneratingBlog || userCredits < SEO_CREDITS.BLOG_POST}
-                        >
-                          {isGeneratingBlog ? (
-                            <>
-                              <Loader2 className="mr-2 w-5 h-5 animate-spin" />
-                              Generating...
-                            </>
-                          ) : (
-                            <>
-                              <PenTool className="mr-2 w-5 h-5" />
-                              Generate Blog Post
-                              <span className="ml-2 flex items-center text-sm opacity-80">
-                                <Coins className="w-4 h-4 mr-1" />
-                                {SEO_CREDITS.BLOG_POST}
-                              </span>
-                            </>
-                          )}
-                        </Button>
+                        {!isGeneratingBlog && (
+                          <Button
+                            className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white"
+                            onClick={generateBlogPost}
+                            disabled={userCredits < SEO_CREDITS.BLOG_POST}
+                          >
+                            <PenTool className="mr-2 w-5 h-5" />
+                            Generate Blog Post
+                            <span className="ml-2 flex items-center text-sm opacity-80">
+                              <Coins className="w-4 h-4 mr-1" />
+                              {SEO_CREDITS.BLOG_POST}
+                            </span>
+                          </Button>
+                        )}
                       </CardContent>
                     </Card>
+
+                    {/* Blog Generation Progress */}
+                    {isGeneratingBlog && blogStages.length > 0 && (
+                      <SeoProgressCard
+                        stages={blogStages}
+                        title="Generating Blog Post"
+                        subtitle={blogTopic || 'AI is choosing the best topic from your analysis'}
+                        error={blogError}
+                      />
+                    )}
 
                     {/* Generated Blog Posts */}
                     {blogPosts && blogPosts.length > 0 && (
@@ -1102,29 +1311,32 @@ const SeoAgent = () => {
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <Button
-                          className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white"
-                          onClick={searchEngagement}
-                          disabled={isSearchingEngagement || userCredits < SEO_CREDITS.ENGAGEMENT}
-                        >
-                          {isSearchingEngagement ? (
-                            <>
-                              <Loader2 className="mr-2 w-5 h-5 animate-spin" />
-                              {engagementStage || 'Searching...'}
-                            </>
-                          ) : (
-                            <>
-                              <RefreshCw className="mr-2 w-5 h-5" />
-                              Find Opportunities
-                              <span className="ml-2 flex items-center text-sm opacity-80">
-                                <Coins className="w-4 h-4 mr-1" />
-                                {SEO_CREDITS.ENGAGEMENT}
-                              </span>
-                            </>
-                          )}
-                        </Button>
+                        {!isSearchingEngagement && (
+                          <Button
+                            className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white"
+                            onClick={searchEngagement}
+                            disabled={userCredits < SEO_CREDITS.ENGAGEMENT}
+                          >
+                            <RefreshCw className="mr-2 w-5 h-5" />
+                            Find Opportunities
+                            <span className="ml-2 flex items-center text-sm opacity-80">
+                              <Coins className="w-4 h-4 mr-1" />
+                              {SEO_CREDITS.ENGAGEMENT}
+                            </span>
+                          </Button>
+                        )}
                       </CardContent>
                     </Card>
+
+                    {/* Engagement Search Progress */}
+                    {isSearchingEngagement && engagementStages.length > 0 && (
+                      <SeoProgressCard
+                        stages={engagementStages}
+                        title="Finding Engagement Opportunities"
+                        subtitle="Scanning platforms for relevant discussions"
+                        error={engagementError}
+                      />
+                    )}
 
                     {/* Engagement Opportunities */}
                     {engagementOpportunities && engagementOpportunities.length > 0 && (

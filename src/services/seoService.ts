@@ -104,5 +104,41 @@ export async function analyzePresence(
     throw new Error(errorData?.detail || `Server error: ${response.status}`);
   }
 
-  return response.json();
+  const result: AnalyzePresenceResult = await response.json();
+
+  // Validate: if all platform scores are 0 and visibility is 0, the backend likely failed
+  // (e.g. missing SERPER_API_KEY, LLM connection error) but still returned 200
+  const scores = Object.values(result.platform_scores || {});
+  const allZero = scores.length > 0 && scores.every(s => s === 0);
+  if (allZero && result.visibility_score === 0) {
+    throw new Error(
+      "Analysis returned empty results (all scores are 0). This usually means the search API or LLM backend is unavailable. Please try again later."
+    );
+  }
+
+  // Validate: detect partial pipeline failure where the backend returned raw mention-count
+  // scores but LLM analysis actually failed. The backend signals this by including phrases
+  // like "LLM analysis unavailable" or "scores based on raw mention counts" in its analysis.
+  const analysisText = typeof result.analysis === 'string'
+    ? result.analysis.toLowerCase()
+    : '';
+  const llmFailureIndicators = [
+    'llm analysis unavailable',
+    'scores based on raw mention counts',
+    'automated analysis:',
+    'llm unavailable',
+    'analysis could not be completed',
+  ];
+  const isPartialFailure = llmFailureIndicators.some(indicator =>
+    analysisText.includes(indicator)
+  );
+
+  if (isPartialFailure) {
+    throw new Error(
+      "The SEO analysis pipeline did not complete fully — the LLM analysis step failed. " +
+      "No credits were deducted. Please try again later."
+    );
+  }
+
+  return result;
 }

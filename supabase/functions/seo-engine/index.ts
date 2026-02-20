@@ -268,25 +268,6 @@ serve(async (req) => {
     // Determine credits needed based on action
     const creditsNeeded = request.action === 'generate_blog' ? SEO_BLOG_CREDITS : SEO_ENGAGEMENT_CREDITS;
 
-    // Check and deduct credits BEFORE processing
-    const { data: deductResult, error: deductError } = await supabaseClient.rpc('deduct_credits', {
-      _user_id: user.id,
-      _credits_to_deduct: creditsNeeded
-    });
-
-    if (deductError) {
-      logStep("Credit deduction error", { error: deductError.message });
-      throw new Error(`Failed to process credits: ${deductError.message}`);
-    }
-
-    if (!deductResult) {
-      logStep("Insufficient credits");
-      const actionName = request.action === 'generate_blog' ? 'Blog generation' : 'Engagement finder';
-      throw new Error(`Insufficient credits. ${actionName} requires ${creditsNeeded} credit(s).`);
-    }
-
-    logStep("Credits deducted", { credits: creditsNeeded, action: request.action });
-
     // Fetch company data
     const { data: company, error: companyError } = await supabaseClient
       .from('companies')
@@ -316,6 +297,15 @@ serve(async (req) => {
     // Handle different actions
     if (request.action === 'generate_blog') {
       const blogPost = await generateBlogPost(company, analysis, request.topic);
+
+      // LLM succeeded — NOW deduct credits
+      const { data: deductResult, error: deductError } = await supabaseClient.rpc('deduct_credits', {
+        _user_id: user.id,
+        _credits_to_deduct: creditsNeeded
+      });
+      if (deductError) throw new Error(`Failed to process credits: ${deductError.message}`);
+      if (!deductResult) throw new Error(`Insufficient credits. Blog generation requires ${creditsNeeded} credit(s).`);
+      logStep("Credits deducted after successful blog generation", { credits: creditsNeeded });
 
       // Save to database
       const { data: savedPost, error: saveError } = await supabaseClient
@@ -357,6 +347,15 @@ serve(async (req) => {
 
     } else if (request.action === 'find_engagement') {
       const opportunities = await findEngagementOpportunities(company, analysis);
+
+      // LLM succeeded — NOW deduct credits
+      const { data: deductResult2, error: deductError2 } = await supabaseClient.rpc('deduct_credits', {
+        _user_id: user.id,
+        _credits_to_deduct: creditsNeeded
+      });
+      if (deductError2) throw new Error(`Failed to process credits: ${deductError2.message}`);
+      if (!deductResult2) throw new Error(`Insufficient credits. Engagement finder requires ${creditsNeeded} credit(s).`);
+      logStep("Credits deducted after successful engagement search", { credits: creditsNeeded });
 
       // Normalize platform values to match database constraint
       const validPlatforms = ['reddit', 'twitter', 'facebook', 'quora', 'forum', 'other'];
