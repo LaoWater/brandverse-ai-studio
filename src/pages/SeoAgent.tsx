@@ -37,9 +37,11 @@ import {
   ChevronDown,
   ChevronUp,
   Wand2,
-  Coins
+  Coins,
+  Info,
+  MessageSquare
 } from "lucide-react";
-import { FaTiktok, FaRedditAlien, FaXTwitter } from "react-icons/fa6";
+import { FaTiktok, FaRedditAlien, FaXTwitter, FaLinkedin, FaYoutube, FaQuora } from "react-icons/fa6";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,6 +59,7 @@ import SeoProgressCard, {
   ENGAGEMENT_STAGES,
   BLOG_STAGES,
 } from "@/components/seo/SeoProgressCard";
+import ArticleViewerModal from "@/components/seo/ArticleViewerModal";
 
 type SeoTab = 'overview' | 'analysis' | 'engine';
 
@@ -65,7 +68,7 @@ const SeoAgent = () => {
   const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
   const { selectedCompany, loading: companyLoading } = useCompany();
-  const [activeTab, setActiveTab] = useState<SeoTab>('overview');
+  const [activeTab, setActiveTab] = useState<SeoTab | null>(null);
 
   // Scroll to top when tab changes
   const switchTab = (tab: SeoTab) => {
@@ -87,6 +90,10 @@ const SeoAgent = () => {
   const [isGeneratingBlog, setIsGeneratingBlog] = useState(false);
   const [isSearchingEngagement, setIsSearchingEngagement] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Article viewer modal state
+  const [selectedArticle, setSelectedArticle] = useState<any>(null);
+  const [isArticleModalOpen, setIsArticleModalOpen] = useState(false);
 
   // Staged progress for long-running operations
   const [analysisStages, setAnalysisStages] = useState<SeoStage[]>([]);
@@ -166,7 +173,7 @@ const SeoAgent = () => {
       if (latestAnalysis.competitors?.length) setCompetitors(latestAnalysis.competitors.join(', '));
       if (latestAnalysis.keywords?.length) setKeywords(latestAnalysis.keywords.join(', '));
     }
-  }, []);
+  }, [latestAnalysis]);
 
   // Extract website from company other_info or set default
   useEffect(() => {
@@ -200,6 +207,13 @@ const SeoAgent = () => {
     },
     enabled: !!selectedCompany?.id
   });
+
+  // Set initial tab based on whether user has existing analysis
+  useEffect(() => {
+    if (activeTab !== null) return; // Already set
+    if (analysisLoading) return;    // Still loading
+    setActiveTab(latestAnalysis ? 'analysis' : 'overview');
+  }, [analysisLoading, latestAnalysis, activeTab]);
 
   // Fetch blog posts for the company
   const { data: blogPosts } = useQuery({
@@ -355,7 +369,7 @@ const SeoAgent = () => {
 
     // Check credits before proceeding
     if (userCredits < SEO_CREDITS.BLOG_POST) {
-      toast.error(`Insufficient credits. Blog generation requires ${SEO_CREDITS.BLOG_POST} credit. You have ${userCredits}.`);
+      toast.error(`Insufficient credits. Article generation requires ${SEO_CREDITS.BLOG_POST} credit. You have ${userCredits}.`);
       return;
     }
 
@@ -379,13 +393,13 @@ const SeoAgent = () => {
       });
 
       if (error) {
-        throw new Error(error.message || 'Blog generation failed');
+        throw new Error(error.message || 'Article generation failed');
       }
 
       clearInterval(timer);
       completeAllStages(setBlogStages);
       setUserCredits(prev => prev - SEO_CREDITS.BLOG_POST);
-      toast.success("Blog post generated!");
+      toast.success("Article generated!");
       setBlogTopic('');
       queryClient.invalidateQueries({ queryKey: ['seo-blog-posts'] });
 
@@ -398,8 +412,8 @@ const SeoAgent = () => {
       clearInterval(timer);
       console.error('[SEO] Blog generation failed:', error);
       failRemainingStages(setBlogStages);
-      setBlogError(error.message || "Failed to generate blog post");
-      toast.error(error.message || "Failed to generate blog post");
+      setBlogError(error.message || "Failed to generate article");
+      toast.error(error.message || "Failed to generate article");
       setTimeout(() => {
         setIsGeneratingBlog(false);
       }, 4000);
@@ -463,6 +477,8 @@ const SeoAgent = () => {
           suggested_response: opp.suggested_response,
           response_reasoning: opp.engagement_reason,
           relevance_score: opp.relevance_score,
+          url_verified: opp.url_verified ?? false,
+          discovered_via: opp.discovered_via || 'serper',
           status: 'pending',
         }));
 
@@ -527,6 +543,26 @@ const SeoAgent = () => {
     await navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  // Guard against broken/placeholder URLs before opening
+  const handleViewOpportunity = (url: string) => {
+    if (!url) {
+      toast.warning("No URL available for this opportunity");
+      return;
+    }
+    const lower = url.toLowerCase();
+    const isSuspicious =
+      lower.includes('example.com') ||
+      lower.includes('example.org') ||
+      lower.includes('placeholder') ||
+      (!lower.startsWith('http://') && !lower.startsWith('https://'));
+
+    if (isSuspicious) {
+      toast.warning("This URL looks invalid or is a placeholder. Proceed with caution.");
+    }
+    const finalUrl = lower.startsWith('http') ? url : `https://${url}`;
+    window.open(finalUrl, '_blank', 'noopener,noreferrer');
   };
 
   const platforms = [
@@ -664,6 +700,18 @@ const SeoAgent = () => {
   const boldify = (text: string): string => {
     return text.replace(/\*\*(.+?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>');
   };
+
+  // Show loading while determining initial tab
+  if (activeTab === null) {
+    return (
+      <div className="min-h-screen bg-cosmic-gradient">
+        <Navigation />
+        <div className="flex items-center justify-center pt-40">
+          <Loader2 className="w-8 h-8 text-accent animate-spin" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-cosmic-gradient">
@@ -895,146 +943,6 @@ const SeoAgent = () => {
                 </Card>
               ) : (
                 <>
-                  {/* Main Analysis Card - Website First */}
-                  <Card className="cosmic-card mb-8">
-                    <CardHeader>
-                      <CardTitle className="text-white flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                          <Link2 className="w-5 h-5 text-white" />
-                        </div>
-                        Analyze Your Website
-                      </CardTitle>
-                      <CardDescription className="text-gray-400">
-                        We'll crawl your website, understand your business, and provide a comprehensive SEO analysis
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      {/* Website URL - Primary Input */}
-                      <div>
-                        <Label htmlFor="websiteUrl" className="text-white text-lg flex items-center gap-2">
-                          <Globe className="w-4 h-4 text-accent" />
-                          Website URL
-                        </Label>
-                        <div className="relative mt-2">
-                          <Input
-                            id="websiteUrl"
-                            placeholder="https://yourcompany.com"
-                            value={websiteUrl}
-                            onChange={(e) => setWebsiteUrl(e.target.value)}
-                            className="bg-white/5 border-white/20 text-white pl-4 pr-4 py-6 text-lg"
-                          />
-                        </div>
-                        <p className="text-gray-500 text-sm mt-2">
-                          Enter your main website URL. We'll analyze the content, structure, and SEO elements.
-                        </p>
-                      </div>
-
-                      {/* Company Info Summary */}
-                      <div className="flex items-center gap-4 p-4 bg-white/5 rounded-lg border border-white/10">
-                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/50 to-accent/50 flex items-center justify-center flex-shrink-0">
-                          <Building2 className="w-6 h-6 text-white" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-white font-medium">{selectedCompany?.name}</p>
-                          {selectedCompany?.mission && (
-                            <p className="text-gray-400 text-sm line-clamp-1">{selectedCompany.mission}</p>
-                          )}
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-gray-400 hover:text-white"
-                          onClick={() => navigate('/settings')}
-                        >
-                          Edit
-                        </Button>
-                      </div>
-
-                      {/* Advanced Options Toggle */}
-                      <button
-                        onClick={() => setShowAdvanced(!showAdvanced)}
-                        className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors w-full justify-center py-2"
-                      >
-                        {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                        <span className="text-sm">{showAdvanced ? 'Hide' : 'Show'} Advanced Options</span>
-                      </button>
-
-                      {/* Advanced Options */}
-                      {showAdvanced && (
-                        <div className="space-y-4 pt-4 border-t border-white/10">
-                          <div>
-                            <Label htmlFor="targetAudience" className="text-white">Target Audience</Label>
-                            <Textarea
-                              id="targetAudience"
-                              placeholder="e.g., 'Small business owners aged 30-50 looking to automate their marketing'"
-                              value={targetAudience}
-                              onChange={(e) => setTargetAudience(e.target.value)}
-                              className="bg-white/5 border-white/20 text-white mt-2"
-                              rows={2}
-                            />
-                          </div>
-
-                          <div>
-                            <Label htmlFor="buyerPersona" className="text-white">Buyer Persona</Label>
-                            <Textarea
-                              id="buyerPersona"
-                              placeholder="e.g., 'Marketing Manager at mid-size company, tech-savvy, budget-conscious'"
-                              value={buyerPersona}
-                              onChange={(e) => setBuyerPersona(e.target.value)}
-                              className="bg-white/5 border-white/20 text-white mt-2"
-                              rows={2}
-                            />
-                          </div>
-
-                          <div className="grid md:grid-cols-2 gap-4">
-                            <div>
-                              <Label htmlFor="competitors" className="text-white">Competitors</Label>
-                              <Input
-                                id="competitors"
-                                placeholder="competitor1.com, competitor2.com"
-                                value={competitors}
-                                onChange={(e) => setCompetitors(e.target.value)}
-                                className="bg-white/5 border-white/20 text-white mt-2"
-                              />
-                            </div>
-
-                            <div>
-                              <Label htmlFor="keywords" className="text-white">Target Keywords</Label>
-                              <Input
-                                id="keywords"
-                                placeholder="AI marketing, content automation"
-                                value={keywords}
-                                onChange={(e) => setKeywords(e.target.value)}
-                                className="bg-white/5 border-white/20 text-white mt-2"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Run Analysis Button */}
-                      {!isAnalyzing && (
-                        <div className="space-y-2">
-                          <Button
-                            className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white py-6 text-lg font-semibold"
-                            onClick={runAnalysis}
-                            disabled={!websiteUrl.trim() || userCredits < SEO_CREDITS.ANALYSIS}
-                          >
-                            <Search className="mr-2 w-5 h-5" />
-                            Run SEO Analysis
-                            <span className="ml-2 flex items-center text-sm opacity-80">
-                              <Coins className="w-4 h-4 mr-1" />
-                              {SEO_CREDITS.ANALYSIS}
-                            </span>
-                          </Button>
-                          <p className="text-center text-sm text-gray-400">
-                            Your credits: <span className={userCredits < SEO_CREDITS.ANALYSIS ? 'text-red-400' : 'text-accent'}>{userCredits}</span>
-                          </p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-
                   {/* Analysis Progress Card */}
                   {isAnalyzing && analysisStages.length > 0 && (
                     <SeoProgressCard
@@ -1049,7 +957,7 @@ const SeoAgent = () => {
                     />
                   )}
 
-                  {/* Previous Analysis Results */}
+                  {/* Results FIRST for returning users */}
                   {latestAnalysis && !isAnalyzing && (
                     <div className="space-y-6">
                       {/* Visibility Score & Platform Scores Card */}
@@ -1144,17 +1052,111 @@ const SeoAgent = () => {
                         </Card>
                       )}
 
-                      {/* Action Buttons */}
-                      <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                        <Button
-                          variant="outline"
-                          className="border-white/20 text-white hover:bg-white/10"
-                          onClick={runAnalysis}
-                          disabled={isAnalyzing || !websiteUrl.trim()}
-                        >
-                          <RefreshCw className="mr-2 w-4 h-4" />
-                          Re-run Analysis
-                        </Button>
+                      {/* Re-analyze section - collapsible */}
+                      <details className="group">
+                        <summary className="flex items-center justify-center gap-2 py-4 cursor-pointer text-gray-400 hover:text-white transition-colors list-none [&::-webkit-details-marker]:hidden">
+                          <RefreshCw className="w-4 h-4" />
+                          <span className="text-sm font-medium">Re-analyze Your Website</span>
+                          <ChevronDown className="w-4 h-4 group-open:rotate-180 transition-transform" />
+                        </summary>
+                        <Card className="cosmic-card mt-2">
+                          <CardHeader>
+                            <CardTitle className="text-white flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                                <Link2 className="w-5 h-5 text-white" />
+                              </div>
+                              Analyze Your Website
+                            </CardTitle>
+                            <CardDescription className="text-gray-400">
+                              Re-run the analysis with updated parameters
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-6">
+                            <div>
+                              <Label htmlFor="websiteUrl" className="text-white text-lg flex items-center gap-2">
+                                <Globe className="w-4 h-4 text-accent" />
+                                Website URL
+                              </Label>
+                              <div className="relative mt-2">
+                                <Input
+                                  id="websiteUrl"
+                                  placeholder="https://yourcompany.com"
+                                  value={websiteUrl}
+                                  onChange={(e) => setWebsiteUrl(e.target.value)}
+                                  className="bg-white/5 border-white/20 text-white pl-4 pr-4 py-6 text-lg"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-4 p-4 bg-white/5 rounded-lg border border-white/10">
+                              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/50 to-accent/50 flex items-center justify-center flex-shrink-0">
+                                <Building2 className="w-6 h-6 text-white" />
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-white font-medium">{selectedCompany?.name}</p>
+                                {selectedCompany?.mission && (
+                                  <p className="text-gray-400 text-sm line-clamp-1">{selectedCompany.mission}</p>
+                                )}
+                              </div>
+                              <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white" onClick={() => navigate('/settings')}>
+                                Edit
+                              </Button>
+                            </div>
+
+                            <button
+                              onClick={() => setShowAdvanced(!showAdvanced)}
+                              className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors w-full justify-center py-2"
+                            >
+                              {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                              <span className="text-sm">{showAdvanced ? 'Hide' : 'Show'} Advanced Options</span>
+                            </button>
+
+                            {showAdvanced && (
+                              <div className="space-y-4 pt-4 border-t border-white/10">
+                                <div>
+                                  <Label htmlFor="targetAudience" className="text-white">Target Audience</Label>
+                                  <Textarea id="targetAudience" placeholder="e.g., 'Small business owners aged 30-50 looking to automate their marketing'" value={targetAudience} onChange={(e) => setTargetAudience(e.target.value)} className="bg-white/5 border-white/20 text-white mt-2" rows={2} />
+                                </div>
+                                <div>
+                                  <Label htmlFor="buyerPersona" className="text-white">Buyer Persona</Label>
+                                  <Textarea id="buyerPersona" placeholder="e.g., 'Marketing Manager at mid-size company, tech-savvy, budget-conscious'" value={buyerPersona} onChange={(e) => setBuyerPersona(e.target.value)} className="bg-white/5 border-white/20 text-white mt-2" rows={2} />
+                                </div>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                  <div>
+                                    <Label htmlFor="competitors" className="text-white">Competitors</Label>
+                                    <Input id="competitors" placeholder="competitor1.com, competitor2.com" value={competitors} onChange={(e) => setCompetitors(e.target.value)} className="bg-white/5 border-white/20 text-white mt-2" />
+                                  </div>
+                                  <div>
+                                    <Label htmlFor="keywords" className="text-white">Target Keywords</Label>
+                                    <Input id="keywords" placeholder="AI marketing, content automation" value={keywords} onChange={(e) => setKeywords(e.target.value)} className="bg-white/5 border-white/20 text-white mt-2" />
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="space-y-2">
+                              <Button
+                                className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white py-6 text-lg font-semibold"
+                                onClick={runAnalysis}
+                                disabled={!websiteUrl.trim() || userCredits < SEO_CREDITS.ANALYSIS}
+                              >
+                                <Search className="mr-2 w-5 h-5" />
+                                Re-run SEO Analysis
+                                <span className="ml-2 flex items-center text-sm opacity-80">
+                                  <Coins className="w-4 h-4 mr-1" />
+                                  {SEO_CREDITS.ANALYSIS}
+                                </span>
+                              </Button>
+                              <p className="text-center text-sm text-gray-400">
+                                Your credits: <span className={userCredits < SEO_CREDITS.ANALYSIS ? 'text-red-400' : 'text-accent'}>{userCredits}</span>
+                              </p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </details>
+
+                      {/* Go to Engine Button */}
+                      <div className="flex items-center justify-center">
                         <Button
                           className="bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white"
                           onClick={() => switchTab('engine')}
@@ -1164,6 +1166,107 @@ const SeoAgent = () => {
                         </Button>
                       </div>
                     </div>
+                  )}
+
+                  {/* Analysis form for first-time users (no existing analysis) */}
+                  {!latestAnalysis && !isAnalyzing && (
+                    <Card className="cosmic-card mb-8">
+                      <CardHeader>
+                        <CardTitle className="text-white flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                            <Link2 className="w-5 h-5 text-white" />
+                          </div>
+                          Analyze Your Website
+                        </CardTitle>
+                        <CardDescription className="text-gray-400">
+                          We'll crawl your website, understand your business, and provide a comprehensive SEO analysis
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        <div>
+                          <Label htmlFor="websiteUrl" className="text-white text-lg flex items-center gap-2">
+                            <Globe className="w-4 h-4 text-accent" />
+                            Website URL
+                          </Label>
+                          <div className="relative mt-2">
+                            <Input
+                              id="websiteUrl"
+                              placeholder="https://yourcompany.com"
+                              value={websiteUrl}
+                              onChange={(e) => setWebsiteUrl(e.target.value)}
+                              className="bg-white/5 border-white/20 text-white pl-4 pr-4 py-6 text-lg"
+                            />
+                          </div>
+                          <p className="text-gray-500 text-sm mt-2">
+                            Enter your main website URL. We'll analyze the content, structure, and SEO elements.
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-4 p-4 bg-white/5 rounded-lg border border-white/10">
+                          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/50 to-accent/50 flex items-center justify-center flex-shrink-0">
+                            <Building2 className="w-6 h-6 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-white font-medium">{selectedCompany?.name}</p>
+                            {selectedCompany?.mission && (
+                              <p className="text-gray-400 text-sm line-clamp-1">{selectedCompany.mission}</p>
+                            )}
+                          </div>
+                          <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white" onClick={() => navigate('/settings')}>
+                            Edit
+                          </Button>
+                        </div>
+
+                        <button
+                          onClick={() => setShowAdvanced(!showAdvanced)}
+                          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors w-full justify-center py-2"
+                        >
+                          {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          <span className="text-sm">{showAdvanced ? 'Hide' : 'Show'} Advanced Options</span>
+                        </button>
+
+                        {showAdvanced && (
+                          <div className="space-y-4 pt-4 border-t border-white/10">
+                            <div>
+                              <Label htmlFor="targetAudience" className="text-white">Target Audience</Label>
+                              <Textarea id="targetAudience" placeholder="e.g., 'Small business owners aged 30-50 looking to automate their marketing'" value={targetAudience} onChange={(e) => setTargetAudience(e.target.value)} className="bg-white/5 border-white/20 text-white mt-2" rows={2} />
+                            </div>
+                            <div>
+                              <Label htmlFor="buyerPersona" className="text-white">Buyer Persona</Label>
+                              <Textarea id="buyerPersona" placeholder="e.g., 'Marketing Manager at mid-size company, tech-savvy, budget-conscious'" value={buyerPersona} onChange={(e) => setBuyerPersona(e.target.value)} className="bg-white/5 border-white/20 text-white mt-2" rows={2} />
+                            </div>
+                            <div className="grid md:grid-cols-2 gap-4">
+                              <div>
+                                <Label htmlFor="competitors" className="text-white">Competitors</Label>
+                                <Input id="competitors" placeholder="competitor1.com, competitor2.com" value={competitors} onChange={(e) => setCompetitors(e.target.value)} className="bg-white/5 border-white/20 text-white mt-2" />
+                              </div>
+                              <div>
+                                <Label htmlFor="keywords" className="text-white">Target Keywords</Label>
+                                <Input id="keywords" placeholder="AI marketing, content automation" value={keywords} onChange={(e) => setKeywords(e.target.value)} className="bg-white/5 border-white/20 text-white mt-2" />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="space-y-2">
+                          <Button
+                            className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white py-6 text-lg font-semibold"
+                            onClick={runAnalysis}
+                            disabled={!websiteUrl.trim() || userCredits < SEO_CREDITS.ANALYSIS}
+                          >
+                            <Search className="mr-2 w-5 h-5" />
+                            Run SEO Analysis
+                            <span className="ml-2 flex items-center text-sm opacity-80">
+                              <Coins className="w-4 h-4 mr-1" />
+                              {SEO_CREDITS.ANALYSIS}
+                            </span>
+                          </Button>
+                          <p className="text-center text-sm text-gray-400">
+                            Your credits: <span className={userCredits < SEO_CREDITS.ANALYSIS ? 'text-red-400' : 'text-accent'}>{userCredits}</span>
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
                   )}
                 </>
               )}
@@ -1219,16 +1322,16 @@ const SeoAgent = () => {
                 </Card>
               ) : (
                 <div className="grid lg:grid-cols-2 gap-8">
-                  {/* Blog Post Generator */}
+                  {/* Article Generator */}
                   <div className="space-y-6">
                     <Card className="cosmic-card">
                       <CardHeader>
                         <CardTitle className="text-white flex items-center gap-2">
                           <FileText className="w-5 h-5 text-accent" />
-                          Blog Post Generator
+                          Article Generator
                         </CardTitle>
                         <CardDescription className="text-gray-400">
-                          Generate SEO-optimized blog posts based on your analysis
+                          Generate SEO-optimized articles based on your analysis
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-4">
@@ -1249,7 +1352,7 @@ const SeoAgent = () => {
                             disabled={userCredits < SEO_CREDITS.BLOG_POST}
                           >
                             <PenTool className="mr-2 w-5 h-5" />
-                            Generate Blog Post
+                            Generate Article
                             <span className="ml-2 flex items-center text-sm opacity-80">
                               <Coins className="w-4 h-4 mr-1" />
                               {SEO_CREDITS.BLOG_POST}
@@ -1259,29 +1362,33 @@ const SeoAgent = () => {
                       </CardContent>
                     </Card>
 
-                    {/* Blog Generation Progress */}
+                    {/* Article Generation Progress */}
                     {isGeneratingBlog && blogStages.length > 0 && (
                       <SeoProgressCard
                         stages={blogStages}
-                        title="Generating Blog Post"
+                        title="Generating Article"
                         subtitle={blogTopic || 'AI is choosing the best topic from your analysis'}
                         error={blogError}
                       />
                     )}
 
-                    {/* Generated Blog Posts */}
+                    {/* Generated Articles */}
                     {blogPosts && blogPosts.length > 0 && (
                       <Card className="cosmic-card">
                         <CardHeader>
-                          <CardTitle className="text-white text-lg">Generated Posts</CardTitle>
+                          <CardTitle className="text-white text-lg">Generated Articles</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
                           {blogPosts.map((post: any) => (
                             <div
                               key={post.id}
-                              className="p-4 bg-white/5 rounded-lg border border-white/10 hover:border-accent/30 transition-colors"
+                              className="p-4 bg-white/5 rounded-lg border border-white/10 hover:border-accent/30 transition-colors cursor-pointer group"
+                              onClick={() => {
+                                setSelectedArticle(post);
+                                setIsArticleModalOpen(true);
+                              }}
                             >
-                              <h4 className="text-white font-medium mb-1">{post.title}</h4>
+                              <h4 className="text-white font-medium mb-1 group-hover:text-accent transition-colors">{post.title}</h4>
                               <p className="text-gray-400 text-sm line-clamp-2">{post.excerpt || post.content?.substring(0, 150)}</p>
                               <div className="mt-2 flex items-center justify-between">
                                 <Badge variant="outline" className="text-xs border-white/20 text-gray-400">
@@ -1305,10 +1412,19 @@ const SeoAgent = () => {
                         <CardTitle className="text-white flex items-center gap-2">
                           <Users className="w-5 h-5 text-accent" />
                           Engagement Finder
+                          <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px] font-medium px-1.5 py-0">
+                            Beta
+                          </Badge>
                         </CardTitle>
                         <CardDescription className="text-gray-400">
                           Find real discussions on Reddit, YouTube, Quora, and forums where you can engage
                         </CardDescription>
+                        <div className="mt-3 flex items-start gap-2 p-3 rounded-lg bg-white/[0.03] border border-white/5 text-xs text-gray-500 leading-relaxed">
+                          <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-gray-500" />
+                          <span>
+                            Results sourced via web search. Most platforms actively restrict indexing and automated access, which means link freshness and availability may vary. We're building direct platform integrations to improve accuracy — always verify links before engaging.
+                          </span>
+                        </div>
                       </CardHeader>
                       <CardContent>
                         {!isSearchingEngagement && (
@@ -1345,87 +1461,120 @@ const SeoAgent = () => {
                           <CardTitle className="text-white text-lg">Engagement Opportunities</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                          {engagementOpportunities.filter((o: any) => o.status === 'pending').map((opportunity: any) => (
-                            <div
-                              key={opportunity.id}
-                              className="p-4 bg-white/5 rounded-lg border border-white/10"
-                            >
-                              <div className="flex items-center gap-2 mb-2 flex-wrap">
-                                <Badge className="bg-white/10 text-white border-0 capitalize">
-                                  {opportunity.platform === 'reddit' && <FaRedditAlien className="w-3 h-3 mr-1" />}
-                                  {opportunity.platform === 'twitter' && <FaXTwitter className="w-3 h-3 mr-1" />}
-                                  {opportunity.platform === 'youtube' && <Youtube className="w-3 h-3 mr-1" />}
-                                  {opportunity.platform}
-                                </Badge>
-                                {opportunity.relevance_score && (
-                                  <Badge variant="outline" className="text-xs border-accent/30 text-accent">
-                                    {opportunity.relevance_score}% match
+                          {engagementOpportunities.filter((o: any) => o.status === 'pending').map((opportunity: any) => {
+                            const platformStyles: Record<string, { bg: string; text: string; icon: React.ReactNode }> = {
+                              reddit: { bg: 'bg-orange-500/20', text: 'text-orange-400', icon: <FaRedditAlien className="w-3 h-3 mr-1" /> },
+                              twitter: { bg: 'bg-sky-500/20', text: 'text-sky-400', icon: <FaXTwitter className="w-3 h-3 mr-1" /> },
+                              youtube: { bg: 'bg-red-500/20', text: 'text-red-400', icon: <FaYoutube className="w-3 h-3 mr-1" /> },
+                              linkedin: { bg: 'bg-blue-500/20', text: 'text-blue-400', icon: <FaLinkedin className="w-3 h-3 mr-1" /> },
+                              quora: { bg: 'bg-red-300/20', text: 'text-red-300', icon: <FaQuora className="w-3 h-3 mr-1" /> },
+                              forum: { bg: 'bg-white/10', text: 'text-gray-300', icon: <MessageSquare className="w-3 h-3 mr-1" /> },
+                            };
+                            const pStyle = platformStyles[opportunity.platform] || { bg: 'bg-white/10', text: 'text-gray-300', icon: null };
+                            const isVerified = opportunity.url_verified === true;
+
+                            return (
+                              <div
+                                key={opportunity.id}
+                                className="p-4 bg-white/5 rounded-lg border border-white/10"
+                              >
+                                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                  <Badge className={`${pStyle.bg} ${pStyle.text} border-0 capitalize`}>
+                                    {pStyle.icon}
+                                    {opportunity.platform}
                                   </Badge>
-                                )}
-                                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
-                                  <CheckCircle2 className="w-3 h-3 mr-1" />
-                                  Verified URL
-                                </Badge>
-                              </div>
-
-                              <h4 className="text-white font-medium mb-2">{opportunity.source_title}</h4>
-
-                              {opportunity.source_content && (
-                                <p className="text-gray-400 text-sm mb-3 line-clamp-2">
-                                  {opportunity.source_content}
-                                </p>
-                              )}
-
-                              {opportunity.suggested_response && (
-                                <div className="bg-accent/10 rounded-lg p-3 mb-3">
-                                  <p className="text-sm text-gray-300">{opportunity.suggested_response}</p>
+                                  {opportunity.relevance_score && (
+                                    <Badge variant="outline" className="text-xs border-accent/30 text-accent">
+                                      {opportunity.relevance_score}% match
+                                    </Badge>
+                                  )}
+                                  {isVerified ? (
+                                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
+                                      <CheckCircle2 className="w-3 h-3 mr-1" />
+                                      Verified URL
+                                    </Badge>
+                                  ) : (
+                                    <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-xs">
+                                      <AlertCircle className="w-3 h-3 mr-1" />
+                                      Unverified
+                                    </Badge>
+                                  )}
                                 </div>
-                              )}
 
-                              <div className="flex items-center gap-2">
-                                {opportunity.source_url && (
+                                <h4 className="text-white font-medium mb-2">{opportunity.source_title}</h4>
+
+                                {opportunity.source_content && (
+                                  <p className="text-gray-400 text-sm mb-3 line-clamp-2">
+                                    {opportunity.source_content}
+                                  </p>
+                                )}
+
+                                {/* Discovery metadata */}
+                                {(opportunity.created_at || opportunity.discovered_via) && (
+                                  <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
+                                    {opportunity.created_at && (
+                                      <span>Found {new Date(opportunity.created_at).toLocaleDateString()}</span>
+                                    )}
+                                    {opportunity.discovered_via && (
+                                      <span>via {
+                                        ({ reddit_api: 'Reddit API', youtube_api: 'YouTube API', serper: 'Web Search' } as Record<string, string>)[opportunity.discovered_via]
+                                        || opportunity.discovered_via
+                                      }</span>
+                                    )}
+                                  </div>
+                                )}
+
+                                {opportunity.suggested_response && (
+                                  <div className="bg-accent/10 rounded-lg p-3 mb-3">
+                                    <p className="text-sm text-gray-300">{opportunity.suggested_response}</p>
+                                  </div>
+                                )}
+
+                                <div className="flex items-center gap-2">
+                                  {opportunity.source_url && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="border-white/20 text-white hover:bg-white/10"
+                                      onClick={() => handleViewOpportunity(opportunity.source_url)}
+                                    >
+                                      <ExternalLink className="w-3 h-3 mr-1" />
+                                      View
+                                    </Button>
+                                  )}
                                   <Button
                                     size="sm"
                                     variant="outline"
                                     className="border-white/20 text-white hover:bg-white/10"
-                                    onClick={() => window.open(opportunity.source_url, '_blank')}
+                                    onClick={() => copyToClipboard(opportunity.suggested_response || '', opportunity.id)}
                                   >
-                                    <ExternalLink className="w-3 h-3 mr-1" />
-                                    View
+                                    {copiedId === opportunity.id ? (
+                                      <Check className="w-3 h-3 mr-1" />
+                                    ) : (
+                                      <Copy className="w-3 h-3 mr-1" />
+                                    )}
+                                    Copy
                                   </Button>
-                                )}
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="border-white/20 text-white hover:bg-white/10"
-                                  onClick={() => copyToClipboard(opportunity.suggested_response || '', opportunity.id)}
-                                >
-                                  {copiedId === opportunity.id ? (
-                                    <Check className="w-3 h-3 mr-1" />
-                                  ) : (
-                                    <Copy className="w-3 h-3 mr-1" />
-                                  )}
-                                  Copy
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="border-green-500/30 text-green-400 hover:bg-green-500/10"
-                                  onClick={() => updateEngagementStatus(opportunity.id, 'used')}
-                                >
-                                  <ThumbsUp className="w-3 h-3" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-                                  onClick={() => updateEngagementStatus(opportunity.id, 'dismissed')}
-                                >
-                                  <ThumbsDown className="w-3 h-3" />
-                                </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="border-green-500/30 text-green-400 hover:bg-green-500/10"
+                                    onClick={() => updateEngagementStatus(opportunity.id, 'used')}
+                                  >
+                                    <ThumbsUp className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                                    onClick={() => updateEngagementStatus(opportunity.id, 'dismissed')}
+                                  >
+                                    <ThumbsDown className="w-3 h-3" />
+                                  </Button>
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
 
                           {engagementOpportunities.filter((o: any) => o.status === 'pending').length === 0 && (
                             <p className="text-gray-400 text-center py-4">
@@ -1442,6 +1591,16 @@ const SeoAgent = () => {
           )}
         </div>
       </main>
+
+      {/* Article Viewer Modal */}
+      <ArticleViewerModal
+        article={selectedArticle}
+        isOpen={isArticleModalOpen}
+        onClose={() => {
+          setIsArticleModalOpen(false);
+          setSelectedArticle(null);
+        }}
+      />
     </div>
   );
 };

@@ -53,41 +53,49 @@ async function generateBlogPost(
     ? analysis.analysis_result.text || JSON.stringify(analysis.analysis_result)
     : analysis.analysis_result;
 
-  const systemPrompt = `You are an expert content writer specializing in SEO-optimized blog posts.
-Your task is to write engaging, informative blog posts that:
-- Are optimized for search engines
-- Provide genuine value to readers
-- Match the company's tone of voice
-- Include relevant keywords naturally
-- Are well-structured with headers
+  const recommendations = (analysis.recommendations || []).slice(0, 3);
 
-Write in a professional yet approachable style.`;
+  const systemPrompt = `You are an expert content writer who creates compelling, reader-focused articles for company websites and blogs.
 
-  const userPrompt = `Write a blog post for the following company:
+Your articles must:
+- Be written for the company's TARGET AUDIENCE (potential clients/customers), NOT for the company itself
+- Provide genuine value: actionable advice, unique insights, or educational content
+- Position the company as a thought leader naturally — never sound promotional or salesy
+- Match the company's tone of voice precisely
+- Include relevant keywords naturally (never keyword-stuffed)
+- Use proper markdown formatting: ## headings, **bold** for emphasis, bullet lists, numbered lists where appropriate
+- Read like content a reader would bookmark or share — not like an AI-generated SEO checklist
+
+You are writing articles that would appear on the company's website blog section. Think of content marketing at its best: the reader gets real value, and the company builds trust and authority.`;
+
+  const userPrompt = `Write an article for the company's website/blog that would appeal to their target audience.
 
 **Company:** ${company.name}
-**Mission:** ${company.mission || 'Not specified'}
+**What they do:** ${company.mission || 'Not specified'}
 **Tone of Voice:** ${company.tone_of_voice || 'Professional and friendly'}
+**Target Audience:** ${analysis.target_audience || 'Their potential customers'}
 
-**SEO Analysis Insights:**
-${analysisText?.substring(0, 2000) || 'General SEO optimization'}
+**Keywords to naturally incorporate:** ${(analysis.keywords || []).join(', ') || 'industry-relevant terms'}
 
-**Target Keywords:** ${(analysis.keywords || []).join(', ') || 'industry-relevant keywords'}
+**Topic:** ${topic || 'Based on the company\'s expertise and what their target audience would find most valuable, choose a topic that positions them as a thought leader'}
 
-**Topic:** ${topic || 'Choose a topic based on the analysis recommendations and keywords that would benefit the company\'s SEO'}
+${!topic && recommendations.length > 0 ? `For topic inspiration, here are areas where the company could provide value based on their SEO profile:\n${recommendations.join('\n')}` : ''}
 
-Please write a complete blog post (800-1200 words) with:
-1. An engaging title optimized for SEO
-2. A compelling introduction
-3. Well-structured body with subheadings
-4. Practical takeaways
-5. A conclusion with call to action
+Write a complete article (800-1200 words) in markdown format with:
+1. A compelling, specific title that a reader would click on (not generic SEO bait)
+2. An opening hook that connects with the reader's pain point or curiosity
+3. Well-structured body with ## subheadings, practical examples, and actionable takeaways
+4. Bold (**) key phrases and important points for scannability
+5. A conclusion that provides a clear next step or thought-provoking takeaway
+6. The company's expertise should come through naturally in the content, not as a plug
+
+The article should feel like it was written by a knowledgeable human in the field, not by an AI summarizing SEO data.
 
 Format your response as JSON:
 {
-  "title": "Your SEO-Optimized Title Here",
-  "content": "Full blog post content with markdown formatting...",
-  "excerpt": "A 2-3 sentence excerpt for previews",
+  "title": "Compelling, Specific Article Title",
+  "content": "Full article in markdown format with ## headings, **bold**, bullet lists, etc.",
+  "excerpt": "A 2-3 sentence teaser that makes readers want to read more",
   "keywords": ["keyword1", "keyword2", "keyword3"]
 }`;
 
@@ -104,7 +112,7 @@ Format your response as JSON:
         { role: "user", content: userPrompt }
       ],
       temperature: 0.8,
-      max_completion_tokens: 3000,
+      max_completion_tokens: 4000,
       response_format: { type: "json_object" }
     })
   });
@@ -339,7 +347,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({
         success: true,
         blog_post: savedPost,
-        message: "Blog post generated successfully"
+        message: "Article generated successfully"
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200

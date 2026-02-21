@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle, XCircle, Loader2, Globe, Search, Brain, BarChart3, Save, Shield } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, Globe, Search, Brain, BarChart3, Save } from 'lucide-react';
 import { FaRedditAlien, FaTiktok, FaXTwitter } from 'react-icons/fa6';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -22,18 +22,17 @@ export const ANALYSIS_STAGES: SeoStage[] = [
 ];
 
 export const ENGAGEMENT_STAGES: SeoStage[] = [
-  { id: 'search', label: 'Searching Platforms', description: 'Scanning Reddit, YouTube, Quora, and forums for relevant discussions', status: 'pending', icon: Search },
+  { id: 'search', label: 'Searching the Web', description: 'Scanning Reddit, YouTube, Quora, and forums for relevant discussions', status: 'pending', icon: Search },
   { id: 'filter', label: 'Filtering & Ranking', description: 'AI is evaluating relevance and ranking the best opportunities', status: 'pending', icon: Brain },
-  { id: 'verify', label: 'Verifying URLs', description: 'Confirming links are active and accessible', status: 'pending', icon: Shield },
   { id: 'responses', label: 'Crafting Responses', description: 'Generating suggested replies in your brand voice', status: 'pending', icon: FaXTwitter },
-  { id: 'save', label: 'Saving Opportunities', description: 'Storing verified engagement opportunities', status: 'pending', icon: Save },
+  { id: 'save', label: 'Saving Opportunities', description: 'Storing engagement opportunities', status: 'pending', icon: Save },
 ];
 
 export const BLOG_STAGES: SeoStage[] = [
   { id: 'research', label: 'Researching Topic', description: 'Analyzing your SEO data to find the best angle', status: 'pending', icon: Search },
   { id: 'outline', label: 'Creating Outline', description: 'Structuring the post for maximum SEO impact', status: 'pending', icon: BarChart3 },
-  { id: 'writing', label: 'Writing Content', description: 'AI is crafting your SEO-optimized blog post', status: 'pending', icon: Brain },
-  { id: 'save', label: 'Saving Post', description: 'Storing your new blog post', status: 'pending', icon: Save },
+  { id: 'writing', label: 'Writing Content', description: 'AI is crafting your article', status: 'pending', icon: Brain },
+  { id: 'save', label: 'Saving Article', description: 'Storing your new article', status: 'pending', icon: Save },
 ];
 
 interface SeoProgressCardProps {

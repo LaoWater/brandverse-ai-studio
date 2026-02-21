@@ -8,7 +8,14 @@
       "WebSearch",
       "Bash(npx tsc:*)",
       "Bash(npx vite build:*)",
-      "Bash(gcloud secrets list:*)"
+      "Bash(gcloud secrets list:*)",
+      "WebFetch(domain:support.reddithelp.com)",
+      "WebFetch(domain:painonsocial.com)",
+      "WebFetch(domain:replydaddy.com)",
+      "WebFetch(domain:molehill.io)",
+      "WebFetch(domain:data365.co)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.wappkit.com)"
     ]
   }
 }
