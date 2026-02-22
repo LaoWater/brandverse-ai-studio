@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle, XCircle, Loader2, Globe, Search, Brain, BarChart3, Save } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, Globe, Search, Brain, BarChart3, Save, Shield, Monitor, Users, Lightbulb } from 'lucide-react';
 import { FaRedditAlien, FaTiktok, FaXTwitter } from 'react-icons/fa6';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -14,11 +14,13 @@ export interface SeoStage {
 // Predefined stage definitions for each SEO operation
 export const ANALYSIS_STAGES: SeoStage[] = [
   { id: 'crawl', label: 'Crawling Website', description: 'Fetching and parsing your site content, structure, and metadata', status: 'pending', icon: Globe },
-  { id: 'search-google', label: 'Searching Google', description: 'Checking your presence across Google search results', status: 'pending', icon: Search },
-  { id: 'search-social', label: 'Scanning Social Platforms', description: 'Reddit, TikTok, YouTube, LinkedIn, Twitter — checking where you appear', status: 'pending', icon: FaRedditAlien },
-  { id: 'competitors', label: 'Analyzing Competitors', description: 'Comparing your visibility against competitors on each platform', status: 'pending', icon: BarChart3 },
-  { id: 'llm', label: 'AI Deep Analysis', description: 'Our AI is synthesizing all data into actionable insights and scores', status: 'pending', icon: Brain },
-  { id: 'save', label: 'Saving Results', description: 'Storing your analysis for the SEO Engine', status: 'pending', icon: Save },
+  { id: 'search-google', label: 'Google Search Analysis', description: 'Checking your presence across Google search results with LLM verification', status: 'pending', icon: Search },
+  { id: 'ai-visibility', label: 'AI Visibility Check', description: 'Asking AI systems what they know about your brand', status: 'pending', icon: Brain },
+  { id: 'search-social', label: 'Community Scan', description: 'Reddit, YouTube, Quora, LinkedIn, Twitter — mapping your community presence', status: 'pending', icon: Users },
+  { id: 'technical-audit', label: 'Technical Audit', description: 'Analyzing crawlability, meta tags, tech stack, and search engine readiness', status: 'pending', icon: Monitor },
+  { id: 'competitors', label: 'Competitor Analysis', description: 'Comparing your visibility against competitors on each platform', status: 'pending', icon: BarChart3 },
+  { id: 'synthesis', label: 'Strategy Synthesis', description: 'Crafting your marketing plan using the Art of Marketing framework', status: 'pending', icon: Lightbulb },
+  { id: 'save', label: 'Saving Results', description: 'Storing your 4-pillar analysis', status: 'pending', icon: Save },
 ];
 
 export const ENGAGEMENT_STAGES: SeoStage[] = [

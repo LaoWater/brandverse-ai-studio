@@ -194,9 +194,10 @@ export const calculateMediaStudioCreditsByTier = (
  * SEO Agent Credit Costs
  */
 export const SEO_CREDITS = {
-  ANALYSIS: 5,        // Real website crawl + Serper search + LLM analysis
+  ANALYSIS: 8,        // 4-pillar analysis: website audit + Google search + AI visibility + community + synthesis
   BLOG_POST: 1,       // Generate SEO-optimized blog post
   ENGAGEMENT: 3,      // Real engagement search via Serper + LLM response crafting
+  KEYWORD_SUGGEST: 1, // AI keyword suggestion
 } as const;
 
 export const POST_FROM_MEDIA_CREDITS = {
@@ -204,7 +205,7 @@ export const POST_FROM_MEDIA_CREDITS = {
   MANUAL_TEXT: 0,        // User writes their own text
 } as const;
 
-export type SeoAction = 'analysis' | 'blog' | 'engagement';
+export type SeoAction = 'analysis' | 'blog' | 'engagement' | 'keyword_suggest';
 
 export const getSeoCredits = (action: SeoAction): number => {
   switch (action) {
@@ -214,6 +215,8 @@ export const getSeoCredits = (action: SeoAction): number => {
       return SEO_CREDITS.BLOG_POST;
     case 'engagement':
       return SEO_CREDITS.ENGAGEMENT;
+    case 'keyword_suggest':
+      return SEO_CREDITS.KEYWORD_SUGGEST;
     default:
       return 0;
   }

@@ -15,7 +15,8 @@
       "WebFetch(domain:molehill.io)",
       "WebFetch(domain:data365.co)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:www.wappkit.com)"
+      "WebFetch(domain:www.wappkit.com)",
+      "Bash(find:*)"
     ]
   }
 }

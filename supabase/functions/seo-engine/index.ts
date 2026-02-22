@@ -16,6 +16,7 @@ interface EngineRequest {
   company_id: string;
   analysis_id: string;
   topic?: string; // For blog generation
+  existing_titles?: string[]; // For title deduplication
 }
 
 // Credit costs for SEO Engine actions
@@ -42,7 +43,8 @@ interface AnalysisData {
 async function generateBlogPost(
   company: CompanyData,
   analysis: AnalysisData,
-  topic?: string
+  topic?: string,
+  existingTitles?: string[]
 ): Promise<{ title: string; content: string; excerpt: string; keywords: string[]; wordCount: number }> {
   const openaiKey = Deno.env.get("OPENAI_API_KEY");
   if (!openaiKey) throw new Error("OPENAI_API_KEY not configured");
@@ -80,6 +82,8 @@ You are writing articles that would appear on the company's website blog section
 **Topic:** ${topic || 'Based on the company\'s expertise and what their target audience would find most valuable, choose a topic that positions them as a thought leader'}
 
 ${!topic && recommendations.length > 0 ? `For topic inspiration, here are areas where the company could provide value based on their SEO profile:\n${recommendations.join('\n')}` : ''}
+
+${existingTitles && existingTitles.length > 0 ? `**IMPORTANT — Avoid duplicate topics.** The company already has these articles:\n${existingTitles.map(t => `- "${t}"`).join('\n')}\nChoose a DIFFERENT angle, topic, or sub-topic. Do NOT repeat or closely paraphrase any of the above titles.` : ''}
 
 Write a complete article (800-1200 words) in markdown format with:
 1. A compelling, specific title that a reader would click on (not generic SEO bait)
@@ -304,7 +308,7 @@ serve(async (req) => {
 
     // Handle different actions
     if (request.action === 'generate_blog') {
-      const blogPost = await generateBlogPost(company, analysis, request.topic);
+      const blogPost = await generateBlogPost(company, analysis, request.topic, request.existing_titles || []);
 
       // LLM succeeded — NOW deduct credits
       const { data: deductResult, error: deductError } = await supabaseClient.rpc('deduct_credits', {

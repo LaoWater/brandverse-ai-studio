@@ -7,10 +7,37 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Check, Eye, Code, FileText, Clock, Hash, FileCode } from 'lucide-react';
+import { Copy, Check, Eye, Code, FileText, Clock, Hash, FileCode, ChevronDown, Trash2 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { toast } from 'sonner';
+import ArticleRating from '@/components/seo/ArticleRating';
+
+type ArticleStatus = 'draft' | 'posted' | 'published' | 'archived';
+
+const STATUS_CONFIG: Record<ArticleStatus, { label: string; color: string }> = {
+  draft: { label: 'Draft', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
+  posted: { label: 'Posted', color: 'bg-green-500/20 text-green-400 border-green-500/30' },
+  published: { label: 'Published', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+  archived: { label: 'Archived', color: 'bg-gray-500/20 text-gray-400 border-gray-500/30' },
+};
 
 interface ArticleData {
   id: string;
@@ -21,12 +48,18 @@ interface ArticleData {
   reading_time_minutes?: number;
   target_keywords?: string[];
   created_at: string;
+  status?: string;
+  company_id?: string;
+  user_rating?: number | null;
+  rating_feedback?: string | null;
 }
 
 interface ArticleViewerModalProps {
   article: ArticleData | null;
   isOpen: boolean;
   onClose: () => void;
+  onUpdateStatus?: (id: string, status: ArticleStatus) => Promise<void>;
+  onDelete?: (id: string) => Promise<void>;
 }
 
 type DisplayMode = 'rich' | 'plain' | 'markdown' | 'html';
@@ -105,9 +138,14 @@ const markdownToHtml = (md: string): string => {
   return html.trim();
 };
 
-const ArticleViewerModal: React.FC<ArticleViewerModalProps> = ({ article, isOpen, onClose }) => {
+const ArticleViewerModal: React.FC<ArticleViewerModalProps> = ({ article, isOpen, onClose, onUpdateStatus, onDelete }) => {
   const [displayMode, setDisplayMode] = useState<DisplayMode>('rich');
   const [copied, setCopied] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const currentStatus = (article?.status as ArticleStatus) || 'draft';
+  const statusConfig = STATUS_CONFIG[currentStatus] || STATUS_CONFIG.draft;
+  const statusOptions: ArticleStatus[] = ['draft', 'posted', 'published', 'archived'];
 
   const plainText = useMemo(() => article ? stripMarkdown(article.content) : '', [article]);
   const htmlContent = useMemo(() => article ? markdownToHtml(article.content) : '', [article]);
@@ -155,6 +193,54 @@ const ArticleViewerModal: React.FC<ArticleViewerModalProps> = ({ article, isOpen
 
           {/* Metadata badges */}
           <div className="flex flex-wrap items-center gap-2 mt-3">
+            {/* Status badge with dropdown */}
+            {onUpdateStatus ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="inline-flex items-center gap-1 cursor-pointer">
+                    <Badge className={`text-xs ${statusConfig.color} border`}>
+                      {statusConfig.label}
+                      <ChevronDown className="w-3 h-3 ml-0.5" />
+                    </Badge>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-40">
+                  {statusOptions
+                    .filter(s => s !== currentStatus)
+                    .map(s => (
+                      <DropdownMenuItem
+                        key={s}
+                        onClick={() => onUpdateStatus(article.id, s)}
+                      >
+                        <span className={`w-2 h-2 rounded-full mr-2 ${
+                          s === 'draft' ? 'bg-amber-400' :
+                          s === 'posted' ? 'bg-green-400' :
+                          s === 'published' ? 'bg-blue-400' :
+                          'bg-gray-400'
+                        }`} />
+                        {STATUS_CONFIG[s].label}
+                      </DropdownMenuItem>
+                    ))
+                  }
+                  {onDelete && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-red-400 focus:text-red-400"
+                        onClick={() => setShowDeleteConfirm(true)}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Badge className={`text-xs ${statusConfig.color} border`}>
+                {statusConfig.label}
+              </Badge>
+            )}
             {article.word_count && (
               <Badge variant="outline" className="text-xs border-border text-muted-foreground">
                 <FileText className="w-3 h-3 mr-1" />
@@ -179,6 +265,19 @@ const ArticleViewerModal: React.FC<ArticleViewerModalProps> = ({ article, isOpen
                   </Badge>
                 ))}
               </>
+            )}
+
+            {/* Article Rating */}
+            {article.company_id && (
+              <div className="relative ml-auto">
+                <ArticleRating
+                  blogPostId={article.id}
+                  companyId={article.company_id}
+                  targetKeywords={article.target_keywords}
+                  initialRating={article.user_rating}
+                  initialFeedback={article.rating_feedback}
+                />
+              </div>
             )}
           </div>
         </DialogHeader>
@@ -295,6 +394,33 @@ const ArticleViewerModal: React.FC<ArticleViewerModalProps> = ({ article, isOpen
           )}
         </div>
       </DialogContent>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Article</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{article?.title}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-500 hover:bg-red-600 text-white"
+              onClick={async () => {
+                if (article && onDelete) {
+                  await onDelete(article.id);
+                  setShowDeleteConfirm(false);
+                  onClose();
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 };

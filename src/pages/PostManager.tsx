@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,8 +17,11 @@ import { Database } from "@/integrations/supabase/types";
 import { EditPostDialog } from "@/components/EditPostDialog";
 import { FaXTwitter, FaInstagram, FaFacebook, FaLinkedin } from "react-icons/fa6";
 import { useCompany } from "@/contexts/CompanyContext";
+import { useMediaStudio, MediaType } from "@/contexts/MediaStudioContext";
+import { useAuth } from "@/contexts/AuthContext";
 import MediaLibrary from "@/components/media/MediaLibrary";
 import PostActionButton from "@/components/shared/PostActionButton";
+import { MediaFile, extractAndUploadLastFrame } from "@/services/mediaStudioService";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,9 +40,23 @@ type ViewMode = 'posts' | 'studio';
 
 const PostManager = () => {
   const { selectedCompany } = useCompany();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const {
+    setMediaType,
+    setVideoGenerationMode,
+    clearReferenceImages,
+    addReferenceImageFromUrl,
+    clearVideoFrames,
+    setInputVideoImageFromUrl,
+    setSourceVideoForExtension,
+  } = useMediaStudio();
+
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('posts');
+  const [isContinuingVideo, setIsContinuingVideo] = useState(false);
+  const [continueVideoProgress, setContinueVideoProgress] = useState('');
   const [postedConfirmDialog, setPostedConfirmDialog] = useState<{ isOpen: boolean; postId: string | null }>({ isOpen: false, postId: null });
   const [deleteConfirmDialog, setDeleteConfirmDialog] = useState<{ isOpen: boolean; postId: string | null }>({ isOpen: false, postId: null });
   const [filters, setFilters] = useState({
@@ -155,6 +173,60 @@ const PostManager = () => {
       });
     }
   });
+
+  // --- Media Studio integration handlers (mirror MediaStudio.tsx) ---
+  const handleUseForGeneration = async (media: MediaFile, targetType: MediaType) => {
+    try {
+      if (targetType === 'image') {
+        clearReferenceImages();
+        await addReferenceImageFromUrl(media.public_url, media.file_name);
+        setMediaType('image');
+      } else {
+        clearVideoFrames();
+        await setInputVideoImageFromUrl(media.public_url, media.file_name);
+        setMediaType('video');
+        setVideoGenerationMode('image-to-video');
+      }
+      navigate('/media-studio?view=create');
+      toast({ title: 'Ready', description: `Image loaded in Media Studio for ${targetType} generation.` });
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to load image. Please try again.', variant: 'destructive' });
+    }
+  };
+
+  const handleContinueVideo = async (media: MediaFile) => {
+    if (!user) return;
+    setIsContinuingVideo(true);
+    setContinueVideoProgress('Preparing...');
+    try {
+      const result = await extractAndUploadLastFrame(
+        media.public_url,
+        user.id,
+        media.id,
+        (stage) => setContinueVideoProgress(stage)
+      );
+      if (!result.success || !result.frameUrl) throw new Error(result.error || 'Failed to extract frame');
+      clearVideoFrames();
+      await setInputVideoImageFromUrl(result.frameUrl, `continuation_from_${media.file_name}`);
+      setMediaType('video');
+      setVideoGenerationMode('image-to-video');
+      navigate('/media-studio?view=create');
+      toast({ title: 'Ready to Continue', description: 'Last frame extracted! Enter a prompt in Media Studio to continue this video.' });
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message || 'Failed to extract frame.', variant: 'destructive' });
+    } finally {
+      setIsContinuingVideo(false);
+      setContinueVideoProgress('');
+    }
+  };
+
+  const handleExtendVideo = (media: MediaFile, gcsUri: string) => {
+    setSourceVideoForExtension(gcsUri, media.public_url);
+    setMediaType('video');
+    setVideoGenerationMode('extend-video');
+    navigate('/media-studio?view=create');
+    toast({ title: 'Ready to Extend', description: 'Enter a prompt in Media Studio to extend this video.' });
+  };
 
   const platforms = [
     { id: 'instagram', name: 'Instagram', icon: FaInstagram, color: 'from-pink-500 to-purple-600', iconColor: '#E4405F' },
@@ -777,7 +849,15 @@ const PostManager = () => {
             </>
           ) : (
             /* Studio Library View - Same behavior as Media Studio: show all companies by default with toggle */
-            <MediaLibrary onCreateNew={() => setViewMode('posts')} isStudioContext={true} />
+            <MediaLibrary
+              onCreateNew={() => setViewMode('posts')}
+              isStudioContext={true}
+              onUseForGeneration={handleUseForGeneration}
+              onContinueVideo={handleContinueVideo}
+              onExtendVideo={handleExtendVideo}
+              isContinuingVideo={isContinuingVideo}
+              continueVideoProgress={continueVideoProgress}
+            />
           )}
         </div>
       </div>

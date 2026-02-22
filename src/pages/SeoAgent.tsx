@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   Search,
   Globe,
@@ -25,23 +25,19 @@ import {
   Loader2,
   FileText,
   Users,
-  PenTool,
-  ExternalLink,
   RefreshCw,
-  ThumbsUp,
-  ThumbsDown,
-  Copy,
-  Check,
   Link2,
   Building2,
   ChevronDown,
   ChevronUp,
   Wand2,
   Coins,
-  Info,
-  MessageSquare
+  Columns2,
+  Maximize2,
+  Monitor,
+  Lightbulb,
 } from "lucide-react";
-import { FaTiktok, FaRedditAlien, FaXTwitter, FaLinkedin, FaYoutube, FaQuora } from "react-icons/fa6";
+import { FaTiktok, FaRedditAlien } from "react-icons/fa6";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,7 +47,9 @@ import {
   searchEngagement as searchEngagementAPI,
   analyzePresence,
   type EngagementOpportunity,
-  type AnalyzePresenceResult,
+  type PillarScores,
+  type PillarDetails,
+  type MarketingPlan,
 } from "@/services/seoService";
 import SeoProgressCard, {
   type SeoStage,
@@ -60,6 +58,13 @@ import SeoProgressCard, {
   BLOG_STAGES,
 } from "@/components/seo/SeoProgressCard";
 import ArticleViewerModal from "@/components/seo/ArticleViewerModal";
+import EngineArticlesSection from "@/components/seo/EngineArticlesSection";
+import EngineEngagementSection from "@/components/seo/EngineEngagementSection";
+import KeywordManager from "@/components/seo/KeywordManager";
+import AnalysisPillarCard from "@/components/seo/AnalysisPillarCard";
+import WebsiteAuditSection from "@/components/seo/WebsiteAuditSection";
+import AIVisibilitySection from "@/components/seo/AIVisibilitySection";
+import MarketingPlanSection from "@/components/seo/MarketingPlanSection";
 
 type SeoTab = 'overview' | 'analysis' | 'engine';
 
@@ -90,6 +95,10 @@ const SeoAgent = () => {
   const [isGeneratingBlog, setIsGeneratingBlog] = useState(false);
   const [isSearchingEngagement, setIsSearchingEngagement] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Engine sub-navigation
+  const [engineSection, setEngineSection] = useState<'articles' | 'engagement'>('articles');
+  const [engineLayout, setEngineLayout] = useState<'side-by-side' | 'focused'>('side-by-side');
 
   // Article viewer modal state
   const [selectedArticle, setSelectedArticle] = useState<any>(null);
@@ -164,17 +173,6 @@ const SeoAgent = () => {
     fetchCredits();
   }, [user]);
 
-  // Load saved preferences from latest analysis
-  useEffect(() => {
-    if (latestAnalysis) {
-      // Pre-fill from previous analysis
-      if (latestAnalysis.target_audience) setTargetAudience(latestAnalysis.target_audience);
-      if (latestAnalysis.buyer_persona?.description) setBuyerPersona(latestAnalysis.buyer_persona.description);
-      if (latestAnalysis.competitors?.length) setCompetitors(latestAnalysis.competitors.join(', '));
-      if (latestAnalysis.keywords?.length) setKeywords(latestAnalysis.keywords.join(', '));
-    }
-  }, [latestAnalysis]);
-
   // Extract website from company other_info or set default
   useEffect(() => {
     if (selectedCompany?.other_info) {
@@ -207,6 +205,17 @@ const SeoAgent = () => {
     },
     enabled: !!selectedCompany?.id
   });
+
+  // Load saved preferences from latest analysis
+  useEffect(() => {
+    if (latestAnalysis) {
+      // Pre-fill from previous analysis
+      if (latestAnalysis.target_audience) setTargetAudience(latestAnalysis.target_audience);
+      if (latestAnalysis.buyer_persona?.description) setBuyerPersona(latestAnalysis.buyer_persona.description);
+      if (latestAnalysis.competitors?.length) setCompetitors(latestAnalysis.competitors.join(', '));
+      if (latestAnalysis.keywords?.length) setKeywords(latestAnalysis.keywords.join(', '));
+    }
+  }, [latestAnalysis]);
 
   // Set initial tab based on whether user has existing analysis
   useEffect(() => {
@@ -310,7 +319,7 @@ const SeoAgent = () => {
       if (creditError) throw new Error('Insufficient credits');
       setUserCredits(prev => prev - SEO_CREDITS.ANALYSIS);
 
-      // Step 3: Save results to Supabase
+      // Step 3: Save results to Supabase (includes 4-pillar data when available)
       const insertPayload: any = {
         company_id: selectedCompany.id,
         user_id: user!.id,
@@ -324,6 +333,9 @@ const SeoAgent = () => {
         recommendations: result.recommendations,
         search_data: result.search_evidence,
         competitor_data: result.competitor_data,
+        pillar_scores: result.pillar_scores || {},
+        pillar_details: result.pillar_details || {},
+        marketing_plan: result.marketing_plan || {},
         status: 'completed',
         credits_used: SEO_CREDITS.ANALYSIS,
       };
@@ -383,12 +395,14 @@ const SeoAgent = () => {
     const timer = runTimedStages(setBlogStages, stageIds, 3000);
 
     try {
+      const existingTitles = (blogPosts || []).map((p: any) => p.title).filter(Boolean);
       const { data, error } = await supabase.functions.invoke('seo-engine', {
         body: {
           action: 'generate_blog',
           company_id: selectedCompany.id,
           analysis_id: latestAnalysis.id,
-          topic: blogTopic
+          topic: blogTopic,
+          existing_titles: existingTitles
         }
       });
 
@@ -543,6 +557,64 @@ const SeoAgent = () => {
     await navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  // Update article status
+  const updateArticleStatus = async (id: string, status: string) => {
+    try {
+      const { error } = await supabase
+        .from('seo_blog_posts')
+        .update({ status })
+        .eq('id', id);
+
+      if (error) throw error;
+      toast.success(`Article marked as ${status}`);
+      queryClient.invalidateQueries({ queryKey: ['seo-blog-posts'] });
+    } catch (error: any) {
+      toast.error("Failed to update article status");
+    }
+  };
+
+  // Delete article
+  const deleteArticle = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('seo_blog_posts')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      toast.success("Article deleted");
+      queryClient.invalidateQueries({ queryKey: ['seo-blog-posts'] });
+    } catch (error: any) {
+      toast.error("Failed to delete article");
+    }
+  };
+
+  // Regenerate engagement with kept opportunities
+  const regenerateWithKeptEngagement = async (keptIds: string[]) => {
+    if (!selectedCompany?.id || !engagementOpportunities) return;
+
+    // Dismiss all pending opportunities that are NOT in keptIds
+    const pendingOpps = engagementOpportunities.filter((o: any) => o.status === 'pending');
+    const toDismiss = pendingOpps.filter((o: any) => !keptIds.includes(o.id));
+
+    try {
+      if (toDismiss.length > 0) {
+        const { error } = await supabase
+          .from('seo_engagement_opportunities')
+          .update({ status: 'dismissed' })
+          .in('id', toDismiss.map((o: any) => o.id));
+
+        if (error) throw error;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['seo-engagement'] });
+      // Now search for new engagement opportunities
+      await searchEngagement();
+    } catch (error: any) {
+      toast.error("Failed to regenerate opportunities");
+    }
   };
 
   // Guard against broken/placeholder URLs before opening
@@ -728,27 +800,18 @@ const SeoAgent = () => {
           {/* Sliding Tabs Header with Company Logo */}
           <div className="relative flex items-center justify-center mb-6 sm:mb-8">
             {/* Tabs */}
-            <div className="relative inline-flex items-center bg-muted/50 dark:bg-black/30 rounded-full p-1.5 sm:p-2 border-0 will-change-auto">
-              {/* Sliding indicator */}
-              <div
-                className="absolute top-1 bottom-1 sm:top-1.5 sm:bottom-1.5 rounded-full bg-gradient-to-r from-primary to-accent transition-all duration-300 ease-out will-change-transform"
-                style={{
-                  width: `calc(${100 / tabs.length}% - 8px)`,
-                  transform: `translateX(calc(${tabs.findIndex(t => t.id === activeTab) * 100}% + 6px + ${tabs.findIndex(t => t.id === activeTab) * 4}px))`,
-                }}
-              />
-
+            <div className="inline-flex items-center bg-muted/50 dark:bg-black/30 rounded-full p-1.5 sm:p-2 border-0">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => switchTab(tab.id)}
-                  className={`relative z-10 px-3 py-2 sm:px-6 sm:py-3.5 rounded-full text-sm sm:text-lg font-semibold transition-colors duration-200 ${
+                  className={`px-4 py-2.5 sm:px-7 sm:py-3.5 rounded-full text-sm sm:text-lg font-semibold transition-all duration-200 whitespace-nowrap ${
                     activeTab === tab.id
-                      ? 'text-white'
+                      ? 'text-white bg-gradient-to-r from-primary to-accent shadow-md'
                       : 'text-gray-400 hover:text-gray-200'
                   }`}
                 >
-                  <span className="flex items-center gap-1 sm:gap-2">
+                  <span className="flex items-center gap-1.5 sm:gap-2">
                     <span className="hidden sm:inline">{tab.label}</span>
                     <span className={`font-serif ${activeTab === tab.id ? 'text-white' : 'text-cosmic'}`}>{tab.sublabel}</span>
                   </span>
@@ -957,99 +1020,308 @@ const SeoAgent = () => {
                     />
                   )}
 
+                  {/* Keyword Manager (above analysis form/results) */}
+                  {selectedCompany && (
+                    <div className="mb-6">
+                      <KeywordManager
+                        companyId={selectedCompany.id}
+                        companyName={selectedCompany.name || ''}
+                        companyDescription={selectedCompany.mission || ''}
+                        industry=""
+                        targetAudience={targetAudience}
+                        userCredits={userCredits}
+                        keywordSuggestCredits={SEO_CREDITS.KEYWORD_SUGGEST}
+                        onCreditsChange={(delta) => setUserCredits(prev => prev + delta)}
+                      />
+                    </div>
+                  )}
+
                   {/* Results FIRST for returning users */}
                   {latestAnalysis && !isAnalyzing && (
                     <div className="space-y-6">
-                      {/* Visibility Score & Platform Scores Card */}
-                      <Card className="cosmic-card">
-                        <CardHeader>
-                          <div className="flex items-center justify-between">
-                            <CardTitle className="text-white flex items-center gap-2">
-                              <CheckCircle2 className="w-5 h-5 text-green-400" />
-                              Analysis Results
-                            </CardTitle>
-                            <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                              {new Date(latestAnalysis.created_at).toLocaleDateString()}
-                            </Badge>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          {latestAnalysis.visibility_score && (
-                            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10">
-                              <div className="text-center">
+                      {/* 4-Pillar Score Overview */}
+                      {(latestAnalysis as any).pillar_scores && Object.keys((latestAnalysis as any).pillar_scores).length > 0 ? (
+                        <>
+                          {/* Pillar Score Cards */}
+                          <Card className="cosmic-card">
+                            <CardHeader>
+                              <div className="flex items-center justify-between">
+                                <CardTitle className="text-white flex items-center gap-2">
+                                  <CheckCircle2 className="w-5 h-5 text-green-400" />
+                                  4-Pillar Analysis
+                                </CardTitle>
+                                <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                                  {new Date(latestAnalysis.created_at).toLocaleDateString()}
+                                </Badge>
+                              </div>
+                            </CardHeader>
+                            <CardContent>
+                              {/* Overall score + pillar grid */}
+                              <div className="flex flex-col items-center mb-6">
                                 <div className="text-6xl sm:text-7xl font-bold text-accent mb-1">
                                   {latestAnalysis.visibility_score}
                                 </div>
-                                <p className="text-gray-400 text-sm">Visibility Score</p>
+                                <p className="text-gray-400 text-sm">Overall Visibility Score</p>
                               </div>
 
-                              {latestAnalysis.platform_scores && Object.keys(latestAnalysis.platform_scores).length > 0 && (
-                                <div className="flex flex-wrap justify-center gap-2">
-                                  {Object.entries(latestAnalysis.platform_scores).map(([platform, score]) => {
-                                    const evidence = (latestAnalysis as any).search_data?.[platform];
-                                    const scoreNum = score as number;
-                                    const scoreColor = scoreNum >= 70 ? 'text-green-400' : scoreNum >= 40 ? 'text-yellow-400' : 'text-red-400';
-                                    return (
-                                      <div key={platform} className="px-3 py-2 bg-white/5 rounded-lg text-center min-w-[80px] border border-white/5">
-                                        <div className={`text-xl font-bold ${scoreColor}`}>{scoreNum}</div>
-                                        <div className="text-xs text-gray-400 capitalize">{platform}</div>
-                                        {evidence?.mention_count !== undefined && (
-                                          <div className="text-[10px] text-gray-500 mt-1">
-                                            {evidence.mention_count} mention{evidence.mention_count !== 1 ? 's' : ''}
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                {[
+                                  { key: 'google_search', label: 'Google', color: 'from-blue-500 to-blue-600', icon: '🔍' },
+                                  { key: 'ai_visibility', label: 'AI', color: 'from-purple-500 to-purple-600', icon: '🤖' },
+                                  { key: 'community', label: 'Community', color: 'from-orange-500 to-orange-600', icon: '👥' },
+                                  { key: 'website_technical', label: 'Technical', color: 'from-green-500 to-green-600', icon: '🔧' },
+                                ].map(pillar => {
+                                  const score = ((latestAnalysis as any).pillar_scores as PillarScores)?.[pillar.key as keyof PillarScores] || 0;
+                                  const scoreColor = score >= 60 ? 'text-green-400' : score >= 35 ? 'text-yellow-400' : 'text-red-400';
+                                  return (
+                                    <div key={pillar.key} className="p-3 bg-white/5 rounded-xl border border-white/5 text-center">
+                                      <div className="text-lg mb-1">{pillar.icon}</div>
+                                      <div className={`text-2xl font-bold ${scoreColor}`}>{score}</div>
+                                      <div className="text-xs text-gray-400">{pillar.label}</div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          {/* Expandable Pillar Detail Cards */}
+                          <div className="space-y-3">
+                            {(() => {
+                              const pillarDetails = (latestAnalysis as any).pillar_details as PillarDetails | undefined;
+                              const pillarScores = (latestAnalysis as any).pillar_scores as PillarScores | undefined;
+                              if (!pillarDetails || !pillarScores) return null;
+
+                              return (
+                                <>
+                                  {/* Pillar 1: Google Search */}
+                                  <AnalysisPillarCard
+                                    icon={<Search className="w-4 h-4 text-blue-400" />}
+                                    title="Google Search Presence"
+                                    score={pillarScores.google_search}
+                                    summary={`${pillarDetails.google_search?.total_mentions || 0} total mentions, ${pillarDetails.google_search?.verified_mentions || 0} verified`}
+                                    color="blue"
+                                  >
+                                    {/* Platform breakdown */}
+                                    {pillarDetails.google_search?.evidence && (
+                                      <div className="space-y-2">
+                                        {Object.entries(pillarDetails.google_search.evidence).map(([platform, evidence]) => (
+                                          <div key={platform} className="flex items-center justify-between p-2 bg-white/5 rounded-lg">
+                                            <span className="text-sm text-gray-300 capitalize">{platform}</span>
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-xs text-gray-500">
+                                                {evidence.mention_count} mentions
+                                                {evidence.verified_mention_count !== undefined && (
+                                                  <> ({evidence.verified_mention_count} verified)</>
+                                                )}
+                                              </span>
+                                            </div>
                                           </div>
-                                        )}
+                                        ))}
                                       </div>
-                                    );
-                                  })}
+                                    )}
+                                  </AnalysisPillarCard>
+
+                                  {/* Pillar 2: AI Visibility */}
+                                  <AnalysisPillarCard
+                                    icon={<Brain className="w-4 h-4 text-purple-400" />}
+                                    title="AI Visibility"
+                                    score={pillarScores.ai_visibility}
+                                    summary={pillarDetails.ai_visibility?.systems?.chatgpt?.awareness === 'none'
+                                      ? 'AI systems do not recognize your brand'
+                                      : `AI awareness: ${pillarDetails.ai_visibility?.systems?.chatgpt?.awareness || 'unknown'}`
+                                    }
+                                    color="purple"
+                                  >
+                                    <AIVisibilitySection data={pillarDetails.ai_visibility} />
+                                  </AnalysisPillarCard>
+
+                                  {/* Pillar 3: Community */}
+                                  <AnalysisPillarCard
+                                    icon={<Users className="w-4 h-4 text-orange-400" />}
+                                    title="Community Presence"
+                                    score={pillarScores.community}
+                                    summary={(() => {
+                                      const total = Object.values(pillarDetails.community || {}).reduce((sum, p) => sum + (p.mention_count || 0), 0);
+                                      const platforms = Object.keys(pillarDetails.community || {}).filter(k => k !== 'google').length;
+                                      return `${total} mentions across ${platforms} platforms`;
+                                    })()}
+                                    color="orange"
+                                  >
+                                    {pillarDetails.community && (
+                                      <div className="space-y-2">
+                                        {Object.entries(pillarDetails.community)
+                                          .filter(([p]) => p !== 'google')
+                                          .map(([platform, evidence]) => (
+                                            <div key={platform} className="flex items-center justify-between p-2 bg-white/5 rounded-lg">
+                                              <span className="text-sm text-gray-300 capitalize">{platform}</span>
+                                              <span className="text-xs text-gray-500">
+                                                {evidence.mention_count} mentions
+                                              </span>
+                                            </div>
+                                          ))}
+                                      </div>
+                                    )}
+                                  </AnalysisPillarCard>
+
+                                  {/* Pillar 4: Website Technical */}
+                                  <AnalysisPillarCard
+                                    icon={<Monitor className="w-4 h-4 text-green-400" />}
+                                    title="Website Technical"
+                                    score={pillarScores.website_technical}
+                                    summary={pillarDetails.website_technical?.technical_summary || 'Technical audit data'}
+                                    color="green"
+                                  >
+                                    <WebsiteAuditSection data={pillarDetails.website_technical} />
+                                  </AnalysisPillarCard>
+                                </>
+                              );
+                            })()}
+                          </div>
+
+                          {/* Marketing Plan & Recommendations */}
+                          {(latestAnalysis as any).marketing_plan && Object.keys((latestAnalysis as any).marketing_plan).length > 0 && (
+                            <Card className="cosmic-card">
+                              <CardHeader>
+                                <CardTitle className="text-white flex items-center gap-2">
+                                  <Lightbulb className="w-5 h-5 text-accent" />
+                                  Marketing Plan
+                                </CardTitle>
+                                <CardDescription className="text-gray-400">
+                                  Prioritized actions from the Art of Marketing framework
+                                </CardDescription>
+                              </CardHeader>
+                              <CardContent>
+                                <MarketingPlanSection plan={(latestAnalysis as any).marketing_plan as MarketingPlan} />
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {/* Recommendations */}
+                          {latestAnalysis.recommendations && latestAnalysis.recommendations.length > 0 && (
+                            <Card className="cosmic-card">
+                              <CardHeader>
+                                <CardTitle className="text-white flex items-center gap-2">
+                                  <Rocket className="w-5 h-5 text-accent" />
+                                  Top Recommendations
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="space-y-2">
+                                  {latestAnalysis.recommendations.map((rec: string, idx: number) => (
+                                    <div key={idx} className="flex items-start gap-3 p-3 bg-accent/10 rounded-lg">
+                                      <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <span className="text-accent text-sm font-medium">{idx + 1}</span>
+                                      </div>
+                                      <p className="text-gray-300 text-sm">{rec}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {/* Deep Analysis (collapsed) */}
+                          {latestAnalysis.analysis_result && (
+                            <details className="group">
+                              <summary className="flex items-center justify-center gap-2 py-3 cursor-pointer text-gray-400 hover:text-white transition-colors list-none [&::-webkit-details-marker]:hidden">
+                                <Brain className="w-4 h-4" />
+                                <span className="text-sm font-medium">Deep Analysis</span>
+                                <ChevronDown className="w-4 h-4 group-open:rotate-180 transition-transform" />
+                              </summary>
+                              <Card className="cosmic-card mt-2">
+                                <CardContent className="pt-6">
+                                  <div className="bg-white/5 rounded-lg p-4 sm:p-6">
+                                    {renderAnalysisText(formatAnalysisResult(latestAnalysis.analysis_result))}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            </details>
+                          )}
+                        </>
+                      ) : (
+                        /* Legacy display for analyses without 4-pillar data */
+                        <>
+                          <Card className="cosmic-card">
+                            <CardHeader>
+                              <div className="flex items-center justify-between">
+                                <CardTitle className="text-white flex items-center gap-2">
+                                  <CheckCircle2 className="w-5 h-5 text-green-400" />
+                                  Analysis Results
+                                </CardTitle>
+                                <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                                  {new Date(latestAnalysis.created_at).toLocaleDateString()}
+                                </Badge>
+                              </div>
+                            </CardHeader>
+                            <CardContent>
+                              {latestAnalysis.visibility_score && (
+                                <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10">
+                                  <div className="text-center">
+                                    <div className="text-6xl sm:text-7xl font-bold text-accent mb-1">
+                                      {latestAnalysis.visibility_score}
+                                    </div>
+                                    <p className="text-gray-400 text-sm">Visibility Score</p>
+                                  </div>
+
+                                  {latestAnalysis.platform_scores && Object.keys(latestAnalysis.platform_scores).length > 0 && (
+                                    <div className="flex flex-wrap justify-center gap-2">
+                                      {Object.entries(latestAnalysis.platform_scores).map(([platform, score]) => {
+                                        const scoreNum = score as number;
+                                        const scoreColor = scoreNum >= 70 ? 'text-green-400' : scoreNum >= 40 ? 'text-yellow-400' : 'text-red-400';
+                                        return (
+                                          <div key={platform} className="px-3 py-2 bg-white/5 rounded-lg text-center min-w-[80px] border border-white/5">
+                                            <div className={`text-xl font-bold ${scoreColor}`}>{scoreNum}</div>
+                                            <div className="text-xs text-gray-400 capitalize">{platform}</div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
                                 </div>
                               )}
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
+                            </CardContent>
+                          </Card>
 
-                      {/* Full Analysis Interpretation */}
-                      {latestAnalysis.analysis_result && (
-                        <Card className="cosmic-card">
-                          <CardHeader>
-                            <CardTitle className="text-white flex items-center gap-2">
-                              <Brain className="w-5 h-5 text-accent" />
-                              Deep Analysis
-                            </CardTitle>
-                            <CardDescription className="text-gray-400">
-                              Comprehensive interpretation from our agentic pipeline
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="bg-white/5 rounded-lg p-4 sm:p-6">
-                              {renderAnalysisText(formatAnalysisResult(latestAnalysis.analysis_result))}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
-
-                      {/* Recommendations */}
-                      {latestAnalysis.recommendations && latestAnalysis.recommendations.length > 0 && (
-                        <Card className="cosmic-card">
-                          <CardHeader>
-                            <CardTitle className="text-white flex items-center gap-2">
-                              <Rocket className="w-5 h-5 text-accent" />
-                              Top Recommendations
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="space-y-2">
-                              {latestAnalysis.recommendations.map((rec: string, idx: number) => (
-                                <div key={idx} className="flex items-start gap-3 p-3 bg-accent/10 rounded-lg">
-                                  <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                    <span className="text-accent text-sm font-medium">{idx + 1}</span>
-                                  </div>
-                                  <p className="text-gray-300 text-sm">{rec}</p>
+                          {latestAnalysis.analysis_result && (
+                            <Card className="cosmic-card">
+                              <CardHeader>
+                                <CardTitle className="text-white flex items-center gap-2">
+                                  <Brain className="w-5 h-5 text-accent" />
+                                  Deep Analysis
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="bg-white/5 rounded-lg p-4 sm:p-6">
+                                  {renderAnalysisText(formatAnalysisResult(latestAnalysis.analysis_result))}
                                 </div>
-                              ))}
-                            </div>
-                          </CardContent>
-                        </Card>
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {latestAnalysis.recommendations && latestAnalysis.recommendations.length > 0 && (
+                            <Card className="cosmic-card">
+                              <CardHeader>
+                                <CardTitle className="text-white flex items-center gap-2">
+                                  <Rocket className="w-5 h-5 text-accent" />
+                                  Top Recommendations
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="space-y-2">
+                                  {latestAnalysis.recommendations.map((rec: string, idx: number) => (
+                                    <div key={idx} className="flex items-start gap-3 p-3 bg-accent/10 rounded-lg">
+                                      <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <span className="text-accent text-sm font-medium">{idx + 1}</span>
+                                      </div>
+                                      <p className="text-gray-300 text-sm">{rec}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )}
+                        </>
                       )}
 
                       {/* Re-analyze section - collapsible */}
@@ -1321,270 +1593,172 @@ const SeoAgent = () => {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="grid lg:grid-cols-2 gap-8">
-                  {/* Article Generator */}
-                  <div className="space-y-6">
-                    <Card className="cosmic-card">
-                      <CardHeader>
-                        <CardTitle className="text-white flex items-center gap-2">
-                          <FileText className="w-5 h-5 text-accent" />
-                          Article Generator
-                        </CardTitle>
-                        <CardDescription className="text-gray-400">
-                          Generate SEO-optimized articles based on your analysis
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div>
-                          <Label htmlFor="blogTopic" className="text-white">Topic or Title (Optional)</Label>
-                          <Input
-                            id="blogTopic"
-                            placeholder="Leave empty for AI suggestion based on analysis"
-                            value={blogTopic}
-                            onChange={(e) => setBlogTopic(e.target.value)}
-                            className="bg-white/5 border-white/20 text-white mt-2"
-                          />
-                        </div>
-                        {!isGeneratingBlog && (
-                          <Button
-                            className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white"
-                            onClick={generateBlogPost}
-                            disabled={userCredits < SEO_CREDITS.BLOG_POST}
-                          >
-                            <PenTool className="mr-2 w-5 h-5" />
-                            Generate Article
-                            <span className="ml-2 flex items-center text-sm opacity-80">
-                              <Coins className="w-4 h-4 mr-1" />
-                              {SEO_CREDITS.BLOG_POST}
-                            </span>
-                          </Button>
-                        )}
-                      </CardContent>
-                    </Card>
-
-                    {/* Article Generation Progress */}
-                    {isGeneratingBlog && blogStages.length > 0 && (
-                      <SeoProgressCard
-                        stages={blogStages}
-                        title="Generating Article"
-                        subtitle={blogTopic || 'AI is choosing the best topic from your analysis'}
-                        error={blogError}
-                      />
-                    )}
-
-                    {/* Generated Articles */}
-                    {blogPosts && blogPosts.length > 0 && (
-                      <Card className="cosmic-card">
-                        <CardHeader>
-                          <CardTitle className="text-white text-lg">Generated Articles</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                          {blogPosts.map((post: any) => (
-                            <div
-                              key={post.id}
-                              className="p-4 bg-white/5 rounded-lg border border-white/10 hover:border-accent/30 transition-colors cursor-pointer group"
-                              onClick={() => {
-                                setSelectedArticle(post);
-                                setIsArticleModalOpen(true);
-                              }}
-                            >
-                              <h4 className="text-white font-medium mb-1 group-hover:text-accent transition-colors">{post.title}</h4>
-                              <p className="text-gray-400 text-sm line-clamp-2">{post.excerpt || post.content?.substring(0, 150)}</p>
-                              <div className="mt-2 flex items-center justify-between">
-                                <Badge variant="outline" className="text-xs border-white/20 text-gray-400">
-                                  {post.word_count || 0} words
-                                </Badge>
-                                <span className="text-xs text-gray-500">
-                                  {new Date(post.created_at).toLocaleDateString()}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        </CardContent>
-                      </Card>
-                    )}
-                  </div>
-
-                  {/* Engagement Finder */}
-                  <div className="space-y-6">
-                    <Card className="cosmic-card">
-                      <CardHeader>
-                        <CardTitle className="text-white flex items-center gap-2">
-                          <Users className="w-5 h-5 text-accent" />
-                          Engagement Finder
-                          <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px] font-medium px-1.5 py-0">
-                            Beta
-                          </Badge>
-                        </CardTitle>
-                        <CardDescription className="text-gray-400">
-                          Find real discussions on Reddit, YouTube, Quora, and forums where you can engage
-                        </CardDescription>
-                        <div className="mt-3 flex items-start gap-2 p-3 rounded-lg bg-white/[0.03] border border-white/5 text-xs text-gray-500 leading-relaxed">
-                          <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-gray-500" />
-                          <span>
-                            Results sourced via web search. Most platforms actively restrict indexing and automated access, which means link freshness and availability may vary. We're building direct platform integrations to improve accuracy — always verify links before engaging.
-                          </span>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        {!isSearchingEngagement && (
-                          <Button
-                            className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white"
-                            onClick={searchEngagement}
-                            disabled={userCredits < SEO_CREDITS.ENGAGEMENT}
-                          >
-                            <RefreshCw className="mr-2 w-5 h-5" />
-                            Find Opportunities
-                            <span className="ml-2 flex items-center text-sm opacity-80">
-                              <Coins className="w-4 h-4 mr-1" />
-                              {SEO_CREDITS.ENGAGEMENT}
-                            </span>
-                          </Button>
-                        )}
-                      </CardContent>
-                    </Card>
-
-                    {/* Engagement Search Progress */}
-                    {isSearchingEngagement && engagementStages.length > 0 && (
-                      <SeoProgressCard
-                        stages={engagementStages}
-                        title="Finding Engagement Opportunities"
-                        subtitle="Scanning platforms for relevant discussions"
-                        error={engagementError}
-                      />
-                    )}
-
-                    {/* Engagement Opportunities */}
-                    {engagementOpportunities && engagementOpportunities.length > 0 && (
-                      <Card className="cosmic-card">
-                        <CardHeader>
-                          <CardTitle className="text-white text-lg">Engagement Opportunities</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          {engagementOpportunities.filter((o: any) => o.status === 'pending').map((opportunity: any) => {
-                            const platformStyles: Record<string, { bg: string; text: string; icon: React.ReactNode }> = {
-                              reddit: { bg: 'bg-orange-500/20', text: 'text-orange-400', icon: <FaRedditAlien className="w-3 h-3 mr-1" /> },
-                              twitter: { bg: 'bg-sky-500/20', text: 'text-sky-400', icon: <FaXTwitter className="w-3 h-3 mr-1" /> },
-                              youtube: { bg: 'bg-red-500/20', text: 'text-red-400', icon: <FaYoutube className="w-3 h-3 mr-1" /> },
-                              linkedin: { bg: 'bg-blue-500/20', text: 'text-blue-400', icon: <FaLinkedin className="w-3 h-3 mr-1" /> },
-                              quora: { bg: 'bg-red-300/20', text: 'text-red-300', icon: <FaQuora className="w-3 h-3 mr-1" /> },
-                              forum: { bg: 'bg-white/10', text: 'text-gray-300', icon: <MessageSquare className="w-3 h-3 mr-1" /> },
-                            };
-                            const pStyle = platformStyles[opportunity.platform] || { bg: 'bg-white/10', text: 'text-gray-300', icon: null };
-                            const isVerified = opportunity.url_verified === true;
-
-                            return (
-                              <div
-                                key={opportunity.id}
-                                className="p-4 bg-white/5 rounded-lg border border-white/10"
-                              >
-                                <div className="flex items-center gap-2 mb-2 flex-wrap">
-                                  <Badge className={`${pStyle.bg} ${pStyle.text} border-0 capitalize`}>
-                                    {pStyle.icon}
-                                    {opportunity.platform}
-                                  </Badge>
-                                  {opportunity.relevance_score && (
-                                    <Badge variant="outline" className="text-xs border-accent/30 text-accent">
-                                      {opportunity.relevance_score}% match
-                                    </Badge>
-                                  )}
-                                  {isVerified ? (
-                                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
-                                      <CheckCircle2 className="w-3 h-3 mr-1" />
-                                      Verified URL
-                                    </Badge>
-                                  ) : (
-                                    <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-xs">
-                                      <AlertCircle className="w-3 h-3 mr-1" />
-                                      Unverified
-                                    </Badge>
-                                  )}
-                                </div>
-
-                                <h4 className="text-white font-medium mb-2">{opportunity.source_title}</h4>
-
-                                {opportunity.source_content && (
-                                  <p className="text-gray-400 text-sm mb-3 line-clamp-2">
-                                    {opportunity.source_content}
-                                  </p>
-                                )}
-
-                                {/* Discovery metadata */}
-                                {(opportunity.created_at || opportunity.discovered_via) && (
-                                  <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
-                                    {opportunity.created_at && (
-                                      <span>Found {new Date(opportunity.created_at).toLocaleDateString()}</span>
-                                    )}
-                                    {opportunity.discovered_via && (
-                                      <span>via {
-                                        ({ reddit_api: 'Reddit API', youtube_api: 'YouTube API', serper: 'Web Search' } as Record<string, string>)[opportunity.discovered_via]
-                                        || opportunity.discovered_via
-                                      }</span>
-                                    )}
-                                  </div>
-                                )}
-
-                                {opportunity.suggested_response && (
-                                  <div className="bg-accent/10 rounded-lg p-3 mb-3">
-                                    <p className="text-sm text-gray-300">{opportunity.suggested_response}</p>
-                                  </div>
-                                )}
-
-                                <div className="flex items-center gap-2">
-                                  {opportunity.source_url && (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="border-white/20 text-white hover:bg-white/10"
-                                      onClick={() => handleViewOpportunity(opportunity.source_url)}
-                                    >
-                                      <ExternalLink className="w-3 h-3 mr-1" />
-                                      View
-                                    </Button>
-                                  )}
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="border-white/20 text-white hover:bg-white/10"
-                                    onClick={() => copyToClipboard(opportunity.suggested_response || '', opportunity.id)}
-                                  >
-                                    {copiedId === opportunity.id ? (
-                                      <Check className="w-3 h-3 mr-1" />
-                                    ) : (
-                                      <Copy className="w-3 h-3 mr-1" />
-                                    )}
-                                    Copy
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="border-green-500/30 text-green-400 hover:bg-green-500/10"
-                                    onClick={() => updateEngagementStatus(opportunity.id, 'used')}
-                                  >
-                                    <ThumbsUp className="w-3 h-3" />
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-                                    onClick={() => updateEngagementStatus(opportunity.id, 'dismissed')}
-                                  >
-                                    <ThumbsDown className="w-3 h-3" />
-                                  </Button>
-                                </div>
-                              </div>
-                            );
-                          })}
-
-                          {engagementOpportunities.filter((o: any) => o.status === 'pending').length === 0 && (
-                            <p className="text-gray-400 text-center py-4">
-                              No pending opportunities. Click "Find Opportunities" to search for more.
-                            </p>
+                <div>
+                  {/* Layout toggle — top right */}
+                  <div className="flex items-center justify-between mb-6">
+                    {/* Section labels (side-by-side mode) or pill toggle (focused mode) */}
+                    {engineLayout === 'side-by-side' ? (
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 text-white/60 text-sm font-medium">
+                          <FileText className="w-4 h-4 text-accent" />
+                          Articles
+                          {blogPosts && blogPosts.length > 0 && (
+                            <Badge variant="outline" className="text-xs px-1.5 py-0 border-white/20 text-gray-400">
+                              {blogPosts.length}
+                            </Badge>
                           )}
-                        </CardContent>
-                      </Card>
+                          <span className="text-white/20 mx-1">+</span>
+                          <Users className="w-4 h-4 text-accent" />
+                          Engagement
+                          {engagementOpportunities && engagementOpportunities.filter((o: any) => o.status === 'pending').length > 0 && (
+                            <Badge variant="outline" className="text-xs px-1.5 py-0 border-white/20 text-gray-400">
+                              {engagementOpportunities.filter((o: any) => o.status === 'pending').length}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center bg-muted/50 dark:bg-black/30 rounded-full p-1 border border-white/10">
+                        <button
+                          onClick={() => setEngineSection('articles')}
+                          className={`flex items-center justify-center gap-2 px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                            engineSection === 'articles'
+                              ? 'text-white bg-gradient-to-r from-primary to-accent shadow-md'
+                              : 'text-gray-400 hover:text-gray-200'
+                          }`}
+                        >
+                          <FileText className="w-4 h-4" />
+                          Articles
+                          {blogPosts && blogPosts.length > 0 && (
+                            <Badge variant="outline" className={`text-xs px-1.5 py-0 ${
+                              engineSection === 'articles' ? 'border-white/30 text-white' : 'border-white/20 text-gray-400'
+                            }`}>
+                              {blogPosts.length}
+                            </Badge>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => setEngineSection('engagement')}
+                          className={`flex items-center justify-center gap-2 px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                            engineSection === 'engagement'
+                              ? 'text-white bg-gradient-to-r from-primary to-accent shadow-md'
+                              : 'text-gray-400 hover:text-gray-200'
+                          }`}
+                        >
+                          <Users className="w-4 h-4" />
+                          Engagement
+                          {engagementOpportunities && engagementOpportunities.filter((o: any) => o.status === 'pending').length > 0 && (
+                            <Badge variant="outline" className={`text-xs px-1.5 py-0 ${
+                              engineSection === 'engagement' ? 'border-white/30 text-white' : 'border-white/20 text-gray-400'
+                            }`}>
+                              {engagementOpportunities.filter((o: any) => o.status === 'pending').length}
+                            </Badge>
+                          )}
+                        </button>
+                      </div>
                     )}
+
+                    {/* Layout toggle button */}
+                    <button
+                      onClick={() => setEngineLayout(prev => prev === 'side-by-side' ? 'focused' : 'side-by-side')}
+                      className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all duration-200"
+                      title={engineLayout === 'side-by-side' ? 'Switch to focused view' : 'Switch to side-by-side view'}
+                    >
+                      {engineLayout === 'side-by-side' ? (
+                        <>
+                          <Maximize2 className="w-4 h-4" />
+                          <span className="hidden lg:inline">Focus</span>
+                        </>
+                      ) : (
+                        <>
+                          <Columns2 className="w-4 h-4" />
+                          <span className="hidden lg:inline">Split</span>
+                        </>
+                      )}
+                    </button>
                   </div>
+
+                  {/* Side-by-side layout (default on desktop, stacked on mobile) */}
+                  {engineLayout === 'side-by-side' ? (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                      {/* Articles column */}
+                      <div>
+                        <EngineArticlesSection
+                          blogPosts={blogPosts || []}
+                          blogTopic={blogTopic}
+                          setBlogTopic={setBlogTopic}
+                          isGeneratingBlog={isGeneratingBlog}
+                          blogStages={blogStages}
+                          blogError={blogError}
+                          generateBlogPost={generateBlogPost}
+                          userCredits={userCredits}
+                          blogPostCredits={SEO_CREDITS.BLOG_POST}
+                          onViewArticle={(post) => {
+                            setSelectedArticle(post);
+                            setIsArticleModalOpen(true);
+                          }}
+                          onUpdateStatus={updateArticleStatus}
+                          onDelete={deleteArticle}
+                        />
+                      </div>
+                      {/* Engagement column */}
+                      <div>
+                        <EngineEngagementSection
+                          engagementOpportunities={engagementOpportunities || []}
+                          isSearchingEngagement={isSearchingEngagement}
+                          engagementStages={engagementStages}
+                          engagementError={engagementError}
+                          searchEngagement={searchEngagement}
+                          updateEngagementStatus={updateEngagementStatus}
+                          copyToClipboard={copyToClipboard}
+                          copiedId={copiedId}
+                          handleViewOpportunity={handleViewOpportunity}
+                          userCredits={userCredits}
+                          engagementCredits={SEO_CREDITS.ENGAGEMENT}
+                          onRegenerateWithKept={regenerateWithKeptEngagement}
+                          compact
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    /* Focused layout — full-width single section */
+                    <div className="max-w-4xl mx-auto">
+                      {engineSection === 'articles' ? (
+                        <EngineArticlesSection
+                          blogPosts={blogPosts || []}
+                          blogTopic={blogTopic}
+                          setBlogTopic={setBlogTopic}
+                          isGeneratingBlog={isGeneratingBlog}
+                          blogStages={blogStages}
+                          blogError={blogError}
+                          generateBlogPost={generateBlogPost}
+                          userCredits={userCredits}
+                          blogPostCredits={SEO_CREDITS.BLOG_POST}
+                          onViewArticle={(post) => {
+                            setSelectedArticle(post);
+                            setIsArticleModalOpen(true);
+                          }}
+                          onUpdateStatus={updateArticleStatus}
+                          onDelete={deleteArticle}
+                        />
+                      ) : (
+                        <EngineEngagementSection
+                          engagementOpportunities={engagementOpportunities || []}
+                          isSearchingEngagement={isSearchingEngagement}
+                          engagementStages={engagementStages}
+                          engagementError={engagementError}
+                          searchEngagement={searchEngagement}
+                          updateEngagementStatus={updateEngagementStatus}
+                          copyToClipboard={copyToClipboard}
+                          copiedId={copiedId}
+                          handleViewOpportunity={handleViewOpportunity}
+                          userCredits={userCredits}
+                          engagementCredits={SEO_CREDITS.ENGAGEMENT}
+                          onRegenerateWithKept={regenerateWithKeptEngagement}
+                        />
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1600,6 +1774,8 @@ const SeoAgent = () => {
           setIsArticleModalOpen(false);
           setSelectedArticle(null);
         }}
+        onUpdateStatus={updateArticleStatus}
+        onDelete={deleteArticle}
       />
     </div>
   );
